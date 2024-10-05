@@ -1,1 +1,0 @@
-import './media/preferences.css';

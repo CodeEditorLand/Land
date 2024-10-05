@@ -10,13 +10,13 @@
 	"extends": "@playform/build/tsconfig",
 	"include": [
 		"./Elements/",
-		"./Dependency/",
-		"./Dependency/Biome/",
-		"./Dependency/Land/",
-		"./Dependency/OXC/",
-		"./Dependency/Rolldown/",
-		"./Dependency/SWC/",
-		"./Dependency/Tauri/",
+		// "./Dependency/",
+		// "./Dependency/Biome/",
+		// "./Dependency/Land/",
+		// "./Dependency/OXC/",
+		// "./Dependency/Rolldown/",
+		// "./Dependency/SWC/",
+		// "./Dependency/Tauri/",
 		"./Source/"
 	],
 	"watchOptions": {
