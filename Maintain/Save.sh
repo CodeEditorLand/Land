@@ -36,7 +36,6 @@ Dependency=(
 	"./Dependency/Tauri/Dependency/Deno/deno_typescript/typescript/"
 	"./Dependency/Tauri/Dependency/JavaScriptCoreRS/"
 	"./Dependency/Tauri/Dependency/Tao/"
-	"./Dependency/Tauri/Dependency/TauriDocs/"
 	"./Dependency/Tauri/Dependency/WebKit2GTKRS/"
 	"./Dependency/Tauri/Dependency/Winit/"
 	"./Elements/"
