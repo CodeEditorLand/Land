@@ -2,14 +2,14 @@
 	"name": "@codeeditorland/ecosystem",
 	"version": "0.0.1",
 	"private": false,
-	"description": "🌿 EcoSystem —",
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/EcoSystem#readme",
+	"description": "🏞️ Land —",
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/Land#readme",
 	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/EcoSystem/issues"
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/Land/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/CodeEditorLand/EcoSystem.git"
+		"url": "git+https://github.com/CodeEditorLand/Land.git"
 	},
 	"license": "SEE LICENSE IN LICENSE",
 	"author": {
