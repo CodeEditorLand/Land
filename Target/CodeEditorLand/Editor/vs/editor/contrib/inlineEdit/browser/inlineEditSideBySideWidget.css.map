@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/contrib/inlineEdit/browser/inlineEditSideBySideWidget.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-editor .inlineEditSideBySide {\n\tz-index: 39;\n\tcolor: var(--vscode-editorHoverWidget-foreground);\n\tbackground-color: var(--vscode-editorHoverWidget-background);\n\tborder: 1px solid var(--vscode-editorHoverWidget-border);\n\twhite-space: pre;\n}\n"],
-  "mappings": "AAKA,CAAC,cAAc,CAAC;AACf,WAAS;AACT,SAAO,IAAI;AACX,oBAAkB,IAAI;AACtB,UAAQ,IAAI,MAAM,IAAI;AACtB,eAAa;AACd;",
-  "names": []
-}

@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/debug/common/debugCompoundRoot.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { Emitter } from '../../../../base/common/event.js';\n\nexport class DebugCompoundRoot {\n\tprivate stopped = false;\n\tprivate stopEmitter = new Emitter<void>();\n\n\tonDidSessionStop = this.stopEmitter.event;\n\n\tsessionStopped(): void {\n\t\tif (!this.stopped) { // avoid sending extranous terminate events\n\t\t\tthis.stopped = true;\n\t\t\tthis.stopEmitter.fire();\n\t\t}\n\t}\n}\n"],
-  "mappings": ";;AAKA,SAAS,eAAe;AAEjB,MAAM,kBAAkB;AAAA,EAP/B,OAO+B;AAAA;AAAA;AAAA,EACtB,UAAU;AAAA,EACV,cAAc,IAAI,QAAc;AAAA,EAExC,mBAAmB,KAAK,YAAY;AAAA,EAEpC,iBAAuB;AACtB,QAAI,CAAC,KAAK,SAAS;AAClB,WAAK,UAAU;AACf,WAAK,YAAY,KAAK;AAAA,IACvB;AAAA,EACD;AACD;",
-  "names": []
-}

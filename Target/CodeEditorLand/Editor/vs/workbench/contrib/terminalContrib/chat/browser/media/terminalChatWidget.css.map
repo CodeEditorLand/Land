@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/terminalContrib/chat/browser/media/terminalChatWidget.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.terminal-inline-chat {\n\tposition: absolute;\n\tleft: 0;\n\tbottom: 0;\n\tz-index: 100;\n\theight: auto !important;\n}\n\n.terminal-inline-chat .inline-chat {\n\tmargin-top: 0 !important;\n}\n\n.terminal-inline-chat.hide {\n\tvisibility: hidden;\n}\n\n.terminal-inline-chat .chatMessageContent .value {\n\tpadding-top: 10px;\n}\n\n.terminal-inline-chat .inline-chat-input .monaco-editor-background {\n\t/* Override the global panel rule for monaco backgrounds */\n\tbackground-color: var(--vscode-inlineChatInput-background) !important;\n}\n"],
-  "mappings": "AAKA,CAAC;AACA,YAAU;AACV,QAAM;AACN,UAAQ;AACR,WAAS;AACT,UAAQ;AACT;AAEA,CARC,qBAQqB,CAAC;AACtB,cAAY;AACb;AAEA,CAZC,oBAYoB,CAAC;AACrB,cAAY;AACb;AAEA,CAhBC,qBAgBqB,CAAC,mBAAmB,CAAC;AAC1C,eAAa;AACd;AAEA,CApBC,qBAoBqB,CAAC,kBAAkB,CAAC;AAEzC,oBAAkB,IAAI;AACvB;",
-  "names": []
-}

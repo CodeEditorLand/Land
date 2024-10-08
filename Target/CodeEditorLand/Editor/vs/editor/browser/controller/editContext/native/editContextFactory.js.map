@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/browser/controller/editContext/native/editContextFactory.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n\nexport namespace EditContext {\n\n\t/**\n\t * Checks if the EditContext is supported in the given window.\n\t */\n\texport function supported(obj: any & Window): boolean {\n\t\treturn typeof obj?.EditContext === 'function';\n\t}\n\n\t/**\n\t * Create an edit context. Check that the EditContext is supported using the method {@link EditContext.supported}\n\t */\n\texport function create(window: Window, options?: EditContextInit): EditContext {\n\t\treturn new (window as any).EditContext(options);\n\t}\n}\n"],
-  "mappings": ";;AAMO,IAAU;AAAA,CAAV,CAAUA,iBAAV;AAKC,WAAS,UAAU,KAA4B;AACrD,WAAO,OAAO,KAAK,gBAAgB;AAAA,EACpC;AAFO,EAAAA,aAAS;AAAA;AAOT,WAAS,OAAO,QAAgB,SAAwC;AAC9E,WAAO,IAAK,OAAe,YAAY,OAAO;AAAA,EAC/C;AAFO,EAAAA,aAAS;AAAA;AAAA,GAZA;",
-  "names": ["EditContext"]
-}

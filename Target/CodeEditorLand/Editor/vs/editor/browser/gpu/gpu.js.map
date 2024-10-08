@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/browser/gpu/gpu.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport type { ViewportData } from '../../common/viewLayout/viewLinesViewportData.js';\nimport type { ViewLineOptions } from '../viewParts/viewLines/viewLineOptions.js';\n\nexport const enum BindingId {\n\tGlyphInfo0,\n\tGlyphInfo1,\n\tCells,\n\tTextureSampler,\n\tTexture,\n\tLayoutInfoUniform,\n\tAtlasDimensionsUniform,\n\tScrollOffset,\n}\n\nexport interface IGpuRenderStrategy {\n\treadonly wgsl: string;\n\treadonly bindGroupEntries: GPUBindGroupEntry[];\n\n\t/**\n\t * Resets the render strategy, clearing all data and setting up for a new frame.\n\t */\n\treset(): void;\n\tupdate(viewportData: ViewportData, viewLineOptions: ViewLineOptions): number;\n\tdraw?(pass: GPURenderPassEncoder, viewportData: ViewportData): void;\n}\n"],
-  "mappings": "AAQO,IAAW,YAAX,kBAAWA,eAAX;AACN,EAAAA,sBAAA;AACA,EAAAA,sBAAA;AACA,EAAAA,sBAAA;AACA,EAAAA,sBAAA;AACA,EAAAA,sBAAA;AACA,EAAAA,sBAAA;AACA,EAAAA,sBAAA;AACA,EAAAA,sBAAA;AARiB,SAAAA;AAAA,GAAA;",
-  "names": ["BindingId"]
-}

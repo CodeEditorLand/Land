@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/browser/viewParts/overlayWidgets/overlayWidgets.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n.monaco-editor .overlayWidgets {\n\tposition: absolute;\n\ttop: 0;\n\tleft:0;\n}"],
-  "mappings": "AAIA,CAAC,cAAc,CAAC;AACf,YAAU;AACV,OAAK;AACL,QAAK;AACN;",
-  "names": []
-}

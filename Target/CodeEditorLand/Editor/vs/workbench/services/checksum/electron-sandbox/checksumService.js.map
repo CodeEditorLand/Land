@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/checksum/electron-sandbox/checksumService.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { IChecksumService } from '../../../../platform/checksum/common/checksumService.js';\nimport { registerSharedProcessRemoteService } from '../../../../platform/ipc/electron-sandbox/services.js';\n\nregisterSharedProcessRemoteService(IChecksumService, 'checksum');\n"],
-  "mappings": "AAKA,SAAS,wBAAwB;AACjC,SAAS,0CAA0C;AAEnD,mCAAmC,kBAAkB,UAAU;",
-  "names": []
-}

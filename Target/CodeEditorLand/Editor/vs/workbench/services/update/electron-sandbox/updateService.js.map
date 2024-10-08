@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/update/electron-sandbox/updateService.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { IUpdateService } from '../../../../platform/update/common/update.js';\nimport { registerMainProcessRemoteService } from '../../../../platform/ipc/electron-sandbox/services.js';\nimport { UpdateChannelClient } from '../../../../platform/update/common/updateIpc.js';\n\nregisterMainProcessRemoteService(IUpdateService, 'update', { channelClientCtor: UpdateChannelClient });\n"],
-  "mappings": "AAKA,SAAS,sBAAsB;AAC/B,SAAS,wCAAwC;AACjD,SAAS,2BAA2B;AAEpC,iCAAiC,gBAAgB,UAAU,EAAE,mBAAmB,oBAAoB,CAAC;",
-  "names": []
-}

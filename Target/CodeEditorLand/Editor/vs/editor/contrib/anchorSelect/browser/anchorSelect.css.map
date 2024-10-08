@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/contrib/anchorSelect/browser/anchorSelect.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-editor .selection-anchor {\n\tbackground-color: #007ACC;\n\twidth: 2px !important;\n}\n"],
-  "mappings": "AAKA,CAAC,cAAc,CAAC;AACf,oBAAkB;AAClB,SAAO;AACR;",
-  "names": []
-}

@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../Dependency/Land/Dependency/Editor/Source/vs/base/browser/fonts.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { isMacintosh, isWindows } from '../common/platform.js';\n\n/**\n * The best font-family to be used in CSS based on the platform:\n * - Windows: Segoe preferred, fallback to sans-serif\n * - macOS: standard system font, fallback to sans-serif\n * - Linux: standard system font preferred, fallback to Ubuntu fonts\n *\n * Note: this currently does not adjust for different locales.\n */\nexport const DEFAULT_FONT_FAMILY = isWindows ? '\"Segoe WPC\", \"Segoe UI\", sans-serif' : isMacintosh ? '-apple-system, BlinkMacSystemFont, sans-serif' : 'system-ui, \"Ubuntu\", \"Droid Sans\", sans-serif';\n"],
-  "mappings": "AAKA,SAAS,aAAa,iBAAiB;AAUhC,MAAM,sBAAsB,YAAY,wCAAwC,cAAc,kDAAkD;",
-  "names": []
-}

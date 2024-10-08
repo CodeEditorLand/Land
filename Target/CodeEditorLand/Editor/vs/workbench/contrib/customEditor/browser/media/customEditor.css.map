@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/customEditor/browser/media/customEditor.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.webview.modified {\n\tbox-shadow: -6px 0 5px -5px var(--vscode-scrollbar-shadow);\n}\n"],
-  "mappings": "AAKA,CAAC,OAAO,CAAC;AACR,cAAY,KAAK,EAAE,IAAI,KAAK,IAAI;AACjC;",
-  "names": []
-}

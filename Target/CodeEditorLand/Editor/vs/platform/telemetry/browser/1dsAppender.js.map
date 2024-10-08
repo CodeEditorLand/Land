@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/telemetry/browser/1dsAppender.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { AbstractOneDataSystemAppender, IAppInsightsCore } from '../common/1dsAppender.js';\n\n\nexport class OneDataSystemWebAppender extends AbstractOneDataSystemAppender {\n\tconstructor(\n\t\tisInternalTelemetry: boolean,\n\t\teventPrefix: string,\n\t\tdefaultData: { [key: string]: any } | null,\n\t\tiKeyOrClientFactory: string | (() => IAppInsightsCore), // allow factory function for testing\n\t) {\n\t\tsuper(isInternalTelemetry, eventPrefix, defaultData, iKeyOrClientFactory);\n\n\t\t// If we cannot fetch the endpoint it means it is down and we should not send any telemetry.\n\t\t// This is most likely due to ad blockers\n\t\tfetch(this.endPointHealthUrl, { method: 'GET' }).catch(err => {\n\t\t\tthis._aiCoreOrKey = undefined;\n\t\t});\n\t}\n}\n"],
-  "mappings": ";;AAKA,SAAS,+BAA+B,wBAAwB;AAGzD,MAAM,iCAAiC,8BAA8B;AAAA,EAR5E,OAQ4E;AAAA;AAAA;AAAA,EAC3E,YACC,qBACA,aACA,aACA,qBACC;AACD,UAAM,qBAAqB,aAAa,aAAa,mBAAmB;AAIxE,UAAM,KAAK,mBAAmB,EAAE,QAAQ,MAAM,CAAC,EAAE,MAAM,SAAO;AAC7D,WAAK,eAAe;AAAA,IACrB,CAAC;AAAA,EACF;AACD;",
-  "names": []
-}

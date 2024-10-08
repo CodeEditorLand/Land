@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/menubar/electron-sandbox/menubarService.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { IMenubarService } from '../../../../platform/menubar/electron-sandbox/menubar.js';\nimport { registerMainProcessRemoteService } from '../../../../platform/ipc/electron-sandbox/services.js';\n\nregisterMainProcessRemoteService(IMenubarService, 'menubar');\n"],
-  "mappings": "AAKA,SAAS,uBAAuB;AAChC,SAAS,wCAAwC;AAEjD,iCAAiC,iBAAiB,SAAS;",
-  "names": []
-}

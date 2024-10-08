@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/common/diff/linesDiffComputers.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { LegacyLinesDiffComputer } from './legacyLinesDiffComputer.js';\nimport { DefaultLinesDiffComputer } from './defaultLinesDiffComputer/defaultLinesDiffComputer.js';\nimport { ILinesDiffComputer } from './linesDiffComputer.js';\n\nexport const linesDiffComputers = {\n\tgetLegacy: () => new LegacyLinesDiffComputer(),\n\tgetDefault: () => new DefaultLinesDiffComputer(),\n} satisfies Record<string, () => ILinesDiffComputer>;\n"],
-  "mappings": ";;AAKA,SAAS,+BAA+B;AACxC,SAAS,gCAAgC;AACzC,SAAS,0BAA0B;AAE5B,MAAM,qBAAqB;AAAA,EACjC,WAAW,6BAAM,IAAI,wBAAwB,GAAlC;AAAA,EACX,YAAY,6BAAM,IAAI,yBAAyB,GAAnC;AACb;",
-  "names": []
-}

@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/search/worker/localFileSearch.esm.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { bootstrapSimpleWorker } from \"../../../../base/common/worker/simpleWorkerBootstrap.js\";\nimport { create } from \"./localFileSearch.js\";\n\nbootstrapSimpleWorker(create);\n"],
-  "mappings": "AAKA,SAAS,6BAA6B;AACtC,SAAS,cAAc;AAEvB,sBAAsB,MAAM;",
-  "names": []
-}

@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/themes/common/hostColorSchemeService.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { Event } from '../../../../base/common/event.js';\nimport { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';\n\nexport const IHostColorSchemeService = createDecorator<IHostColorSchemeService>('hostColorSchemeService');\n\nexport interface IHostColorSchemeService {\n\n\treadonly _serviceBrand: undefined;\n\n\treadonly dark: boolean;\n\treadonly highContrast: boolean;\n\treadonly onDidChangeColorScheme: Event<void>;\n\n}\n"],
-  "mappings": "AAKA,SAAS,aAAa;AACtB,SAAS,uBAAuB;AAEzB,MAAM,0BAA0B,gBAAyC,wBAAwB;",
-  "names": []
-}

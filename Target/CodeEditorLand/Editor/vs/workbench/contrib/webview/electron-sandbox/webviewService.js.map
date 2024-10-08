@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/webview/electron-sandbox/webviewService.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { IWebviewElement, WebviewInitInfo } from '../browser/webview.js';\nimport { WebviewService } from '../browser/webviewService.js';\nimport { ElectronWebviewElement } from './webviewElement.js';\n\nexport class ElectronWebviewService extends WebviewService {\n\n\toverride createWebviewElement(initInfo: WebviewInitInfo): IWebviewElement {\n\t\tconst webview = this._instantiationService.createInstance(ElectronWebviewElement, initInfo, this._webviewThemeDataProvider);\n\t\tthis.registerNewWebview(webview);\n\t\treturn webview;\n\t}\n}\n"],
-  "mappings": ";;AAKA,SAAS,iBAAiB,uBAAuB;AACjD,SAAS,sBAAsB;AAC/B,SAAS,8BAA8B;AAEhC,MAAM,+BAA+B,eAAe;AAAA,EAT3D,OAS2D;AAAA;AAAA;AAAA,EAEjD,qBAAqB,UAA4C;AACzE,UAAM,UAAU,KAAK,sBAAsB,eAAe,wBAAwB,UAAU,KAAK,yBAAyB;AAC1H,SAAK,mBAAmB,OAAO;AAC/B,WAAO;AAAA,EACR;AACD;",
-  "names": []
-}

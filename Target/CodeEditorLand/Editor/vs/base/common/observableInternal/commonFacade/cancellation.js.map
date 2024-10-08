@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/base/common/observableInternal/commonFacade/cancellation.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nexport { CancellationError } from '../../errors.js';\nexport { CancellationToken, CancellationTokenSource } from '../../cancellation.js';\n"],
-  "mappings": "AAKA,SAAS,yBAAyB;AAClC,SAAS,mBAAmB,+BAA+B;",
-  "names": []
-}

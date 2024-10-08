@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/debug/browser/debugSettingMigration.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\nimport { Registry } from '../../../../platform/registry/common/platform.js';\nimport { Extensions, IConfigurationMigrationRegistry } from '../../../common/configuration.js';\n\nRegistry.as<IConfigurationMigrationRegistry>(Extensions.ConfigurationMigration)\n\t.registerConfigurationMigrations([{\n\t\tkey: 'debug.autoExpandLazyVariables',\n\t\tmigrateFn: (value: boolean) => {\n\t\t\tif (value === true) {\n\t\t\t\treturn { value: 'on' };\n\t\t\t} else if (value === false) {\n\t\t\t\treturn { value: 'off' };\n\t\t\t}\n\n\t\t\treturn [];\n\t\t}\n\t}]);\n"],
-  "mappings": ";;AAIA,SAAS,gBAAgB;AACzB,SAAS,YAAY,uCAAuC;AAE5D,SAAS,GAAoC,WAAW,sBAAsB,EAC5E,gCAAgC,CAAC;AAAA,EACjC,KAAK;AAAA,EACL,WAAW,wBAAC,UAAmB;AAC9B,QAAI,UAAU,MAAM;AACnB,aAAO,EAAE,OAAO,KAAK;AAAA,IACtB,WAAW,UAAU,OAAO;AAC3B,aAAO,EAAE,OAAO,MAAM;AAAA,IACvB;AAEA,WAAO,CAAC;AAAA,EACT,GARW;AASZ,CAAC,CAAC;",
-  "names": []
-}

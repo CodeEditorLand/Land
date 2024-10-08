@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/extensions/electron-sandbox/extensionHostStarter.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { registerMainProcessRemoteService } from '../../../../platform/ipc/electron-sandbox/services.js';\nimport { IExtensionHostStarter, ipcExtensionHostStarterChannelName } from '../../../../platform/extensions/common/extensionHostStarter.js';\n\nregisterMainProcessRemoteService(IExtensionHostStarter, ipcExtensionHostStarterChannelName);\n"],
-  "mappings": "AAKA,SAAS,wCAAwC;AACjD,SAAS,uBAAuB,0CAA0C;AAE1E,iCAAiC,uBAAuB,kCAAkC;",
-  "names": []
-}

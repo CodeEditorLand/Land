@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/mergeEditor/electron-sandbox/mergeEditor.contribution.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { registerAction2 } from '../../../../platform/actions/common/actions.js';\nimport { MergeEditorOpenContentsFromJSON, OpenSelectionInTemporaryMergeEditor } from './devCommands.js';\n\n// Dev Commands\nregisterAction2(MergeEditorOpenContentsFromJSON);\nregisterAction2(OpenSelectionInTemporaryMergeEditor);\n"],
-  "mappings": "AAKA,SAAS,uBAAuB;AAChC,SAAS,iCAAiC,2CAA2C;AAGrF,gBAAgB,+BAA+B;AAC/C,gBAAgB,mCAAmC;",
-  "names": []
-}

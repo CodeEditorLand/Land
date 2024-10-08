@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/common/comments.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { MarshalledId } from '../../base/common/marshallingIds.js';\nimport { CommentThread } from '../../editor/common/languages.js';\n\nexport interface MarshalledCommentThread {\n\t$mid: MarshalledId.CommentThread;\n\tcommentControlHandle: number;\n\tcommentThreadHandle: number;\n}\n\nexport interface MarshalledCommentThreadInternal extends MarshalledCommentThread {\n\tthread: CommentThread;\n}\n"],
-  "mappings": "AAKA,SAAS,oBAAoB;AAC7B,SAAS,qBAAqB;",
-  "names": []
-}

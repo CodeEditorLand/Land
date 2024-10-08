@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/languagePacks/common/localizedStrings.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport * as nls from '../../../nls.js';\n\n/**\n * These are some predefined strings that we test during smoke testing that they are localized\n * correctly. Don't change these strings!!\n */\n\nconst open: string = nls.localize('open', 'open');\nconst close: string = nls.localize('close', 'close');\nconst find: string = nls.localize('find', 'find');\n\nexport default {\n\topen: open,\n\tclose: close,\n\tfind: find\n};\n"],
-  "mappings": "AAKA,YAAY,SAAS;AAOrB,MAAM,OAAe,IAAI,SAAS,QAAQ,MAAM;AAChD,MAAM,QAAgB,IAAI,SAAS,SAAS,OAAO;AACnD,MAAM,OAAe,IAAI,SAAS,QAAQ,MAAM;AAEhD,IAAO,2BAAQ;AAAA,EACd;AAAA,EACA;AAAA,EACA;AACD;",
-  "names": []
-}

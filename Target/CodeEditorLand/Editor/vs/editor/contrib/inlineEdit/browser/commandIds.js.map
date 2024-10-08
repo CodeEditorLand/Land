@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/contrib/inlineEdit/browser/commandIds.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nexport const inlineEditAcceptId = 'editor.action.inlineEdit.accept';\nexport const inlineEditTriggerId = 'editor.action.inlineEdit.trigger';\nexport const inlineEditRejectId = 'editor.action.inlineEdit.reject';\nexport const inlineEditJumpToId = 'editor.action.inlineEdit.jumpTo';\nexport const inlineEditJumpBackId = 'editor.action.inlineEdit.jumpBack';\n"],
-  "mappings": "AAKO,MAAM,qBAAqB;AAC3B,MAAM,sBAAsB;AAC5B,MAAM,qBAAqB;AAC3B,MAAM,qBAAqB;AAC3B,MAAM,uBAAuB;",
-  "names": []
-}

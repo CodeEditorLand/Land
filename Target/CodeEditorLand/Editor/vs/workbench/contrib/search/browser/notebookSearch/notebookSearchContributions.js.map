@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/search/browser/notebookSearch/notebookSearchContributions.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\nimport { InstantiationType, registerSingleton } from '../../../../../platform/instantiation/common/extensions.js';\nimport { INotebookSearchService } from '../../common/notebookSearch.js';\nimport { NotebookSearchService } from './notebookSearchService.js';\n\nexport function registerContributions(): void {\n\tregisterSingleton(INotebookSearchService, NotebookSearchService, InstantiationType.Delayed);\n}\n"],
-  "mappings": ";;AAIA,SAAS,mBAAmB,yBAAyB;AACrD,SAAS,8BAA8B;AACvC,SAAS,6BAA6B;AAE/B,SAAS,wBAA8B;AAC7C,oBAAkB,wBAAwB,uBAAuB,kBAAkB,OAAO;AAC3F;AAFgB;",
-  "names": []
-}

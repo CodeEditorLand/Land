@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/base/browser/ui/codicons/codicon/codicon-modifiers.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.codicon-wrench-subaction {\n\topacity: 0.5;\n}\n\n@keyframes codicon-spin {\n\t100% {\n\t\ttransform:rotate(360deg);\n\t}\n}\n\n.codicon-sync.codicon-modifier-spin,\n.codicon-loading.codicon-modifier-spin,\n.codicon-gear.codicon-modifier-spin,\n.codicon-notebook-state-executing.codicon-modifier-spin {\n\t/* Use steps to throttle FPS to reduce CPU usage */\n\tanimation: codicon-spin 1.5s steps(30) infinite;\n}\n\n.codicon-modifier-disabled {\n\topacity: 0.4;\n}\n\n/* custom speed & easing for loading icon */\n.codicon-loading,\n.codicon-tree-item-loading::before {\n\tanimation-duration: 1s !important;\n\tanimation-timing-function: cubic-bezier(0.53, 0.21, 0.29, 0.67) !important;\n}\n"],
-  "mappings": "AAKA,CAAC;AACA,WAAS;AACV;AAEA,WAAW;AACV;AACC,eAAU,OAAO;AAClB;AACD;AAEA,CAAC,YAAY,CAAC;AACd,CAAC,eAAe,CADF;AAEd,CAAC,YAAY,CAFC;AAGd,CAAC,gCAAgC,CAHnB;AAKb,aAAW,aAAa,KAAK,MAAM,IAAI;AACxC;AAEA,CAAC;AACA,WAAS;AACV;AAGA,CAZC;AAaD,CAAC,yBAAyB;AACzB,sBAAoB;AACpB,6BAA2B,aAAa,IAAI,EAAE,IAAI,EAAE,IAAI,EAAE;AAC3D;",
-  "names": []
-}

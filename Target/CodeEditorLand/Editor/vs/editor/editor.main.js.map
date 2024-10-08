@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/editor.main.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport './editor.all.js';\nimport './standalone/browser/iPadShowKeyboard/iPadShowKeyboard.js';\nimport './standalone/browser/inspectTokens/inspectTokens.js';\nimport './standalone/browser/quickAccess/standaloneHelpQuickAccess.js';\nimport './standalone/browser/quickAccess/standaloneGotoLineQuickAccess.js';\nimport './standalone/browser/quickAccess/standaloneGotoSymbolQuickAccess.js';\nimport './standalone/browser/quickAccess/standaloneCommandsQuickAccess.js';\nimport './standalone/browser/referenceSearch/standaloneReferenceSearch.js';\nimport './standalone/browser/toggleHighContrast/toggleHighContrast.js';\n\nexport * from './editor.api.js';\n"],
-  "mappings": "AAKA,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AAEP,cAAc;",
-  "names": []
-}

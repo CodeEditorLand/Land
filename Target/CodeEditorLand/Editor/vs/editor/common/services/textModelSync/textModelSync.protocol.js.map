@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/common/services/textModelSync/textModelSync.protocol.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { IModelChangedEvent } from '../../model/mirrorTextModel.js';\n\nexport interface IWorkerTextModelSyncChannelServer {\n\t$acceptNewModel(data: IRawModelData): void;\n\n\t$acceptModelChanged(strURL: string, e: IModelChangedEvent): void;\n\n\t$acceptRemovedModel(strURL: string): void;\n}\n\nexport interface IRawModelData {\n\turl: string;\n\tversionId: number;\n\tlines: string[];\n\tEOL: string;\n}\n"],
-  "mappings": "AAKA,SAAS,0BAA0B;",
-  "names": []
-}

@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/inlineChat/browser/inlineChatSavingService.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\nimport { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';\nimport { Session } from './inlineChatSession.js';\n\n\nexport const IInlineChatSavingService = createDecorator<IInlineChatSavingService>('IInlineChatSavingService\t');\n\nexport interface IInlineChatSavingService {\n\t_serviceBrand: undefined;\n\n\tmarkChanged(session: Session): void;\n\n}\n"],
-  "mappings": "AAIA,SAAS,uBAAuB;AAChC,SAAS,eAAe;AAGjB,MAAM,2BAA2B,gBAA0C,2BAA2B;",
-  "names": []
-}

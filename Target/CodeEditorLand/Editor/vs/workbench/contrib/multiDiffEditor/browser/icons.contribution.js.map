@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/multiDiffEditor/browser/icons.contribution.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { Codicon } from '../../../../base/common/codicons.js';\nimport { localize } from '../../../../nls.js';\nimport { registerIcon } from '../../../../platform/theme/common/iconRegistry.js';\n\nexport const MultiDiffEditorIcon = registerIcon('multi-diff-editor-label-icon', Codicon.diffMultiple, localize('multiDiffEditorLabelIcon', 'Icon of the multi diff editor label.'));\n"],
-  "mappings": "AAKA,SAAS,eAAe;AACxB,SAAS,gBAAgB;AACzB,SAAS,oBAAoB;AAEtB,MAAM,sBAAsB,aAAa,gCAAgC,QAAQ,cAAc,SAAS,4BAA4B,sCAAsC,CAAC;",
-  "names": []
-}

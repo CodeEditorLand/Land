@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/common/composite.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { Event } from '../../base/common/event.js';\n\nexport interface IComposite {\n\n\t/**\n\t * An event when the composite gained focus.\n\t */\n\treadonly onDidFocus: Event<void>;\n\n\t/**\n\t * An event when the composite lost focus.\n\t */\n\treadonly onDidBlur: Event<void>;\n\n\t/**\n\t * Returns true if the composite has focus.\n\t */\n\thasFocus(): boolean;\n\n\t/**\n\t * Returns the unique identifier of this composite.\n\t */\n\tgetId(): string;\n\n\t/**\n\t * Returns the name of this composite to show in the title area.\n\t */\n\tgetTitle(): string | undefined;\n\n\t/**\n\t * Returns the underlying control of this composite.\n\t */\n\tgetControl(): ICompositeControl | undefined;\n\n\t/**\n\t * Asks the underlying control to focus.\n\t */\n\tfocus(): void;\n}\n\n/**\n * Marker interface for the composite control\n */\nexport interface ICompositeControl { }\n"],
-  "mappings": "AAKA,SAAS,aAAa;",
-  "names": []
-}

@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/remote/common/remoteAgentEnvironment.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport * as performance from '../../../base/common/performance.js';\nimport { OperatingSystem } from '../../../base/common/platform.js';\nimport { URI } from '../../../base/common/uri.js';\nimport { IUserDataProfile } from '../../userDataProfile/common/userDataProfile.js';\n\nexport interface IRemoteAgentEnvironment {\n\tpid: number;\n\tconnectionToken: string;\n\tappRoot: URI;\n\tsettingsPath: URI;\n\tlogsPath: URI;\n\textensionHostLogsPath: URI;\n\tglobalStorageHome: URI;\n\tworkspaceStorageHome: URI;\n\tlocalHistoryHome: URI;\n\tuserHome: URI;\n\tos: OperatingSystem;\n\tarch: string;\n\tmarks: performance.PerformanceMark[];\n\tuseHostProxy: boolean;\n\tprofiles: {\n\t\tall: IUserDataProfile[];\n\t\thome: URI;\n\t};\n\tisUnsupportedGlibc: boolean;\n}\n\nexport interface RemoteAgentConnectionContext {\n\tremoteAuthority: string;\n\tclientId: string;\n}\n"],
-  "mappings": "AAKA,YAAY,iBAAiB;AAC7B,SAAS,uBAAuB;AAChC,SAAS,WAAW;AACpB,SAAS,wBAAwB;",
-  "names": []
-}

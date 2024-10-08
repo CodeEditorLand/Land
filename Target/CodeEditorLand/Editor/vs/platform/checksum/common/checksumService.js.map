@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/checksum/common/checksumService.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { URI } from '../../../base/common/uri.js';\nimport { createDecorator } from '../../instantiation/common/instantiation.js';\n\nexport const IChecksumService = createDecorator<IChecksumService>('checksumService');\n\nexport interface IChecksumService {\n\n\treadonly _serviceBrand: undefined;\n\n\t/**\n\t * Computes the checksum of the contents of the resource.\n\t */\n\tchecksum(resource: URI): Promise<string>;\n}\n"],
-  "mappings": "AAKA,SAAS,WAAW;AACpB,SAAS,uBAAuB;AAEzB,MAAM,mBAAmB,gBAAkC,iBAAiB;",
-  "names": []
-}

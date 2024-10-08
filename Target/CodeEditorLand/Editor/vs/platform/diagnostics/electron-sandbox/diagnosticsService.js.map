@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/diagnostics/electron-sandbox/diagnosticsService.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { IDiagnosticsService } from '../common/diagnostics.js';\nimport { registerSharedProcessRemoteService } from '../../ipc/electron-sandbox/services.js';\n\nregisterSharedProcessRemoteService(IDiagnosticsService, 'diagnostics');\n"],
-  "mappings": "AAKA,SAAS,2BAA2B;AACpC,SAAS,0CAA0C;AAEnD,mCAAmC,qBAAqB,aAAa;",
-  "names": []
-}

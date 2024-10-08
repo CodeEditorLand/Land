@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/localization/electron-sandbox/languagePackService.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { ILanguagePackService } from '../../../../platform/languagePacks/common/languagePacks.js';\nimport { registerSharedProcessRemoteService } from '../../../../platform/ipc/electron-sandbox/services.js';\n\nregisterSharedProcessRemoteService(ILanguagePackService, 'languagePacks');\n"],
-  "mappings": "AAKA,SAAS,4BAA4B;AACrC,SAAS,0CAA0C;AAEnD,mCAAmC,sBAAsB,eAAe;",
-  "names": []
-}

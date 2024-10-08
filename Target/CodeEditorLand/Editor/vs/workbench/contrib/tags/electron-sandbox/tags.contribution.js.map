@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/tags/electron-sandbox/tags.contribution.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { Registry } from '../../../../platform/registry/common/platform.js';\nimport { IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from '../../../common/contributions.js';\nimport { WorkspaceTags } from './workspaceTags.js';\nimport { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';\n\n// Register Workspace Tags Contribution\nRegistry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(WorkspaceTags, LifecyclePhase.Eventually);\n"],
-  "mappings": "AAKA,SAAS,gBAAgB;AACzB,SAAS,iCAAiC,cAAc,2BAA2B;AACnF,SAAS,qBAAqB;AAC9B,SAAS,sBAAsB;AAG/B,SAAS,GAAoC,oBAAoB,SAAS,EAAE,8BAA8B,eAAe,eAAe,UAAU;",
-  "names": []
-}

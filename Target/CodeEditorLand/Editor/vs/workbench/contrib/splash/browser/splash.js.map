@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/splash/browser/splash.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';\nimport { IPartsSplash } from '../../../../platform/theme/common/themeService.js';\n\nexport const ISplashStorageService = createDecorator<ISplashStorageService>('ISplashStorageService');\n\nexport interface ISplashStorageService {\n\n\treadonly _serviceBrand: undefined;\n\n\tsaveWindowSplash(splash: IPartsSplash): Promise<void>;\n}\n"],
-  "mappings": "AAKA,SAAS,uBAAuB;AAChC,SAAS,oBAAoB;AAEtB,MAAM,wBAAwB,gBAAuC,uBAAuB;",
-  "names": []
-}

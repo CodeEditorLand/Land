@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/debug/node/telemetryApp.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { Server } from '../../../../base/parts/ipc/node/ipc.cp.js';\nimport { TelemetryAppenderChannel } from '../../../../platform/telemetry/common/telemetryIpc.js';\nimport { OneDataSystemAppender } from '../../../../platform/telemetry/node/1dsAppender.js';\n\nconst appender = new OneDataSystemAppender(undefined, false, process.argv[2], JSON.parse(process.argv[3]), process.argv[4]);\nprocess.once('exit', () => appender.flush());\n\nconst channel = new TelemetryAppenderChannel([appender]);\nconst server = new Server('telemetry');\nserver.registerChannel('telemetryAppender', channel);\n"],
-  "mappings": "AAKA,SAAS,cAAc;AACvB,SAAS,gCAAgC;AACzC,SAAS,6BAA6B;AAEtC,MAAM,WAAW,IAAI,sBAAsB,QAAW,OAAO,QAAQ,KAAK,CAAC,GAAG,KAAK,MAAM,QAAQ,KAAK,CAAC,CAAC,GAAG,QAAQ,KAAK,CAAC,CAAC;AAC1H,QAAQ,KAAK,QAAQ,MAAM,SAAS,MAAM,CAAC;AAE3C,MAAM,UAAU,IAAI,yBAAyB,CAAC,QAAQ,CAAC;AACvD,MAAM,SAAS,IAAI,OAAO,WAAW;AACrC,OAAO,gBAAgB,qBAAqB,OAAO;",
-  "names": []
-}

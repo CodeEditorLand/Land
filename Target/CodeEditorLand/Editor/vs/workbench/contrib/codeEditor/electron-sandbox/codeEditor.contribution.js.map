@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/codeEditor/electron-sandbox/codeEditor.contribution.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport './displayChangeRemeasureFonts.js';\nimport './inputClipboardActions.js';\nimport './selectionClipboard.js';\nimport './sleepResumeRepaintMinimap.js';\nimport './startDebugTextMate.js';\n"],
-  "mappings": "AAKA,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;",
-  "names": []
-}

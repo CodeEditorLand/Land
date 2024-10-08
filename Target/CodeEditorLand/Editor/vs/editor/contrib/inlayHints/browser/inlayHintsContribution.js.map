@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/contrib/inlayHints/browser/inlayHintsContribution.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { EditorContributionInstantiation, registerEditorContribution } from '../../../browser/editorExtensions.js';\nimport { HoverParticipantRegistry } from '../../hover/browser/hoverTypes.js';\nimport { InlayHintsController } from './inlayHintsController.js';\nimport { InlayHintsHover } from './inlayHintsHover.js';\n\nregisterEditorContribution(InlayHintsController.ID, InlayHintsController, EditorContributionInstantiation.AfterFirstRender);\nHoverParticipantRegistry.register(InlayHintsHover);\n"],
-  "mappings": "AAKA,SAAS,iCAAiC,kCAAkC;AAC5E,SAAS,gCAAgC;AACzC,SAAS,4BAA4B;AACrC,SAAS,uBAAuB;AAEhC,2BAA2B,qBAAqB,IAAI,sBAAsB,gCAAgC,gBAAgB;AAC1H,yBAAyB,SAAS,eAAe;",
-  "names": []
-}

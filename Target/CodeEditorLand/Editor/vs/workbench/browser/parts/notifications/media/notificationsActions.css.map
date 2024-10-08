@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/browser/parts/notifications/media/notificationsActions.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-workbench .notifications-list-container .notification-list-item .notification-list-item-toolbar-container .action-item,\n.monaco-workbench > .notifications-center > .notifications-center-header > .notifications-center-header-toolbar .action-item {\n\tmargin-right: 4px;\n}\n\n.monaco-workbench .notifications-list-container .notification-list-item .notification-list-item-toolbar-container .action-item:first-child,\n.monaco-workbench > .notifications-center > .notifications-center-header > .notifications-center-header-toolbar .action-item:first-child {\n\tmargin-left: 4px;\n}\n"],
-  "mappings": "AAKA,CAAC,iBAAiB,CAAC,6BAA6B,CAAC,uBAAuB,CAAC,yCAAyC,CAAC;AACnH,CADC,iBACiB,EAAE,CAAC,qBAAqB,EAAE,CAAC,4BAA4B,EAAE,CAAC,oCAAoC,CADG;AAElH,gBAAc;AACf;AAEA,CALC,iBAKiB,CALC,6BAK6B,CALC,uBAKuB,CALC,yCAKyC,CALC,WAKW;AAC9H,CANC,iBAMiB,EAAE,CALC,qBAKqB,EAAE,CALC,4BAK4B,EAAE,CALC,oCAKoC,CANG,WAMS;AAC3H,eAAa;AACd;",
-  "names": []
-}

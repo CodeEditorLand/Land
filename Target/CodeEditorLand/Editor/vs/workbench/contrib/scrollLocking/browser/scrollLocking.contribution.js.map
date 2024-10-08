@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/scrollLocking/browser/scrollLocking.contribution.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { WorkbenchPhase, registerWorkbenchContribution2 } from '../../../common/contributions.js';\nimport { SyncScroll as ScrollLocking } from './scrollLocking.js';\n\nregisterWorkbenchContribution2(\n\tScrollLocking.ID,\n\tScrollLocking,\n\tWorkbenchPhase.Eventually // registration only\n);\n"],
-  "mappings": "AAKA,SAAS,gBAAgB,sCAAsC;AAC/D,SAAS,cAAc,qBAAqB;AAE5C;AAAA,EACC,cAAc;AAAA,EACd;AAAA,EACA,eAAe;AAAA;AAChB;",
-  "names": []
-}

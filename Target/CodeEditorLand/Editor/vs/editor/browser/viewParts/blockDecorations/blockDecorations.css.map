@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/browser/viewParts/blockDecorations/blockDecorations.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-editor .blockDecorations-container {\n\tposition: absolute;\n\ttop: 0;\n\tpointer-events: none;\n}\n\n.monaco-editor .blockDecorations-block {\n\tposition: absolute;\n\tbox-sizing: border-box;\n}\n"],
-  "mappings": "AAKA,CAAC,cAAc,CAAC;AACf,YAAU;AACV,OAAK;AACL,kBAAgB;AACjB;AAEA,CANC,cAMc,CAAC;AACf,YAAU;AACV,cAAY;AACb;",
-  "names": []
-}

@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/common/services/editorWorkerHost.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { IWorkerServer, IWorkerClient } from '../../../base/common/worker/simpleWorker.js';\n\nexport abstract class EditorWorkerHost {\n\tpublic static CHANNEL_NAME = 'editorWorkerHost';\n\tpublic static getChannel(workerServer: IWorkerServer): EditorWorkerHost {\n\t\treturn workerServer.getChannel<EditorWorkerHost>(EditorWorkerHost.CHANNEL_NAME);\n\t}\n\tpublic static setChannel(workerClient: IWorkerClient<any>, obj: EditorWorkerHost): void {\n\t\tworkerClient.setChannel<EditorWorkerHost>(EditorWorkerHost.CHANNEL_NAME, obj);\n\t}\n\n\t// foreign host request\n\tabstract $fhr(method: string, args: any[]): Promise<any>;\n}\n"],
-  "mappings": ";;AAKA,SAAS,eAAe,qBAAqB;AAEtC,MAAe,iBAAiB;AAAA,EAPvC,OAOuC;AAAA;AAAA;AAAA,EACtC,OAAc,eAAe;AAAA,EAC7B,OAAc,WAAW,cAA+C;AACvE,WAAO,aAAa,WAA6B,iBAAiB,YAAY;AAAA,EAC/E;AAAA,EACA,OAAc,WAAW,cAAkC,KAA6B;AACvF,iBAAa,WAA6B,iBAAiB,cAAc,GAAG;AAAA,EAC7E;AAID;",
-  "names": []
-}

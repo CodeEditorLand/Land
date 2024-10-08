@@ -1,5 +1,5 @@
 {
-	"name": "@codeeditorland/ecosystem",
+	"name": "@codeeditorland/land",
 	"version": "0.0.1",
 	"private": false,
 	"description": "🏞️ Land —",
@@ -19,21 +19,14 @@
 	},
 	"type": "module",
 	"scripts": {
-		"Build": "Build 'Dependency/Land/Dependency/Editor/Source/**/*.{css,map,fish,html,js,json,jsx,md,mp3,png,ps1,psm1,scm,scpt,sh,svg,ts,tsx,ttf,zsh}' --ESBuild Source/Variable/CodeEditorLand/Editor/ESBuild.ts --TypeScript Source/Notation/CodeEditorLand/Editor/tsconfig.no-types.json",
-		"Inspect": "cross-env NODE_ENV=development Build 'Dependency/Land/Dependency/Editor/Source/**/*.{css,map,fish,html,js,json,jsx,md,mp3,png,ps1,psm1,scm,scpt,sh,svg,ts,tsx,ttf,zsh}' --ESBuild Source/Variable/CodeEditorLand/Editor/ESBuild.ts --TypeScript Source/Notation/CodeEditorLand/Editor/tsconfig.json",
 		"Run": "turbo run Run --framework-inference=false --no-daemon",
-		"TypeScript": "tsc -p Source/Notation/CodeEditorLand/Editor/tsconfig.compile.json",
-		"Watch": "Build 'Dependency/Land/Dependency/Editor/Source/**/*.{css,map,fish,html,js,json,jsx,md,mp3,png,ps1,psm1,scm,scpt,sh,svg,ts,tsx,ttf,zsh}' --ESBuild Source/Variable/CodeEditorLand/Editor/ESBuild.ts --TypeScript Source/Notation/CodeEditorLand/Editor/tsconfig.no-types.json --Watch",
 		"codemod": "node ./node_modules/@turbo/codemod/dist/cli.js",
 		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.3",
-		"@commonalityco/studio": "0.2.57",
 		"@ianvs/prettier-plugin-sort-imports": "4.3.1",
 		"@playform/build": "0.1.7",
-		"@playform/document": "0.1.2",
-		"@playform/maintain": "0.1.1",
 		"@prettier/plugin-lua": "0.0.3",
 		"@prettier/plugin-php": "0.22.2",
 		"@tailwindcss/aspect-ratio": "0.4.2",
@@ -42,9 +35,6 @@
 		"@trivago/prettier-plugin-sort-imports": "4.3.0",
 		"@turbo/codemod": "2.1.3",
 		"@vue/compiler-sfc": "3.5.11",
-		"commonality": "0.2.63",
-		"cross-env": "7.0.3",
-		"deepmerge-ts": "7.1.3",
 		"prettier": "3.3.3",
 		"prettier-plugin-astro": "0.14.1",
 		"prettier-plugin-autocorrect": "0.4.1",

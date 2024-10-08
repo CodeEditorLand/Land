@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/api/node/extHostVariableResolverService.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { homedir } from 'os';\nimport { ExtHostVariableResolverProviderService } from '../common/extHostVariableResolverService.js';\n\nexport class NodeExtHostVariableResolverProviderService extends ExtHostVariableResolverProviderService {\n\tprotected override homeDir(): string | undefined {\n\t\treturn homedir();\n\t}\n}\n"],
-  "mappings": ";;AAKA,SAAS,eAAe;AACxB,SAAS,8CAA8C;AAEhD,MAAM,mDAAmD,uCAAuC;AAAA,EARvG,OAQuG;AAAA;AAAA;AAAA,EACnF,UAA8B;AAChD,WAAO,QAAQ;AAAA,EAChB;AACD;",
-  "names": []
-}

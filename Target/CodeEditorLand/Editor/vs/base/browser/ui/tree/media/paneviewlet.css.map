@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/base/browser/ui/tree/media/paneviewlet.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-pane-view .pane > .pane-header h3.title {\n\twhite-space: nowrap;\n\ttext-overflow: ellipsis;\n\toverflow: hidden;\n\tfont-size: 11px;\n\tmargin: 0;\n}\n"],
-  "mappings": "AAKA,CAAC,iBAAiB,CAAC,KAAK,EAAE,CAAC,YAAY,EAAE,CAAC;AACzC,eAAa;AACb,iBAAe;AACf,YAAU;AACV,aAAW;AACX,UAAQ;AACT;",
-  "names": []
-}

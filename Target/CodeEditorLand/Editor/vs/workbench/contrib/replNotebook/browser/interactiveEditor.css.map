@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/replNotebook/browser/interactiveEditor.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.interactive-editor .input-cell-container:focus-within .input-editor-container>.monaco-editor {\n\toutline: solid 1px var(--vscode-notebook-focusedCellBorder);\n}\n\n.interactive-editor .input-cell-container .input-editor-container>.monaco-editor {\n\toutline: solid 1px var(--vscode-notebook-inactiveFocusedCellBorder);\n}\n\n.interactive-editor .input-cell-container .input-focus-indicator {\n\ttop: 8px;\n}\n\n.interactive-editor .input-cell-container .monaco-editor-background,\n.interactive-editor .input-cell-container .margin-view-overlays {\n\tbackground-color: var(--vscode-notebook-cellEditorBackground, var(--vscode-editor-background));\n}\n"],
-  "mappings": "AAKA,CAAC,mBAAmB,CAAC,oBAAoB,cAAc,CAAC,uBAAsB,EAAC,CAAC;AAC/E,WAAS,MAAM,IAAI,IAAI;AACxB;AAEA,CAJC,mBAImB,CAJC,qBAIqB,CAJc,uBAIS,EAAC,CAJc;AAK/E,WAAS,MAAM,IAAI,IAAI;AACxB;AAEA,CARC,mBAQmB,CARC,qBAQqB,CAAC;AAC1C,OAAK;AACN;AAEA,CAZC,mBAYmB,CAZC,qBAYqB,CAAC;AAC3C,CAbC,mBAamB,CAbC,qBAaqB,CAAC;AAC1C,oBAAkB,IAAI,sCAAsC,EAAE,IAAI;AACnE;",
-  "names": []
-}

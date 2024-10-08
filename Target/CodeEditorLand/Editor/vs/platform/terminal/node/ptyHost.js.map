@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/terminal/node/ptyHost.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { Event } from '../../../base/common/event.js';\nimport { DisposableStore, IDisposable } from '../../../base/common/lifecycle.js';\nimport { IChannelClient } from '../../../base/parts/ipc/common/ipc.js';\n\nexport interface IPtyHostConnection {\n\treadonly client: IChannelClient;\n\treadonly store: DisposableStore;\n\treadonly onDidProcessExit: Event<{ code: number; signal: string }>;\n}\n\nexport interface IPtyHostStarter extends IDisposable {\n\tonRequestConnection?: Event<void>;\n\tonWillShutdown?: Event<void>;\n\n\t/**\n\t * Creates a pty host and connects to it.\n\t */\n\tstart(): IPtyHostConnection;\n}\n"],
-  "mappings": "AAKA,SAAS,aAAa;AACtB,SAAS,iBAAiB,mBAAmB;AAC7C,SAAS,sBAAsB;",
-  "names": []
-}

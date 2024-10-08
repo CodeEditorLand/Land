@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/download/common/download.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { CancellationToken } from '../../../base/common/cancellation.js';\nimport { URI } from '../../../base/common/uri.js';\nimport { createDecorator } from '../../instantiation/common/instantiation.js';\n\nexport const IDownloadService = createDecorator<IDownloadService>('downloadService');\n\nexport interface IDownloadService {\n\n\treadonly _serviceBrand: undefined;\n\n\tdownload(uri: URI, to: URI, cancellationToken?: CancellationToken): Promise<void>;\n\n}\n"],
-  "mappings": "AAKA,SAAS,yBAAyB;AAClC,SAAS,WAAW;AACpB,SAAS,uBAAuB;AAEzB,MAAM,mBAAmB,gBAAkC,iBAAiB;",
-  "names": []
-}

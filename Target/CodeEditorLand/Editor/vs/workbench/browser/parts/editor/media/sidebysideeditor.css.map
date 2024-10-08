@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/browser/parts/editor/media/sidebysideeditor.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.side-by-side-editor-container {\n\twidth: 100%;\n\theight: 100%;\n}\n"],
-  "mappings": "AAKA,CAAC;AACA,SAAO;AACP,UAAQ;AACT;",
-  "names": []
-}

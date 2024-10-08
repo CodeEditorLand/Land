@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/editor/browser/editorPaneService.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { IEditorPaneService } from '../common/editorPaneService.js';\nimport { EditorPaneDescriptor } from '../../../browser/editor.js';\nimport { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';\n\nexport class EditorPaneService implements IEditorPaneService {\n\n\tdeclare readonly _serviceBrand: undefined;\n\n\treadonly onWillInstantiateEditorPane = EditorPaneDescriptor.onWillInstantiateEditorPane;\n\n\tdidInstantiateEditorPane(typeId: string): boolean {\n\t\treturn EditorPaneDescriptor.didInstantiateEditorPane(typeId);\n\t}\n}\n\nregisterSingleton(IEditorPaneService, EditorPaneService, InstantiationType.Delayed);\n"],
-  "mappings": ";;AAKA,SAAS,0BAA0B;AACnC,SAAS,4BAA4B;AACrC,SAAS,mBAAmB,yBAAyB;AAE9C,MAAM,kBAAgD;AAAA,EAT7D,OAS6D;AAAA;AAAA;AAAA,EAInD,8BAA8B,qBAAqB;AAAA,EAE5D,yBAAyB,QAAyB;AACjD,WAAO,qBAAqB,yBAAyB,MAAM;AAAA,EAC5D;AACD;AAEA,kBAAkB,oBAAoB,mBAAmB,kBAAkB,OAAO;",
-  "names": []
-}

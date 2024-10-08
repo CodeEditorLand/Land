@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/contrib/links/browser/links.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n.monaco-editor .detected-link,\n.monaco-editor .detected-link-active {\n\ttext-decoration: underline;\n\ttext-underline-position: under;\n}\n\n.monaco-editor .detected-link-active {\n\tcursor: pointer;\n\tcolor: var(--vscode-editorLink-activeForeground) !important;\n}\n"],
-  "mappings": "AAIA,CAAC,cAAc,CAAC;AAChB,CADC,cACc,CAAC;AACf,mBAAiB;AACjB,2BAAyB;AAC1B;AAEA,CANC,cAMc,CALC;AAMf,UAAQ;AACR,SAAO,IAAI;AACZ;",
-  "names": []
-}

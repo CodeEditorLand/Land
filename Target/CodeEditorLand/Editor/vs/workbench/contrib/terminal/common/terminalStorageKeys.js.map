@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/terminal/common/terminalStorageKeys.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nexport const enum TerminalStorageKeys {\n\tSuggestedRendererType = 'terminal.integrated.suggestedRendererType',\n\tTabsListWidthHorizontal = 'tabs-list-width-horizontal',\n\tTabsListWidthVertical = 'tabs-list-width-vertical',\n\tDeprecatedEnvironmentVariableCollections = 'terminal.integrated.environmentVariableCollections',\n\tEnvironmentVariableCollections = 'terminal.integrated.environmentVariableCollectionsV2',\n\tTerminalBufferState = 'terminal.integrated.bufferState',\n\tTerminalLayoutInfo = 'terminal.integrated.layoutInfo',\n\tPinnedRecentCommandsPrefix = 'terminal.pinnedRecentCommands',\n\tTerminalSuggestSize = 'terminal.integrated.suggestSize'\n}\n"],
-  "mappings": "AAKO,IAAW,sBAAX,kBAAWA,yBAAX;AACN,EAAAA,qBAAA,2BAAwB;AACxB,EAAAA,qBAAA,6BAA0B;AAC1B,EAAAA,qBAAA,2BAAwB;AACxB,EAAAA,qBAAA,8CAA2C;AAC3C,EAAAA,qBAAA,oCAAiC;AACjC,EAAAA,qBAAA,yBAAsB;AACtB,EAAAA,qBAAA,wBAAqB;AACrB,EAAAA,qBAAA,gCAA6B;AAC7B,EAAAA,qBAAA,yBAAsB;AATL,SAAAA;AAAA,GAAA;",
-  "names": ["TerminalStorageKeys"]
-}

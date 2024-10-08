@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/comments/browser/comments.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';\nimport { IView } from '../../../common/views.js';\nimport { CommentsFilters } from './commentsViewActions.js';\n\nexport const CommentsViewFilterFocusContextKey = new RawContextKey<boolean>('commentsFilterFocus', false);\n\nexport interface ICommentsView extends IView {\n\n\treadonly filters: CommentsFilters;\n\tfocusFilter(): void;\n\tclearFilterText(): void;\n\tgetFilterStats(): { total: number; filtered: number };\n\n\tcollapseAll(): void;\n}\n"],
-  "mappings": "AAKA,SAAS,qBAAqB;AAC9B,SAAS,aAAa;AACtB,SAAS,uBAAuB;AAEzB,MAAM,oCAAoC,IAAI,cAAuB,uBAAuB,KAAK;",
-  "names": []
-}

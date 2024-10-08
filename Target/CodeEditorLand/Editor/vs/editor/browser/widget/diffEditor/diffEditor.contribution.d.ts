@@ -1,1 +1,0 @@
-import './registrations.contribution.js';

@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/terminal/terminalContribChatExports.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n// HACK: Export chat parts as it's only partially encapsulated within the contrib. This file only\n// exists because including it into terminalContribExports would cause a circular dependency on\n// startup\nexport { TerminalChatContextKeys } from '../terminalContrib/chat/browser/terminalChat.js';\nexport { TerminalChatController } from '../terminalContrib/chat/browser/terminalChatController.js';\n"],
-  "mappings": "AAQA,SAAS,+BAA+B;AACxC,SAAS,8BAA8B;",
-  "names": []
-}

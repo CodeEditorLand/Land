@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/contrib/inlineProgress/browser/inlineProgressWidget.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.inline-editor-progress-decoration {\n\tdisplay: inline-block;\n\twidth: 1em;\n\theight: 1em;\n}\n\n.inline-progress-widget  {\n\tdisplay: flex !important;\n\tjustify-content: center;\n\talign-items: center;\n}\n\n.inline-progress-widget .icon {\n\tfont-size: 80% !important;\n}\n\n.inline-progress-widget:hover .icon {\n\tfont-size: 90% !important;\n\tanimation: none;\n}\n\n.inline-progress-widget:hover .icon::before {\n\tcontent: var(--vscode-icon-x-content);\n\tfont-family: var(--vscode-icon-x-font-family);\n}\n"],
-  "mappings": "AAKA,CAAC;AACA,WAAS;AACT,SAAO;AACP,UAAQ;AACT;AAEA,CAAC;AACA,WAAS;AACT,mBAAiB;AACjB,eAAa;AACd;AAEA,CANC,uBAMuB,CAAC;AACxB,aAAW;AACZ;AAEA,CAVC,sBAUsB,OAAO,CAJL;AAKxB,aAAW;AACX,aAAW;AACZ;AAEA,CAfC,sBAesB,OAAO,CATL,IASU;AAClC,WAAS,IAAI;AACb,eAAa,IAAI;AAClB;",
-  "names": []
-}

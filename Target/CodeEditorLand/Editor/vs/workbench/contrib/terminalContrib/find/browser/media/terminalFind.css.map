@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/terminalContrib/find/browser/media/terminalFind.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.hc-black .xterm-find-result-decoration,\n.hc-light .xterm-find-result-decoration {\n\toutline-style: dotted !important;\n}\n\n.hc-black .xterm-find-result-decoration,\n.hc-light .xterm-find-result-decoration {\n\toutline-style: solid !important;\n}\n\n.xterm-find-active-result-decoration {\n\toutline-style: solid !important;\n\toutline-width: 2px !important;\n\t/* Ensure the active decoration is above the regular decoration */\n\tz-index: 7 !important;\n}\n"],
-  "mappings": "AAKA,CAAC,SAAS,CAAC;AACX,CAAC,SAAS,CADC;AAEV,iBAAe;AAChB;AAEA,CALC,SAKS,CALC;AAMX,CALC,SAKS,CANC;AAOV,iBAAe;AAChB;AAEA,CAAC;AACA,iBAAe;AACf,iBAAe;AAEf,WAAS;AACV;",
-  "names": []
-}

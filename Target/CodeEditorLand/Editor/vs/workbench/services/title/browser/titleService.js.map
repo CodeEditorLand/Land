@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/title/browser/titleService.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';\nimport { IAuxiliaryTitlebarPart, ITitlebarPart } from '../../../browser/parts/titlebar/titlebarPart.js';\nimport { IEditorGroupsContainer } from '../../editor/common/editorGroupsService.js';\n\nexport const ITitleService = createDecorator<ITitleService>('titleService');\n\nexport interface ITitleService extends ITitlebarPart {\n\n\treadonly _serviceBrand: undefined;\n\n\t/**\n\t * Get the status bar part that is rooted in the provided container.\n\t */\n\tgetPart(container: HTMLElement): ITitlebarPart;\n\n\t/**\n\t * Creates a new auxililary title bar part in the provided container.\n\t */\n\tcreateAuxiliaryTitlebarPart(container: HTMLElement, editorGroupsContainer: IEditorGroupsContainer): IAuxiliaryTitlebarPart;\n}\n"],
-  "mappings": "AAKA,SAAS,uBAAuB;AAChC,SAAS,wBAAwB,qBAAqB;AACtD,SAAS,8BAA8B;AAEhC,MAAM,gBAAgB,gBAA+B,cAAc;",
-  "names": []
-}

@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/api/common/extHostInitDataService.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { IExtensionHostInitData } from '../../services/extensions/common/extensionHostProtocol.js';\nimport { createDecorator } from '../../../platform/instantiation/common/instantiation.js';\n\nexport const IExtHostInitDataService = createDecorator<IExtHostInitDataService>('IExtHostInitDataService');\n\nexport interface IExtHostInitDataService extends Readonly<IExtensionHostInitData> {\n\treadonly _serviceBrand: undefined;\n}\n\n"],
-  "mappings": "AAKA,SAAS,8BAA8B;AACvC,SAAS,uBAAuB;AAEzB,MAAM,0BAA0B,gBAAyC,yBAAyB;",
-  "names": []
-}

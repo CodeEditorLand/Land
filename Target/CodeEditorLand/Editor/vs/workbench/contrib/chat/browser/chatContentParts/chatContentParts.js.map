@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/chat/browser/chatContentParts/chatContentParts.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { IDisposable } from '../../../../../base/common/lifecycle.js';\nimport { ChatTreeItem } from '../chat.js';\nimport { IChatRendererContent } from '../../common/chatViewModel.js';\n\nexport interface IChatContentPart extends IDisposable {\n\tdomNode: HTMLElement;\n\n\t/**\n\t * Returns true if the other content is equivalent to what is already rendered in this content part.\n\t * Returns false if a rerender is needed.\n\t * followingContent is all the content that will be rendered after this content part (to support progress messages' behavior).\n\t */\n\thasSameContent(other: IChatRendererContent, followingContent: IChatRendererContent[], element: ChatTreeItem): boolean;\n}\n\nexport interface IChatContentPartRenderContext {\n\telement: ChatTreeItem;\n\tcontent: ReadonlyArray<IChatRendererContent>;\n\tcontentIndex: number;\n\tpreceedingContentParts: ReadonlyArray<IChatContentPart>;\n}\n"],
-  "mappings": "AAKA,SAAS,mBAAmB;AAC5B,SAAS,oBAAoB;AAC7B,SAAS,4BAA4B;",
-  "names": []
-}

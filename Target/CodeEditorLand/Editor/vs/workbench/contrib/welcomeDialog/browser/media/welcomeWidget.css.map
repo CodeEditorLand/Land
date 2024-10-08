@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/welcomeDialog/browser/media/welcomeWidget.css"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n.monaco-dialog-box {\n\tborder-radius: 6px;\n}\n\n.dialog-message-detail-title > div > p > .codicon[class*='codicon-']::before{\n\tposition: relative;\n\tcolor: var(--vscode-textLink-foreground);\n\tpadding-right: 10px;\n\tfont-size: larger;\n}\n\n.dialog-message-detail-title {\n\theight: 22px;\n\tfont-size: large;\n}\n\n.monaco-dialog-box .monaco-action-bar .actions-container {\n\tjustify-content: flex-end;\n}\n"],
-  "mappings": "AAIA,CAAC;AACA,iBAAe;AAChB;AAEA,CAAC,4BAA4B,EAAE,IAAI,EAAE,EAAE,EAAE,CAAC,OAAO,CAAC,gBAAkB;AACnE,YAAU;AACV,SAAO,IAAI;AACX,iBAAe;AACf,aAAW;AACZ;AAEA,CAPC;AAQA,UAAQ;AACR,aAAW;AACZ;AAEA,CAhBC,kBAgBkB,CAAC,kBAAkB,CAAC;AACtC,mBAAiB;AAClB;",
-  "names": []
-}

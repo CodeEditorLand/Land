@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/api/browser/mainThreadErrors.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { SerializedError, onUnexpectedError, transformErrorFromSerialization } from '../../../base/common/errors.js';\nimport { extHostNamedCustomer } from '../../services/extensions/common/extHostCustomers.js';\nimport { MainContext, MainThreadErrorsShape } from '../common/extHost.protocol.js';\n\n@extHostNamedCustomer(MainContext.MainThreadErrors)\nexport class MainThreadErrors implements MainThreadErrorsShape {\n\n\tdispose(): void {\n\t\t//\n\t}\n\n\t$onUnexpectedError(err: any | SerializedError): void {\n\t\tif (err && err.$isError) {\n\t\t\terr = transformErrorFromSerialization(err);\n\t\t}\n\t\tonUnexpectedError(err);\n\t}\n}\n"],
-  "mappings": ";;;;;;;;;;;AAKA,SAAS,iBAAiB,mBAAmB,uCAAuC;AACpF,SAAS,4BAA4B;AACrC,SAAS,aAAa,6BAA6B;AAG5C,IAAM,mBAAN,MAAwD;AAAA,EAE9D,UAAgB;AAAA,EAEhB;AAAA,EAEA,mBAAmB,KAAkC;AACpD,QAAI,OAAO,IAAI,UAAU;AACxB,YAAM,gCAAgC,GAAG;AAAA,IAC1C;AACA,sBAAkB,GAAG;AAAA,EACtB;AACD;AAZ+D;AAAlD,mBAAN;AAAA,EADN,qBAAqB,YAAY,gBAAgB;AAAA,GACrC;",
-  "names": []
-}

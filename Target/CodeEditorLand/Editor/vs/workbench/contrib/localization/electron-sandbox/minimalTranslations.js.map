@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/localization/electron-sandbox/minimalTranslations.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { localize } from '../../../../nls.js';\n\n// The strings localized in this file will get pulled into the manifest of the language packs.\n// So that they are available for VS Code to use without downloading the entire language pack.\n\nexport const minimumTranslatedStrings: { [key: string]: string } = {\n\tshowLanguagePackExtensions: localize('showLanguagePackExtensions', \"Search language packs in the Marketplace to change the display language to {0}.\"),\n\tsearchMarketplace: localize('searchMarketplace', \"Search Marketplace\"),\n\tinstallAndRestartMessage: localize('installAndRestartMessage', \"Install language pack to change the display language to {0}.\"),\n\tinstallAndRestart: localize('installAndRestart', \"Install and Restart\")\n};"],
-  "mappings": "AAKA,SAAS,gBAAgB;AAKlB,MAAM,2BAAsD;AAAA,EAClE,4BAA4B,SAAS,8BAA8B,iFAAiF;AAAA,EACpJ,mBAAmB,SAAS,qBAAqB,oBAAoB;AAAA,EACrE,0BAA0B,SAAS,4BAA4B,8DAA8D;AAAA,EAC7H,mBAAmB,SAAS,qBAAqB,qBAAqB;AACvE;",
-  "names": []
-}

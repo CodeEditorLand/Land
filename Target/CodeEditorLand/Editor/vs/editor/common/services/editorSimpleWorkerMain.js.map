@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/common/services/editorSimpleWorkerMain.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { create } from './editorSimpleWorker.js';\nimport { bootstrapSimpleEditorWorker } from './editorWorkerBootstrap.js';\n\nbootstrapSimpleEditorWorker(create);\n"],
-  "mappings": "AAKA,SAAS,cAAc;AACvB,SAAS,mCAAmC;AAE5C,4BAA4B,MAAM;",
-  "names": []
-}

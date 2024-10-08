@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/browser/widget/multiDiffEditor/utils.ts"],
-  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { ActionRunner, IAction } from '../../../../base/common/actions.js';\n\nexport class ActionRunnerWithContext extends ActionRunner {\n\tconstructor(private readonly _getContext: () => unknown) {\n\t\tsuper();\n\t}\n\n\tprotected override runAction(action: IAction, _context?: unknown): Promise<void> {\n\t\tconst ctx = this._getContext();\n\t\treturn super.runAction(action, ctx);\n\t}\n}\n"],
-  "mappings": ";;AAKA,SAAS,cAAc,eAAe;AAE/B,MAAM,gCAAgC,aAAa;AAAA,EACzD,YAA6B,aAA4B;AACxD,UAAM;AADsB;AAAA,EAE7B;AAAA,EAVD,OAO0D;AAAA;AAAA;AAAA,EAKtC,UAAU,QAAiB,UAAmC;AAChF,UAAM,MAAM,KAAK,YAAY;AAC7B,WAAO,MAAM,UAAU,QAAQ,GAAG;AAAA,EACnC;AACD;",
-  "names": []
-}
