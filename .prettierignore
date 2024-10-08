@@ -153,15 +153,7 @@ Dependency/Land/Dependency/MonacoEditor/test/smoke/vite/dist
 Dependency/Land/Dependency/MonacoEditor/test/smoke/parcel/dist
 
 Documentation
-Target
-WordPress
-docs
-test
-test_data
-vendor
-
-Documentation
-Target
+# Target
 WordPress
 docs
 test
