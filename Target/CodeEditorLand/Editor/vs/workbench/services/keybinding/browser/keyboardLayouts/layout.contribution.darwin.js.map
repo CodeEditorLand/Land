@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/keybinding/browser/keyboardLayouts/layout.contribution.darwin.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport './en.darwin.js'; // 15%\nimport './zh-hans.darwin.js';\nimport './en-uk.darwin.js';\nimport './es.darwin.js';\nimport './jp-roman.darwin.js';\nimport './de.darwin.js';\nimport './en-intl.darwin.js';\nimport './en-ext.darwin.js';\nimport './fr.darwin.js';\nimport './jp.darwin.js';\nimport './pl.darwin.js';\nimport './it.darwin.js';\nimport './ru.darwin.js';\nimport './pt.darwin.js';\nimport './ko.darwin.js';\nimport './dvorak.darwin.js';\n\nexport { KeyboardLayoutContribution } from './_.contribution.js';\n"],
+  "mappings": "AAKA,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AAEP,SAAS,kCAAkC;",
+  "names": []
+}

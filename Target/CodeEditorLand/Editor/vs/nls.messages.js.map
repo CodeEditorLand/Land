@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../Dependency/Land/Dependency/Editor/Source/vs/nls.messages.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n/*\n * This module exists so that the AMD build of the monaco editor can replace this with an async loader plugin.\n * If you add new functions to this module make sure that they are also provided in the AMD build of the monaco editor.\n *\n * TODO@esm remove me once we no longer ship an AMD build.\n */\n\nexport function getNLSMessages(): string[] {\n\treturn globalThis._VSCODE_NLS_MESSAGES;\n}\n\nexport function getNLSLanguage(): string | undefined {\n\treturn globalThis._VSCODE_NLS_LANGUAGE;\n}\n"],
+  "mappings": ";;AAYO,SAAS,iBAA2B;AAC1C,SAAO,WAAW;AACnB;AAFgB;AAIT,SAAS,iBAAqC;AACpD,SAAO,WAAW;AACnB;AAFgB;",
+  "names": []
+}

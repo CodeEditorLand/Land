@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/browser/viewParts/currentLineHighlight/currentLineHighlight.css"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-editor .view-overlays .current-line {\n\tdisplay: block;\n\tposition: absolute;\n\tleft: 0;\n\ttop: 0;\n\tbox-sizing: border-box;\n\theight: 100%;\n}\n\n.monaco-editor .margin-view-overlays .current-line {\n\tdisplay: block;\n\tposition: absolute;\n\tleft: 0;\n\ttop: 0;\n\tbox-sizing: border-box;\n\theight: 100%;\n}\n\n.monaco-editor\n\t.margin-view-overlays\n\t.current-line.current-line-margin.current-line-margin-both {\n\tborder-right: 0;\n}\n"],
+  "mappings": "AAKA,CAAC,cAAc,CAAC,cAAc,CAAC;AAC9B,WAAS;AACT,YAAU;AACV,QAAM;AACN,OAAK;AACL,cAAY;AACZ,UAAQ;AACT;AAEA,CATC,cASc,CAAC,qBAAqB,CATN;AAU9B,WAAS;AACT,YAAU;AACV,QAAM;AACN,OAAK;AACL,cAAY;AACZ,UAAQ;AACT;AAEA,CAlBC,cAmBA,CAVe,qBAWf,CApB8B,YAoBjB,CAAC,mBAAmB,CAAC;AAClC,gBAAc;AACf;",
+  "names": []
+}

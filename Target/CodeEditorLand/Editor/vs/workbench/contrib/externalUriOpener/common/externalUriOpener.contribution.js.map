@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/externalUriOpener/common/externalUriOpener.contribution.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { Extensions as ConfigurationExtensions, IConfigurationRegistry } from '../../../../platform/configuration/common/configurationRegistry.js';\nimport { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';\nimport { Registry } from '../../../../platform/registry/common/platform.js';\nimport { externalUriOpenersConfigurationNode } from './configuration.js';\nimport { ExternalUriOpenerService, IExternalUriOpenerService } from './externalUriOpenerService.js';\n\nregisterSingleton(IExternalUriOpenerService, ExternalUriOpenerService, InstantiationType.Delayed);\n\nRegistry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration)\n\t.registerConfiguration(externalUriOpenersConfigurationNode);\n"],
+  "mappings": "AAKA,SAAS,cAAc,yBAAyB,8BAA8B;AAC9E,SAAS,mBAAmB,yBAAyB;AACrD,SAAS,gBAAgB;AACzB,SAAS,2CAA2C;AACpD,SAAS,0BAA0B,iCAAiC;AAEpE,kBAAkB,2BAA2B,0BAA0B,kBAAkB,OAAO;AAEhG,SAAS,GAA2B,wBAAwB,aAAa,EACvE,sBAAsB,mCAAmC;",
+  "names": []
+}

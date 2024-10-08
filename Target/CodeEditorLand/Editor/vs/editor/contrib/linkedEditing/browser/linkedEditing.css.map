@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/contrib/linkedEditing/browser/linkedEditing.css"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-editor .linked-editing-decoration {\n\tbackground-color: var(--vscode-editor-linkedEditingBackground);\n\n\t/* Ensure decoration is visible even if range is empty */\n\tmin-width: 1px;\n}\n"],
+  "mappings": "AAKA,CAAC,cAAc,CAAC;AACf,oBAAkB,IAAI;AAGtB,aAAW;AACZ;",
+  "names": []
+}

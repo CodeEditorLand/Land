@@ -1,0 +1,11 @@
+.monaco-workbench .pane-body.integrated-terminal .terminal-initial-hint {
+  color: var(--vscode-terminal-initialHintForeground);
+}
+.monaco-workbench .pane-body.integrated-terminal .terminal-initial-hint a {
+  cursor: pointer;
+}
+.monaco-workbench .pane-body.integrated-terminal .terminal-initial-hint a,
+.monaco-workbench .pane-body.integrated-terminal .terminal-initial-hint .detail {
+  font-style: italic;
+}
+/*# sourceMappingURL=terminalInitialHint.css.map */

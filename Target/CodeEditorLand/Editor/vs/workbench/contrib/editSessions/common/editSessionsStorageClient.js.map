@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/editSessions/common/editSessionsStorageClient.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { UserDataSyncStoreClient } from '../../../../platform/userDataSync/common/userDataSyncStoreService.js';\n\nexport class EditSessionsStoreClient extends UserDataSyncStoreClient {\n\t_serviceBrand: any;\n}\n"],
+  "mappings": ";;AAKA,SAAS,+BAA+B;AAEjC,MAAM,gCAAgC,wBAAwB;AAAA,EAPrE,OAOqE;AAAA;AAAA;AAAA,EACpE;AACD;",
+  "names": []
+}

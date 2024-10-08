@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/opener/browser/link.css"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-link {\n\tcolor: var(--vscode-textLink-foreground);\n}\n\n.monaco-link:hover {\n\tcolor: var(--vscode-textLink-activeForeground);\n}\n\n"],
+  "mappings": "AAKA,CAAC;AACA,SAAO,IAAI;AACZ;AAEA,CAJC,WAIW;AACX,SAAO,IAAI;AACZ;",
+  "names": []
+}

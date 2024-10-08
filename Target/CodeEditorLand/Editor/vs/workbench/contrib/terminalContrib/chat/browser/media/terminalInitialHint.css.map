@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/terminalContrib/chat/browser/media/terminalInitialHint.css"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-workbench .pane-body.integrated-terminal .terminal-initial-hint {\n\tcolor: var(--vscode-terminal-initialHintForeground);\n}\n.monaco-workbench .pane-body.integrated-terminal .terminal-initial-hint a {\n\tcursor: pointer;\n}\n\n.monaco-workbench .pane-body.integrated-terminal .terminal-initial-hint a,\n.monaco-workbench .pane-body.integrated-terminal .terminal-initial-hint .detail {\n\tfont-style: italic;\n}\n"],
+  "mappings": "AAKA,CAAC,iBAAiB,CAAC,SAAS,CAAC,oBAAoB,CAAC;AACjD,SAAO,IAAI;AACZ;AACA,CAHC,iBAGiB,CAHC,SAGS,CAHC,oBAGoB,CAHC,sBAGsB;AACvE,UAAQ;AACT;AAEA,CAPC,iBAOiB,CAPC,SAOS,CAPC,oBAOoB,CAPC,sBAOsB;AACxE,CARC,iBAQiB,CARC,SAQS,CARC,oBAQoB,CARC,sBAQsB,CAAC;AACxE,cAAY;AACb;",
+  "names": []
+}

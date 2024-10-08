@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/theme/common/theme.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n/**\n * Color scheme used by the OS and by color themes.\n */\nexport enum ColorScheme {\n\tDARK = 'dark',\n\tLIGHT = 'light',\n\tHIGH_CONTRAST_DARK = 'hcDark',\n\tHIGH_CONTRAST_LIGHT = 'hcLight'\n}\n\nexport function isHighContrast(scheme: ColorScheme): boolean {\n\treturn scheme === ColorScheme.HIGH_CONTRAST_DARK || scheme === ColorScheme.HIGH_CONTRAST_LIGHT;\n}\n\nexport function isDark(scheme: ColorScheme): boolean {\n\treturn scheme === ColorScheme.DARK || scheme === ColorScheme.HIGH_CONTRAST_DARK;\n}\n"],
+  "mappings": ";;AAQO,IAAK,cAAL,kBAAKA,iBAAL;AACN,EAAAA,aAAA,UAAO;AACP,EAAAA,aAAA,WAAQ;AACR,EAAAA,aAAA,wBAAqB;AACrB,EAAAA,aAAA,yBAAsB;AAJX,SAAAA;AAAA,GAAA;AAOL,SAAS,eAAe,QAA8B;AAC5D,SAAO,WAAW,qCAAkC,WAAW;AAChE;AAFgB;AAIT,SAAS,OAAO,QAA8B;AACpD,SAAO,WAAW,qBAAoB,WAAW;AAClD;AAFgB;",
+  "names": ["ColorScheme"]
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../Dependency/Land/Dependency/Editor/Source/vs/base/browser/domObservable.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { createStyleSheet2 } from './dom.js';\nimport { DisposableStore, IDisposable } from '../common/lifecycle.js';\nimport { autorun, IObservable } from '../common/observable.js';\n\nexport function createStyleSheetFromObservable(css: IObservable<string>): IDisposable {\n\tconst store = new DisposableStore();\n\tconst w = store.add(createStyleSheet2());\n\tstore.add(autorun(reader => {\n\t\tw.setStyle(css.read(reader));\n\t}));\n\treturn store;\n}\n"],
+  "mappings": ";;AAKA,SAAS,yBAAyB;AAClC,SAAS,iBAAiB,mBAAmB;AAC7C,SAAS,SAAS,mBAAmB;AAE9B,SAAS,+BAA+B,KAAuC;AACrF,QAAM,QAAQ,IAAI,gBAAgB;AAClC,QAAM,IAAI,MAAM,IAAI,kBAAkB,CAAC;AACvC,QAAM,IAAI,QAAQ,YAAU;AAC3B,MAAE,SAAS,IAAI,KAAK,MAAM,CAAC;AAAA,EAC5B,CAAC,CAAC;AACF,SAAO;AACR;AAPgB;",
+  "names": []
+}

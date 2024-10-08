@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/api/worker/extensionHostWorker.esm.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { create } from \"./extensionHostWorker.js\";\n\nconst data = create();\nself.onmessage = (e) => data.onmessage(e.data);\n"],
+  "mappings": "AAKA,SAAS,cAAc;AAEvB,MAAM,OAAO,OAAO;AACpB,KAAK,YAAY,CAAC,MAAM,KAAK,UAAU,EAAE,IAAI;",
+  "names": []
+}

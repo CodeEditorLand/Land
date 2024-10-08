@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/textMate/browser/textMateTokenizationFeature.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';\nimport type { IGrammar } from 'vscode-textmate';\n\nexport const ITextMateTokenizationService = createDecorator<ITextMateTokenizationService>('textMateTokenizationFeature');\n\nexport interface ITextMateTokenizationService {\n\treadonly _serviceBrand: undefined;\n\n\tcreateTokenizer(languageId: string): Promise<IGrammar | null>;\n\n\tstartDebugMode(printFn: (str: string) => void, onStop: () => void): void;\n}\n"],
+  "mappings": "AAKA,SAAS,uBAAuB;AAGzB,MAAM,+BAA+B,gBAA8C,6BAA6B;",
+  "names": []
+}

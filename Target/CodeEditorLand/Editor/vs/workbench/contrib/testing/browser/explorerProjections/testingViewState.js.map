@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/testing/browser/explorerProjections/testingViewState.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { TestId } from '../../common/testId.js';\n\nexport interface ISerializedTestTreeCollapseState {\n\tcollapsed?: boolean;\n\tchildren?: { [localId: string]: ISerializedTestTreeCollapseState };\n}\n\n/**\n * Gets whether the given test ID is collapsed.\n */\nexport function isCollapsedInSerializedTestTree(serialized: ISerializedTestTreeCollapseState, id: TestId | string): boolean | undefined {\n\tif (!(id instanceof TestId)) {\n\t\tid = TestId.fromString(id);\n\t}\n\n\tlet node = serialized;\n\tfor (const part of id.path) {\n\t\tif (!node.children?.hasOwnProperty(part)) {\n\t\t\treturn undefined;\n\t\t}\n\n\t\tnode = node.children[part];\n\t}\n\n\treturn node.collapsed;\n}\n"],
+  "mappings": ";;AAKA,SAAS,cAAc;AAUhB,SAAS,gCAAgC,YAA8C,IAA0C;AACvI,MAAI,EAAE,cAAc,SAAS;AAC5B,SAAK,OAAO,WAAW,EAAE;AAAA,EAC1B;AAEA,MAAI,OAAO;AACX,aAAW,QAAQ,GAAG,MAAM;AAC3B,QAAI,CAAC,KAAK,UAAU,eAAe,IAAI,GAAG;AACzC,aAAO;AAAA,IACR;AAEA,WAAO,KAAK,SAAS,IAAI;AAAA,EAC1B;AAEA,SAAO,KAAK;AACb;AAfgB;",
+  "names": []
+}

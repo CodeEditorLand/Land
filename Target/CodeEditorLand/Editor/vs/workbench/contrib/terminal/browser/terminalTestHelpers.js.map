@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/terminal/browser/terminalTestHelpers.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { timeout } from '../../../../base/common/async.js';\nimport type { Terminal } from '@xterm/xterm';\n\nexport async function writeP(terminal: Terminal, data: string): Promise<void> {\n\treturn new Promise<void>((resolve, reject) => {\n\t\tconst failTimeout = timeout(2000);\n\t\tfailTimeout.then(() => reject('Writing to xterm is taking longer than 2 seconds'));\n\t\tterminal.write(data, () => {\n\t\t\tfailTimeout.cancel();\n\t\t\tresolve();\n\t\t});\n\t});\n}\n"],
+  "mappings": ";;AAKA,SAAS,eAAe;AAGxB,eAAsB,OAAO,UAAoB,MAA6B;AAC7E,SAAO,IAAI,QAAc,CAAC,SAAS,WAAW;AAC7C,UAAM,cAAc,QAAQ,GAAI;AAChC,gBAAY,KAAK,MAAM,OAAO,kDAAkD,CAAC;AACjF,aAAS,MAAM,MAAM,MAAM;AAC1B,kBAAY,OAAO;AACnB,cAAQ;AAAA,IACT,CAAC;AAAA,EACF,CAAC;AACF;AATsB;",
+  "names": []
+}

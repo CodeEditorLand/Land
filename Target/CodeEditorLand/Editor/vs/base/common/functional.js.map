@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../Dependency/Land/Dependency/Editor/Source/vs/base/common/functional.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n/**\n * Given a function, returns a function that is only calling that function once.\n */\nexport function createSingleCallFunction<T extends Function>(this: unknown, fn: T, fnDidRunCallback?: () => void): T {\n\tconst _this = this;\n\tlet didCall = false;\n\tlet result: unknown;\n\n\treturn function () {\n\t\tif (didCall) {\n\t\t\treturn result;\n\t\t}\n\n\t\tdidCall = true;\n\t\tif (fnDidRunCallback) {\n\t\t\ttry {\n\t\t\t\tresult = fn.apply(_this, arguments);\n\t\t\t} finally {\n\t\t\t\tfnDidRunCallback();\n\t\t\t}\n\t\t} else {\n\t\t\tresult = fn.apply(_this, arguments);\n\t\t}\n\n\t\treturn result;\n\t} as unknown as T;\n}\n"],
+  "mappings": ";;AAQO,SAAS,yBAA4D,IAAO,kBAAkC;AACpH,QAAM,QAAQ;AACd,MAAI,UAAU;AACd,MAAI;AAEJ,SAAO,WAAY;AAClB,QAAI,SAAS;AACZ,aAAO;AAAA,IACR;AAEA,cAAU;AACV,QAAI,kBAAkB;AACrB,UAAI;AACH,iBAAS,GAAG,MAAM,OAAO,SAAS;AAAA,MACnC,UAAE;AACD,yBAAiB;AAAA,MAClB;AAAA,IACD,OAAO;AACN,eAAS,GAAG,MAAM,OAAO,SAAS;AAAA,IACnC;AAEA,WAAO;AAAA,EACR;AACD;AAvBgB;",
+  "names": []
+}

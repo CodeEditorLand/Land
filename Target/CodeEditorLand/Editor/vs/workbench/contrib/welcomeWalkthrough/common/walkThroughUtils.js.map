@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/welcomeWalkthrough/common/walkThroughUtils.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { registerColor } from '../../../../platform/theme/common/colorRegistry.js';\nimport { localize } from '../../../../nls.js';\nimport { Color, RGBA } from '../../../../base/common/color.js';\n\nexport const embeddedEditorBackground = registerColor('walkThrough.embeddedEditorBackground', { dark: new Color(new RGBA(0, 0, 0, .4)), light: '#f4f4f4', hcDark: null, hcLight: null }, localize('walkThrough.embeddedEditorBackground', 'Background color for the embedded editors on the Interactive Playground.'));\n"],
+  "mappings": "AAKA,SAAS,qBAAqB;AAC9B,SAAS,gBAAgB;AACzB,SAAS,OAAO,YAAY;AAErB,MAAM,2BAA2B,cAAc,wCAAwC,EAAE,MAAM,IAAI,MAAM,IAAI,KAAK,GAAG,GAAG,GAAG,GAAE,CAAC,GAAG,OAAO,WAAW,QAAQ,MAAM,SAAS,KAAK,GAAG,SAAS,wCAAwC,0EAA0E,CAAC;",
+  "names": []
+}

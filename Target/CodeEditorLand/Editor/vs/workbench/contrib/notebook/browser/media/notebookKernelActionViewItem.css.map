@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/notebook/browser/media/notebookKernelActionViewItem.css"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-workbench .kernel-action-view-item {\n\tborder-radius: 5px;\n}\n.monaco-workbench .kernel-action-view-item:hover {\n\tbackground-color: var(--vscode-toolbar-hoverBackground);\n}\n\n.monaco-workbench .kernel-action-view-item .action-label {\n\tdisplay: inline-flex;\n}\n\n.monaco-workbench .kernel-action-view-item .kernel-label {\n\tfont-size: 11px;\n\tpadding: 3px 5px 3px 3px;\n\tborder-radius: 5px;\n\theight: 16px;\n\tdisplay: inline-flex;\n\tvertical-align: text-bottom;\n}\n"],
+  "mappings": "AAKA,CAAC,iBAAiB,CAAC;AAClB,iBAAe;AAChB;AACA,CAHC,iBAGiB,CAHC,uBAGuB;AACzC,oBAAkB,IAAI;AACvB;AAEA,CAPC,iBAOiB,CAPC,wBAOwB,CAAC;AAC3C,WAAS;AACV;AAEA,CAXC,iBAWiB,CAXC,wBAWwB,CAAC;AAC3C,aAAW;AACX,WAAS,IAAI,IAAI,IAAI;AACrB,iBAAe;AACf,UAAQ;AACR,WAAS;AACT,kBAAgB;AACjB;",
+  "names": []
+}

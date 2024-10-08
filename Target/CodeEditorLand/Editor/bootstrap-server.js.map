@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../Dependency/Land/Dependency/Editor/Source/bootstrap-server.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n// Keep bootstrap-esm.js from redefining 'fs'.\ndelete process.env['ELECTRON_RUN_AS_NODE'];\n"],
+  "mappings": "AAMA,OAAO,QAAQ,IAAI,sBAAsB;",
+  "names": []
+}

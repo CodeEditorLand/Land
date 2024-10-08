@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/telemetry/electron-sandbox/customEndpointTelemetryService.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { registerSharedProcessRemoteService } from '../../ipc/electron-sandbox/services.js';\nimport { ICustomEndpointTelemetryService } from '../common/telemetry.js';\n\nregisterSharedProcessRemoteService(ICustomEndpointTelemetryService, 'customEndpointTelemetry');\n"],
+  "mappings": "AAKA,SAAS,0CAA0C;AACnD,SAAS,uCAAuC;AAEhD,mCAAmC,iCAAiC,yBAAyB;",
+  "names": []
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/localization/browser/localization.contribution.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { BaseLocalizationWorkbenchContribution } from '../common/localization.contribution.js';\nimport { Registry } from '../../../../platform/registry/common/platform.js';\nimport { Extensions as WorkbenchExtensions, IWorkbenchContributionsRegistry } from '../../../common/contributions.js';\nimport { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';\n\nexport class WebLocalizationWorkbenchContribution extends BaseLocalizationWorkbenchContribution { }\n\nconst workbenchRegistry = Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench);\nworkbenchRegistry.registerWorkbenchContribution(WebLocalizationWorkbenchContribution, LifecyclePhase.Eventually);\n"],
+  "mappings": ";;AAKA,SAAS,6CAA6C;AACtD,SAAS,gBAAgB;AACzB,SAAS,cAAc,qBAAqB,uCAAuC;AACnF,SAAS,sBAAsB;AAExB,MAAM,6CAA6C,sCAAsC;AAAA,EAVhG,OAUgG;AAAA;AAAA;AAAE;AAElG,MAAM,oBAAoB,SAAS,GAAoC,oBAAoB,SAAS;AACpG,kBAAkB,8BAA8B,sCAAsC,eAAe,UAAU;",
+  "names": []
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/comments/common/commentsConfiguration.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nexport interface ICommentsConfiguration {\n\topenView: 'never' | 'file' | 'firstFile' | 'firstFileUnresolved';\n\tuseRelativeTime: boolean;\n\tvisible: boolean;\n\tmaxHeight: boolean;\n\tcollapseOnResolve: boolean;\n}\n\nexport const COMMENTS_SECTION = 'comments';\n"],
+  "mappings": "AAaO,MAAM,mBAAmB;",
+  "names": []
+}

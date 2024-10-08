@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/browser/parts/media/compositepart.css"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-workbench .part > .content > .composite {\n\theight: 100%;\n}\n\n.monaco-workbench .part > .composite.header-or-footer,\n.monaco-workbench .part > .composite.title {\n\tdisplay: flex;\n}\n\n.monaco-workbench .part > .composite.title > .title-actions {\n\tflex: 1;\n\tpadding-left: 5px;\n}\n"],
+  "mappings": "AAKA,CAAC,iBAAiB,CAAC,KAAK,EAAE,CAAC,QAAQ,EAAE,CAAC;AACrC,UAAQ;AACT;AAEA,CAJC,iBAIiB,CAJC,KAIK,EAAE,CAJY,SAIF,CAAC;AACrC,CALC,iBAKiB,CALC,KAKK,EAAE,CALY,SAKF,CAAC;AACpC,WAAS;AACV;AAEA,CATC,iBASiB,CATC,KASK,EAAE,CATY,SASF,CAJC,MAIM,EAAE,CAAC;AAC7C,QAAM;AACN,gBAAc;AACf;",
+  "names": []
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/title/electron-sandbox/titleService.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';\nimport { NativeTitleService } from '../../../electron-sandbox/parts/titlebar/titlebarPart.js';\nimport { ITitleService } from '../browser/titleService.js';\n\nregisterSingleton(ITitleService, NativeTitleService, InstantiationType.Eager);\n"],
+  "mappings": "AAKA,SAAS,mBAAmB,yBAAyB;AACrD,SAAS,0BAA0B;AACnC,SAAS,qBAAqB;AAE9B,kBAAkB,eAAe,oBAAoB,kBAAkB,KAAK;",
+  "names": []
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/profiling/electron-sandbox/profilingService.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { registerSharedProcessRemoteService } from '../../ipc/electron-sandbox/services.js';\nimport { IV8InspectProfilingService } from '../common/profiling.js';\n\nregisterSharedProcessRemoteService(IV8InspectProfilingService, 'v8InspectProfiling');\n"],
+  "mappings": "AAKA,SAAS,0CAA0C;AACnD,SAAS,kCAAkC;AAE3C,mCAAmC,4BAA4B,oBAAoB;",
+  "names": []
+}

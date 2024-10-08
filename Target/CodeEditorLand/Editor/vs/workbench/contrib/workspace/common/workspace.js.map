@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/workspace/common/workspace.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { localize } from '../../../../nls.js';\nimport { RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';\n\n/**\n * Trust Context Keys\n */\n\nexport const WorkspaceTrustContext = {\n\tIsEnabled: new RawContextKey<boolean>('isWorkspaceTrustEnabled', false, localize('workspaceTrustEnabledCtx', \"Whether the workspace trust feature is enabled.\")),\n\tIsTrusted: new RawContextKey<boolean>('isWorkspaceTrusted', false, localize('workspaceTrustedCtx', \"Whether the current workspace has been trusted by the user.\"))\n};\n\nexport const MANAGE_TRUST_COMMAND_ID = 'workbench.trust.manage';\n"],
+  "mappings": "AAKA,SAAS,gBAAgB;AACzB,SAAS,qBAAqB;AAMvB,MAAM,wBAAwB;AAAA,EACpC,WAAW,IAAI,cAAuB,2BAA2B,OAAO,SAAS,4BAA4B,iDAAiD,CAAC;AAAA,EAC/J,WAAW,IAAI,cAAuB,sBAAsB,OAAO,SAAS,uBAAuB,6DAA6D,CAAC;AAClK;AAEO,MAAM,0BAA0B;",
+  "names": []
+}

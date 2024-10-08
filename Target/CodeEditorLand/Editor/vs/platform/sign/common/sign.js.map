@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/sign/common/sign.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { createDecorator } from '../../instantiation/common/instantiation.js';\n\nexport const SIGN_SERVICE_ID = 'signService';\nexport const ISignService = createDecorator<ISignService>(SIGN_SERVICE_ID);\n\nexport interface IMessage {\n\tid: string;\n\tdata: string;\n}\n\nexport interface ISignService {\n\treadonly _serviceBrand: undefined;\n\n\tcreateNewMessage(value: string): Promise<IMessage>;\n\tvalidate(message: IMessage, value: string): Promise<boolean>;\n\tsign(value: string): Promise<string>;\n}\n"],
+  "mappings": "AAKA,SAAS,uBAAuB;AAEzB,MAAM,kBAAkB;AACxB,MAAM,eAAe,gBAA8B,eAAe;",
+  "names": []
+}

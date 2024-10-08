@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/localHistory/browser/localHistory.contribution.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport './localHistoryCommands.js';\nimport { WorkbenchPhase, registerWorkbenchContribution2 } from '../../../common/contributions.js';\nimport { LocalHistoryTimeline } from './localHistoryTimeline.js';\n\n// Register Local History Timeline\nregisterWorkbenchContribution2(LocalHistoryTimeline.ID, LocalHistoryTimeline, WorkbenchPhase.BlockRestore /* registrations only */);\n"],
+  "mappings": "AAKA,OAAO;AACP,SAAS,gBAAgB,sCAAsC;AAC/D,SAAS,4BAA4B;AAGrC;AAAA,EAA+B,qBAAqB;AAAA,EAAI;AAAA,EAAsB,eAAe;AAAA;AAAqC;",
+  "names": []
+}

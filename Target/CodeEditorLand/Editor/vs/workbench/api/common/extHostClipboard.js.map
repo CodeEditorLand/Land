@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/api/common/extHostClipboard.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { IMainContext, MainContext } from './extHost.protocol.js';\nimport type * as vscode from 'vscode';\n\nexport class ExtHostClipboard {\n\n\treadonly value: vscode.Clipboard;\n\n\tconstructor(mainContext: IMainContext) {\n\t\tconst proxy = mainContext.getProxy(MainContext.MainThreadClipboard);\n\t\tthis.value = Object.freeze({\n\t\t\treadText() {\n\t\t\t\treturn proxy.$readText();\n\t\t\t},\n\t\t\twriteText(value: string) {\n\t\t\t\treturn proxy.$writeText(value);\n\t\t\t}\n\t\t});\n\t}\n}\n"],
+  "mappings": ";;AAKA,SAAS,cAAc,mBAAmB;AAGnC,MAAM,iBAAiB;AAAA,EAR9B,OAQ8B;AAAA;AAAA;AAAA,EAEpB;AAAA,EAET,YAAY,aAA2B;AACtC,UAAM,QAAQ,YAAY,SAAS,YAAY,mBAAmB;AAClE,SAAK,QAAQ,OAAO,OAAO;AAAA,MAC1B,WAAW;AACV,eAAO,MAAM,UAAU;AAAA,MACxB;AAAA,MACA,UAAU,OAAe;AACxB,eAAO,MAAM,WAAW,KAAK;AAAA,MAC9B;AAAA,IACD,CAAC;AAAA,EACF;AACD;",
+  "names": []
+}

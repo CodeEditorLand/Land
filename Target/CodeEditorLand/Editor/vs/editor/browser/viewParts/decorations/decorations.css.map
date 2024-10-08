@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/browser/viewParts/decorations/decorations.css"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n/*\n\tKeeping name short for faster parsing.\n\tcdr = core decorations rendering (div)\n*/\n.monaco-editor .lines-content .cdr {\n\tposition: absolute;\n\theight: 100%;\n}\n"],
+  "mappings": "AASA,CAAC,cAAc,CAAC,cAAc,CAAC;AAC9B,YAAU;AACV,UAAQ;AACT;",
+  "names": []
+}

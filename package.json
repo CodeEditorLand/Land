@@ -20,7 +20,9 @@
 	"type": "module",
 	"scripts": {
 		"Build": "Build 'Dependency/Land/Dependency/Editor/Source/**/*.{css,map,fish,html,js,json,jsx,md,mp3,png,ps1,psm1,scm,scpt,sh,svg,ts,tsx,ttf,zsh}' --ESBuild Source/Variable/CodeEditorLand/Editor/ESBuild.ts --TypeScript Source/Notation/CodeEditorLand/Editor/tsconfig.no-types.json",
+		"Inspect": "cross-env NODE_ENV=development Build 'Dependency/Land/Dependency/Editor/Source/**/*.{css,map,fish,html,js,json,jsx,md,mp3,png,ps1,psm1,scm,scpt,sh,svg,ts,tsx,ttf,zsh}' --ESBuild Source/Variable/CodeEditorLand/Editor/ESBuild.ts --TypeScript Source/Notation/CodeEditorLand/Editor/tsconfig.json",
 		"Run": "turbo run Run --framework-inference=false --no-daemon",
+		"TypeScript": "tsc -p Source/Notation/CodeEditorLand/Editor/tsconfig.compile.json",
 		"Watch": "Build 'Dependency/Land/Dependency/Editor/Source/**/*.{css,map,fish,html,js,json,jsx,md,mp3,png,ps1,psm1,scm,scpt,sh,svg,ts,tsx,ttf,zsh}' --ESBuild Source/Variable/CodeEditorLand/Editor/ESBuild.ts --TypeScript Source/Notation/CodeEditorLand/Editor/tsconfig.no-types.json --Watch",
 		"codemod": "node ./node_modules/@turbo/codemod/dist/cli.js",
 		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon"

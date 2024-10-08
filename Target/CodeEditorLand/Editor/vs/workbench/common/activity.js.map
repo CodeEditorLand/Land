@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/common/activity.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nexport const GLOBAL_ACTIVITY_ID = 'workbench.actions.manage';\nexport const ACCOUNTS_ACTIVITY_ID = 'workbench.actions.accounts';\n"],
+  "mappings": "AAKO,MAAM,qBAAqB;AAC3B,MAAM,uBAAuB;",
+  "names": []
+}

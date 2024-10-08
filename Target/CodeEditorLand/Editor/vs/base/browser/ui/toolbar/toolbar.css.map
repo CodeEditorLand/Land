@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/base/browser/ui/toolbar/toolbar.css"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-toolbar {\n\theight: 100%;\n}\n\n.monaco-toolbar .toolbar-toggle-more {\n\tdisplay: inline-block;\n\tpadding: 0;\n}\n"],
+  "mappings": "AAKA,CAAC;AACA,UAAQ;AACT;AAEA,CAJC,eAIe,CAAC;AAChB,WAAS;AACT,WAAS;AACV;",
+  "names": []
+}

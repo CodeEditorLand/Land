@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/keybinding/browser/keyboardLayouts/layout.contribution.linux.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport './en.linux.js';\nimport './es.linux.js';\nimport './de.linux.js';\nimport './fr.linux.js';\nimport './ru.linux.js';\n\nexport { KeyboardLayoutContribution } from './_.contribution.js';"],
+  "mappings": "AAKA,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AAEP,SAAS,kCAAkC;",
+  "names": []
+}

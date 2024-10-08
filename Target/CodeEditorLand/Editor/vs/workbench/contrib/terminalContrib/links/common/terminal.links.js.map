@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/terminalContrib/links/common/terminal.links.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nexport const enum TerminalLinksCommandId {\n\tOpenDetectedLink = 'workbench.action.terminal.openDetectedLink',\n\tOpenWordLink = 'workbench.action.terminal.openWordLink',\n\tOpenFileLink = 'workbench.action.terminal.openFileLink',\n\tOpenWebLink = 'workbench.action.terminal.openUrlLink',\n}\n"],
+  "mappings": "AAKO,IAAW,yBAAX,kBAAWA,4BAAX;AACN,EAAAA,wBAAA,sBAAmB;AACnB,EAAAA,wBAAA,kBAAe;AACf,EAAAA,wBAAA,kBAAe;AACf,EAAAA,wBAAA,iBAAc;AAJG,SAAAA;AAAA,GAAA;",
+  "names": ["TerminalLinksCommandId"]
+}

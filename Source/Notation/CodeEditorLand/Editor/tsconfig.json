@@ -9,5 +9,5 @@
 	},
 	"extends": "@playform/build/tsconfig",
 	"include": ["../../../../Dependency/Land/Dependency/Editor/Source"],
-	"exclude": ["Target", "node_modules"]
+	"exclude": ["**/node_modules/**", "**/Target/**"]
 }

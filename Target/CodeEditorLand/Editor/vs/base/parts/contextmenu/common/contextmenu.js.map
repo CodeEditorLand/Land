@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/base/parts/contextmenu/common/contextmenu.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nexport interface ICommonContextMenuItem {\n\tlabel?: string;\n\n\ttype?: 'normal' | 'separator' | 'submenu' | 'checkbox' | 'radio';\n\n\taccelerator?: string;\n\n\tenabled?: boolean;\n\tvisible?: boolean;\n\tchecked?: boolean;\n}\n\nexport interface ISerializableContextMenuItem extends ICommonContextMenuItem {\n\tid: number;\n\tsubmenu?: ISerializableContextMenuItem[];\n}\n\nexport interface IContextMenuItem extends ICommonContextMenuItem {\n\tclick?: (event: IContextMenuEvent) => void;\n\tsubmenu?: IContextMenuItem[];\n}\n\nexport interface IContextMenuEvent {\n\tshiftKey?: boolean;\n\tctrlKey?: boolean;\n\taltKey?: boolean;\n\tmetaKey?: boolean;\n}\n\nexport interface IPopupOptions {\n\tx?: number;\n\ty?: number;\n\tpositioningItem?: number;\n}\n\nexport const CONTEXT_MENU_CHANNEL = 'vscode:contextmenu';\nexport const CONTEXT_MENU_CLOSE_CHANNEL = 'vscode:onCloseContextMenu';\n"],
+  "mappings": "AAwCO,MAAM,uBAAuB;AAC7B,MAAM,6BAA6B;",
+  "names": []
+}

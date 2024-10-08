@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/searchEditor/browser/constants.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';\n\nexport const InSearchEditor = new RawContextKey<boolean>('inSearchEditor', false);\n\nexport const SearchEditorScheme = 'search-editor';\n\nexport const SearchEditorWorkingCopyTypeId = 'search/editor';\n\nexport const SearchEditorFindMatchClass = 'searchEditorFindMatch';\n\nexport const SearchEditorID = 'workbench.editor.searchEditor';\n\nexport const OpenNewEditorCommandId = 'search.action.openNewEditor';\nexport const OpenEditorCommandId = 'search.action.openEditor';\nexport const ToggleSearchEditorContextLinesCommandId = 'toggleSearchEditorContextLines';\n\nexport const SearchEditorInputTypeId = 'workbench.editorinputs.searchEditorInput';\n"],
+  "mappings": "AAKA,SAAS,qBAAqB;AAEvB,MAAM,iBAAiB,IAAI,cAAuB,kBAAkB,KAAK;AAEzE,MAAM,qBAAqB;AAE3B,MAAM,gCAAgC;AAEtC,MAAM,6BAA6B;AAEnC,MAAM,iBAAiB;AAEvB,MAAM,yBAAyB;AAC/B,MAAM,sBAAsB;AAC5B,MAAM,0CAA0C;AAEhD,MAAM,0BAA0B;",
+  "names": []
+}

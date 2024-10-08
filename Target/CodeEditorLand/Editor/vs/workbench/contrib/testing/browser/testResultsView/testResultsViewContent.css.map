@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/testing/browser/testResultsView/testResultsViewContent.css"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-editor .test-output-peek .test-output-peek-tree {\n\tbackground-color: var(--vscode-peekViewResult-background);\n\tcolor: var(--vscode-peekViewResult-lineForeground);\n}\n\n.monaco-editor .test-output-peek .test-output-peek-tree .monaco-list:focus .monaco-list-rows > .monaco-list-row.selected:not(.highlighted) {\n\tbackground-color: var(--vscode-peekViewResult-selectionBackground);\n\tcolor: var(--vscode-peekViewResult-selectionForeground) !important;\n}\n\n.test-output-peek-message-container a {\n\tcolor: var(--vscode-textLink-foreground);\n}\n\n.test-output-peek-message-container a :hover {\n\tcolor: var(--vscode-textLink-activeForeground);\n}\n"],
+  "mappings": "AAKA,CAAC,cAAc,CAAC,iBAAiB,CAAC;AACjC,oBAAkB,IAAI;AACtB,SAAO,IAAI;AACZ;AAEA,CALC,cAKc,CALC,iBAKiB,CALC,sBAKsB,CAAC,WAAW,OAAO,CAAC,iBAAiB,EAAE,CAAC,eAAe,CAAC,QAAQ,KAAK,CAAC;AAC7H,oBAAkB,IAAI;AACtB,SAAO,IAAI;AACZ;AAEA,CAAC,mCAAmC;AACnC,SAAO,IAAI;AACZ;AAEA,CAJC,mCAImC,EAAE;AACrC,SAAO,IAAI;AACZ;",
+  "names": []
+}

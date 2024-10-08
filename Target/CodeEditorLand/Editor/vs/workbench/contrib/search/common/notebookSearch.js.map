@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/contrib/search/common/notebookSearch.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';\nimport { CancellationToken } from '../../../../base/common/cancellation.js';\nimport { ResourceSet } from '../../../../base/common/map.js';\nimport { ITextQuery, ISearchProgressItem, ISearchComplete } from '../../../services/search/common/search.js';\n\nexport const INotebookSearchService = createDecorator<INotebookSearchService>('notebookSearchService');\n\nexport interface INotebookSearchService {\n\n\treadonly _serviceBrand: undefined;\n\n\tnotebookSearch(query: ITextQuery, token: CancellationToken | undefined, searchInstanceID: string, onProgress?: (result: ISearchProgressItem) => void): {\n\t\topenFilesToScan: ResourceSet;\n\t\tcompleteData: Promise<ISearchComplete>;\n\t\tallScannedFiles: Promise<ResourceSet>;\n\t};\n}\n"],
+  "mappings": "AAKA,SAAS,uBAAuB;AAChC,SAAS,yBAAyB;AAClC,SAAS,mBAAmB;AAC5B,SAAS,YAAY,qBAAqB,uBAAuB;AAE1D,MAAM,yBAAyB,gBAAwC,uBAAuB;",
+  "names": []
+}

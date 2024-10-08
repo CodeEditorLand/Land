@@ -1,16 +1,13 @@
 {
 	"compilerOptions": {
+		"baseUrl": "../../../../Dependency/Land/Dependency/Editor/Source",
 		"outDir": "../../../../Target/CodeEditorLand/Editor",
 		"rootDir": "../../../../Dependency/Land/Dependency/Editor/Source",
-		"baseUrl": "../../../../Dependency/Land/Dependency/Editor/Source",
 
 		"jsx": "preserve",
 
 		"emitDeclarationOnly": false,
 		"noEmit": false,
-
-		"experimentalDecorators": true,
-		"emitDecoratorMetadata": true,
 
 		"lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker.ImportScripts"],
 
@@ -39,7 +36,7 @@
 		"verbatimModuleSyntax": false
 	},
 	"exclude": ["**/node_modules/**", "**/Target/**"],
-	"extends": "@playform/build/tsconfig",
+	"extends": "./tsconfig.json",
 	"include": [
 		"../../../../Dependency/Land/Dependency/Editor/Source/*.ts",
 		"../../../../Dependency/Land/Dependency/Editor/Source/typings",

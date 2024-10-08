@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../Dependency/Land/Dependency/Editor/Source/vs/base/common/idGenerator.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nexport class IdGenerator {\n\n\tprivate _prefix: string;\n\tprivate _lastId: number;\n\n\tconstructor(prefix: string) {\n\t\tthis._prefix = prefix;\n\t\tthis._lastId = 0;\n\t}\n\n\tpublic nextId(): string {\n\t\treturn this._prefix + (++this._lastId);\n\t}\n}\n\nexport const defaultGenerator = new IdGenerator('id#');"],
+  "mappings": ";;AAKO,MAAM,YAAY;AAAA,EALzB,OAKyB;AAAA;AAAA;AAAA,EAEhB;AAAA,EACA;AAAA,EAER,YAAY,QAAgB;AAC3B,SAAK,UAAU;AACf,SAAK,UAAU;AAAA,EAChB;AAAA,EAEO,SAAiB;AACvB,WAAO,KAAK,UAAW,EAAE,KAAK;AAAA,EAC/B;AACD;AAEO,MAAM,mBAAmB,IAAI,YAAY,KAAK;",
+  "names": []
+}

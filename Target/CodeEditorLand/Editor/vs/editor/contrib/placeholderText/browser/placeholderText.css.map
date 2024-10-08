@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/editor/contrib/placeholderText/browser/placeholderText.css"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\n.monaco-editor {\n\t--vscode-editor-placeholder-foreground: var(--vscode-editorGhostText-foreground);\n\n\t.editorPlaceholder {\n\t\ttop: 0px;\n\t\tposition: absolute;\n\t\toverflow: hidden;\n\t\ttext-overflow: ellipsis;\n\t\ttext-wrap: nowrap;\n\t\tpointer-events: none;\n\n\t\tcolor: var(--vscode-editor-placeholder-foreground);\n\t}\n}\n"],
+  "mappings": "AAKA,CAAC;AACA,0CAAwC,IAAI;AAE5C,GAAC;AACA,SAAK;AACL,cAAU;AACV,cAAU;AACV,mBAAe;AACf,eAAW;AACX,oBAAgB;AAEhB,WAAO,IAAI;AACZ;AACD;",
+  "names": []
+}

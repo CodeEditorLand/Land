@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/theme/common/colorRegistry.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nexport * from './colorUtils.js';\n\n// Make sure all color files are exported\nexport * from './colors/baseColors.js';\nexport * from './colors/chartsColors.js';\nexport * from './colors/editorColors.js';\nexport * from './colors/inputColors.js';\nexport * from './colors/listColors.js';\nexport * from './colors/menuColors.js';\nexport * from './colors/minimapColors.js';\nexport * from './colors/miscColors.js';\nexport * from './colors/quickpickColors.js';\nexport * from './colors/searchColors.js';\n"],
+  "mappings": "AAKA,cAAc;AAGd,cAAc;AACd,cAAc;AACd,cAAc;AACd,cAAc;AACd,cAAc;AACd,cAAc;AACd,cAAc;AACd,cAAc;AACd,cAAc;AACd,cAAc;",
+  "names": []
+}

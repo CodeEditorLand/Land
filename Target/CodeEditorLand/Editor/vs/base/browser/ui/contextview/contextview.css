@@ -1,0 +1,11 @@
+.context-view {
+  position: absolute;
+}
+.context-view.fixed {
+  all: initial;
+  font-family: inherit;
+  font-size: 13px;
+  position: fixed;
+  color: inherit;
+}
+/*# sourceMappingURL=contextview.css.map */

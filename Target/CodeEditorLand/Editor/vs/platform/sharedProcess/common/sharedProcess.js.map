@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/sharedProcess/common/sharedProcess.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nexport const SharedProcessLifecycle = {\n\texit: 'vscode:electron-main->shared-process=exit',\n\tipcReady: 'vscode:shared-process->electron-main=ipc-ready',\n\tinitDone: 'vscode:shared-process->electron-main=init-done'\n};\n\nexport const SharedProcessChannelConnection = {\n\trequest: 'vscode:createSharedProcessChannelConnection',\n\tresponse: 'vscode:createSharedProcessChannelConnectionResult'\n};\n\nexport const SharedProcessRawConnection = {\n\trequest: 'vscode:createSharedProcessRawConnection',\n\tresponse: 'vscode:createSharedProcessRawConnectionResult'\n};\n"],
+  "mappings": "AAKO,MAAM,yBAAyB;AAAA,EACrC,MAAM;AAAA,EACN,UAAU;AAAA,EACV,UAAU;AACX;AAEO,MAAM,iCAAiC;AAAA,EAC7C,SAAS;AAAA,EACT,UAAU;AACX;AAEO,MAAM,6BAA6B;AAAA,EACzC,SAAS;AAAA,EACT,UAAU;AACX;",
+  "names": []
+}

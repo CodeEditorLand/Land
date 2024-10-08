@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/environment/node/wait.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { writeFileSync } from 'fs';\nimport { tmpdir } from 'os';\nimport { randomPath } from '../../../base/common/extpath.js';\n\nexport function createWaitMarkerFileSync(verbose?: boolean): string | undefined {\n\tconst randomWaitMarkerPath = randomPath(tmpdir());\n\n\ttry {\n\t\twriteFileSync(randomWaitMarkerPath, ''); // use built-in fs to avoid dragging in more dependencies\n\t\tif (verbose) {\n\t\t\tconsole.log(`Marker file for --wait created: ${randomWaitMarkerPath}`);\n\t\t}\n\t\treturn randomWaitMarkerPath;\n\t} catch (err) {\n\t\tif (verbose) {\n\t\t\tconsole.error(`Failed to create marker file for --wait: ${err}`);\n\t\t}\n\t\treturn undefined;\n\t}\n}\n"],
+  "mappings": ";;AAKA,SAAS,qBAAqB;AAC9B,SAAS,cAAc;AACvB,SAAS,kBAAkB;AAEpB,SAAS,yBAAyB,SAAuC;AAC/E,QAAM,uBAAuB,WAAW,OAAO,CAAC;AAEhD,MAAI;AACH,kBAAc,sBAAsB,EAAE;AACtC,QAAI,SAAS;AACZ,cAAQ,IAAI,mCAAmC,oBAAoB,EAAE;AAAA,IACtE;AACA,WAAO;AAAA,EACR,SAAS,KAAK;AACb,QAAI,SAAS;AACZ,cAAQ,MAAM,4CAA4C,GAAG,EAAE;AAAA,IAChE;AACA,WAAO;AAAA,EACR;AACD;AAfgB;",
+  "names": []
+}

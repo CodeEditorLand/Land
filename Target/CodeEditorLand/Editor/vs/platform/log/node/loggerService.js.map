@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/log/node/loggerService.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { URI } from '../../../base/common/uri.js';\nimport { generateUuid } from '../../../base/common/uuid.js';\nimport { AbstractLoggerService, ILogger, ILoggerOptions, ILoggerService, LogLevel } from '../common/log.js';\nimport { SpdLogLogger } from './spdlogLog.js';\n\nexport class LoggerService extends AbstractLoggerService implements ILoggerService {\n\n\tprotected doCreateLogger(resource: URI, logLevel: LogLevel, options?: ILoggerOptions): ILogger {\n\t\treturn new SpdLogLogger(generateUuid(), resource.fsPath, !options?.donotRotate, !!options?.donotUseFormatters, logLevel);\n\t}\n}\n"],
+  "mappings": ";;AAKA,SAAS,WAAW;AACpB,SAAS,oBAAoB;AAC7B,SAAS,uBAAuB,SAAS,gBAAgB,gBAAgB,gBAAgB;AACzF,SAAS,oBAAoB;AAEtB,MAAM,sBAAsB,sBAAgD;AAAA,EAVnF,OAUmF;AAAA;AAAA;AAAA,EAExE,eAAe,UAAe,UAAoB,SAAmC;AAC9F,WAAO,IAAI,aAAa,aAAa,GAAG,SAAS,QAAQ,CAAC,SAAS,aAAa,CAAC,CAAC,SAAS,oBAAoB,QAAQ;AAAA,EACxH;AACD;",
+  "names": []
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/workbench/services/keybinding/browser/keyboardLayouts/layout.contribution.win.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport './en.win.js'; // 40%\nimport './es-latin.win.js';\nimport './en-in.win.js';\nimport './de.win.js';\nimport './en-uk.win.js';\nimport './fr.win.js';\nimport './pt-br.win.js';\nimport './es.win.js';\nimport './en-intl.win.js';\nimport './ru.win.js';\nimport './pl.win.js';\nimport './it.win.js';\nimport './sv.win.js';\nimport './tr.win.js';\nimport './pt.win.js';\nimport './dk.win.js';\nimport './no.win.js';\nimport './thai.win.js';\nimport './hu.win.js';\nimport './de-swiss.win.js';\nimport './en-belgian.win.js';\nimport './cz.win.js';\n\nexport { KeyboardLayoutContribution } from './_.contribution.js';"],
+  "mappings": "AAKA,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AACP,OAAO;AAEP,SAAS,kCAAkC;",
+  "names": []
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../Dependency/Land/Dependency/Editor/Source/vs/platform/menubar/electron-sandbox/menubar.ts"],
+  "sourcesContent": ["/*---------------------------------------------------------------------------------------------\n *  Copyright (c) Microsoft Corporation. All rights reserved.\n *  Licensed under the MIT License. See License.txt in the project root for license information.\n *--------------------------------------------------------------------------------------------*/\n\nimport { createDecorator } from '../../instantiation/common/instantiation.js';\nimport { ICommonMenubarService } from '../common/menubar.js';\n\nexport const IMenubarService = createDecorator<IMenubarService>('menubarService');\n\nexport interface IMenubarService extends ICommonMenubarService {\n\treadonly _serviceBrand: undefined;\n}\n"],
+  "mappings": "AAKA,SAAS,uBAAuB;AAChC,SAAS,6BAA6B;AAE/B,MAAM,kBAAkB,gBAAiC,gBAAgB;",
+  "names": []
+}
