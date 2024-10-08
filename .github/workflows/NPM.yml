@@ -50,13 +50,14 @@ jobs:
             STRIPE_CLI_TELEMETRY_OPTOUT: 1
             TELEMETRY_DISABLED: 1
             TERRAFORM_TELEMETRY: 0
+            VCPKG_DISABLE_METRICS: 1
 
         permissions:
             contents: read
             id-token: write
 
         steps:
-            - uses: actions/checkout@v4.1.7
+            - uses: actions/checkout@v4.2.1
 
             - uses: actions/setup-node@v4.0.4
               with:
