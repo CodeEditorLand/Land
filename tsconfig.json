@@ -9,7 +9,7 @@
 	"exclude": ["**/node_modules/**", "**/Target/**"],
 	"extends": "@playform/build/tsconfig",
 	"include": [
-		"./Elements/",
+		"./Element/"
 		// "./Dependency/",
 		// "./Dependency/Biome/",
 		// "./Dependency/Land/",
@@ -17,7 +17,6 @@
 		// "./Dependency/Rolldown/",
 		// "./Dependency/SWC/",
 		// "./Dependency/Tauri/",
-		"./Source/"
 	],
 	"watchOptions": {
 		"excludeDirectories": ["**/node_modules/**", "**/Target/**"]
