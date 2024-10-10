@@ -1,14 +1,9 @@
 packages:
     - "Dependency/Biome/NPM/**"
-
     - "Dependency/Land/NPM/**"
-
     - "Dependency/OXC/NPM/**"
-
     - "Dependency/Rolldown/NPM/**"
-
     - "Dependency/SWC/NPM/**"
-
     - "Dependency/Tauri/NPM/**"
 
-    - "Element/**/*"
+    - "Element/**"
