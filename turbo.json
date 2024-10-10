@@ -1,19 +1,6 @@
 {
 	"$schema": "https://turbo.build/schema.json",
 	"extends": ["//"],
-	"tasks": {
-		"Run": {
-			"persistent": true,
-			"outputs": ["Target/**"],
-			"outputLogs": "new-only"
-		},
-		"prepublishOnly": {
-			"dependsOn": ["^prepublishOnly"],
-			"outputs": ["Target/**"],
-			"outputLogs": "new-only"
-		}
-	},
-	"ui": "stream",
 	"globalEnv": [
 		"API_PRIVATE_KEYS_DIR",
 		"APPLE_API_ISSUER",
@@ -51,5 +38,19 @@
 		"TAURI_WEBVIEW_AUTOMATION",
 		"TAURI_WINDOWS_SIGNTOOL_PATH",
 		"VITE_CJS_TRACE"
-	]
+	],
+	"tasks": {
+		"Run": {
+			"cache": false,
+			"outputLogs": "new-only",
+			"outputs": ["Target/**"],
+			"persistent": true
+		},
+		"prepublishOnly": {
+			"dependsOn": ["^prepublishOnly"],
+			"outputLogs": "new-only",
+			"outputs": ["Target/**"]
+		}
+	},
+	"ui": "stream"
 }
