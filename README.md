@@ -41,11 +41,11 @@ pnpm run tauri dev
 
 ## 🛠️ Usage
 
-First run the [`Sun`](./Target/release/Sun.exe) binary then the
-[`River`](./Target/release/River.exe) to startup the necessary websockets. Then
-run the Tauri app [`Mountain`](./Target/release/Mountain.exe)
+First run the [`Sun``](./Target/release/Sun.exe) binary then the
+[`River``](./Target/release/River.exe) to startup the necessary websockets. Then
+run the Tauri app [`Mountain``](./Target/release/Mountain.exe)
 
-![Land](https://playform.cloud/Image/GitHub/CodeEditorLand/Land/Land.svg?12.10.2024)
+![`Land`](https://playform.cloud/Image/GitHub/CodeEditorLand/Land/Land.svg?12.10.2024)
 
 ## Graph
 
@@ -133,4 +133,4 @@ sequenceDiagram
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for a history of changes to this ecosystem.
+See [`CHANGELOG.md`](CHANGELOG.md) for a history of changes to this ecosystem.
