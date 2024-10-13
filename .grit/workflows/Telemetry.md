@@ -2284,7 +2284,7 @@
   272
   273  	execute<K extends keyof StandardTsServerRequests>(
   274  		command: K,
-  275  		args: StandardTsServerRequests[K][0],
+  275  		args: StandardTsServerRequests[`K`][0],
   276  		token: vscode.CancellationToken,
 ```
 
@@ -5244,7 +5244,7 @@
 
 ```sh
 87 logLevel?: string
-88 extensionLogLevel?: [string, string][]
+88 extensionLogLevel?: [`string, string`][]
 89 verbose: boolean
 90 isBuilt: boolean
 91
