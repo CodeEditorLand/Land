@@ -1,4 +1,7 @@
 .cargo/
+.github/
+.grit/
+.idea/
 .clang-format
 .csharpierrc
 .editorconfig
@@ -17,6 +20,7 @@ Dependency/
 Element/
 Mountain.key
 Source/
+Maintain/
 Target/debug
 Target/release
 biome.json
