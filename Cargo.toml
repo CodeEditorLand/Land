@@ -2,11 +2,11 @@
 members = [
 	"Element/Echo",
 	"Element/Mountain",
-	"Element/Rest",
+	# "Element/Rest",
 	"Element/River",
 	"Element/Sun",
 
-	"Dependency/Land/Cargo/Maintain",
+	# "Dependency/Land/Cargo/Maintain",
 ]
 resolver = "2"
 exclude = [
