@@ -1,15 +1,15 @@
 import { fontFamily } from "tailwindcss/defaultTheme";
 
 /** @type {import('tailwindcss').Config} */
-var config = {
+export default {
 	content: [
 		"./Public/**/*.html",
 		"./Source/**/*.{astro,css,html,js,json,jsx,md,mdx,scss,svelte,ts,tsx,vue}",
 		"./index.html",
-		__dirname + "/**/*.vue",
-		__dirname + "/frontend/**/*.{css,html,ts,js}",
-		__dirname + "/src/main.js",
-		__dirname + "/src/{components,views}/**/*.js",
+		`${__dirname}/**/*.vue`,
+		`${__dirname}/frontend/**/*.{css,html,ts,js}`,
+		`${__dirname}/src/main.js`,
+		`${__dirname}/src/{components,views}/**/*.js`,
 	],
 
 	darkMode: "media",

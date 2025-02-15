@@ -1,4 +1,8 @@
 [workspace]
+exclude = [
+	"Dependency/Microsoft/Dependency/Editor/cli",
+	"Dependency/Microsoft/Dependency/Editor/build/win32",
+]
 members = [
 	"Element/Echo",
 	"Element/Maintain",
@@ -9,10 +13,11 @@ members = [
 	"Element/Sun",
 ]
 resolver = "2"
-exclude = [
-	"Dependency/Microsoft/Dependency/Editor/cli",
-	"Dependency/Microsoft/Dependency/Editor/build/win32",
-]
+
+[workspace.dependencies]
+prun = { version = "*" }
+
+[workspace.metadata]
 
 [workspace.package]
 authors = ["Source 🖋️ Open 👐🏻 <Source/Open@Editor.Land>"]
@@ -23,9 +28,3 @@ license-file = "LICENSE"
 publish = false
 readme = "README.md"
 repository = "https://github.com/CodeEditorLand/Land"
-
-[workspace.metadata]
-# TODO: Fill in the projects metadata (which binary is what)
-
-[workspace.dependencies]
-prun = { version = "*" }
