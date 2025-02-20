@@ -1,6 +1,7 @@
 [workspace]
 exclude = []
 members = [
+	# Microsoft
 	"Dependency/Microsoft/Dependency/Editor/cli",
 	"Dependency/Microsoft/Dependency/LandDevContainers/containers/rust-postgres/test-project",
 	"Dependency/Microsoft/Dependency/LandDevContainers/containers/rust",
@@ -20,14 +21,18 @@ members = [
 	"Dependency/Microsoft/Dependency/LandWASM/testbeds/rust-threads",
 	"Dependency/Microsoft/Dependency/LandWASM/testbeds/rust",
 
+	# OXC
 	"Dependency/OXC/Dependency/AriaQuery",
 	"Dependency/OXC/Dependency/BenchJavaScriptParserWrittenInRust",
 
+	# Rolldown
 	"Dependency/Rolldown/Dependency/StringWizard",
 	"Dependency/Rolldown/Dependency/Testcase",
 
+	# SWC
 	"Dependency/SWC/Dependency/Ddt",
 
+	# Tauri
 	"Dependency/Tauri/Dependency/CargoMobile2",
 	"Dependency/Tauri/Dependency/RustICNS",
 	"Dependency/Tauri/Dependency/Soup2RS",
@@ -86,6 +91,7 @@ members = [
 	"Dependency/Tauri/Dependency/WinRTNotification",
 	"Dependency/Tauri/Dependency/WryMobile",
 
+	# Element
 	"Element/Document",
 	"Element/Echo",
 	"Element/Maintain",
