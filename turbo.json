@@ -42,6 +42,7 @@
 	"tasks": {
 		"Run": {
 			"cache": false,
+			"dependsOn": ["^prepublishOnly"],
 			"outputLogs": "new-only",
 			"outputs": ["Target/**"],
 			"persistent": true
