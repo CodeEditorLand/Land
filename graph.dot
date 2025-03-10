@@ -1,3 +1,0 @@
-digraph packages {
-  rankdir=LR;
-  node [shape=box];
