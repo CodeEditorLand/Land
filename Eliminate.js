@@ -1,9 +1,16 @@
+export const On = process.env["NODE_ENV"] === "development";
 /**
  * @module Option
  *
  */
 export default (await import("@playform/eliminate/Target/Function/Merge.js")).default((await import("@playform/pipe/Target/Variable/Option.js")).default, {
     Action: {
+        Read: async ({ Input }) => {
+            console.log(`Processing: ${Input}`);
+            return await (await import("node:fs/promises")).readFile(Input, {
+                encoding: "utf-8",
+            });
+        },
         Wrote: async (On) => {
             try {
                 return (await import("@playform/eliminate/Target/Function/Output.js")).default(On.Buffer.toString(), {
@@ -43,5 +50,15 @@ export default (await import("@playform/eliminate/Target/Function/Merge.js")).de
         ],
     ]),
     File: "**/*.ts",
-    Exclude: (File) => (File.indexOf(".d.ts") !== -1 ? true : false),
+    Exclude: (File) => [
+        ".d.ts",
+        "/test/",
+        "/tests/",
+        "/spec/",
+        "/mock/",
+        "/example/",
+        "/demo/",
+        "vs/editor/browser/viewparts/minimap/minimap.ts",
+        "vs/workbench/contrib/notebook/browser/notebookoptions.ts",
+    ].some((Pattern) => File.toLowerCase().indexOf(Pattern) !== -1),
 });

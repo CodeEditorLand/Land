@@ -1,5 +1,7 @@
 import type Interface from "@playform/eliminate/Target/Interface/Option.js";
 
+export const On = process.env["NODE_ENV"] === "development";
+
 /**
  * @module Option
  *
@@ -8,6 +10,16 @@ export default (
 	await import("@playform/eliminate/Target/Function/Merge.js")
 ).default((await import("@playform/pipe/Target/Variable/Option.js")).default, {
 	Action: {
+		Read: async ({ Input }) => {
+			console.log(`Processing: ${Input}`);
+
+			return await (
+				await import("node:fs/promises")
+			).readFile(Input, {
+				encoding: "utf-8",
+			});
+		},
+
 		Wrote: async (On) => {
 			try {
 				return (
@@ -23,34 +35,66 @@ export default (
 				return On.Buffer;
 			}
 		},
+
 		Failed: async ({ Input }, _Error) => {
 			console.log(_Error);
 
 			return `Error: Cannot process file ${Input}`;
 		},
 	},
+
 	Path: new Map([
 		[
 			"./Dependency/Microsoft/Dependency/Editor/build",
+
 			"./Dependency/Microsoft/Dependency/Editor/build",
 		],
+
 		[
 			"./Dependency/Microsoft/Dependency/Editor/extensions",
+
 			"./Dependency/Microsoft/Dependency/Editor/extensions",
 		],
+
 		[
 			"./Dependency/Microsoft/Dependency/Editor/scripts",
+
 			"./Dependency/Microsoft/Dependency/Editor/scripts",
 		],
+
 		[
 			"./Dependency/Microsoft/Dependency/Editor/Source",
+
 			"./Dependency/Microsoft/Dependency/Editor/Source",
 		],
+
 		[
 			"./Dependency/Microsoft/Dependency/Editor/src",
+
 			"./Dependency/Microsoft/Dependency/Editor/src",
 		],
 	]),
+
 	File: "**/*.ts",
-	Exclude: (File) => (File.indexOf(".d.ts") !== -1 ? true : false),
+
+	Exclude: (File) =>
+		[
+			".d.ts",
+
+			"/test/",
+
+			"/tests/",
+
+			"/spec/",
+
+			"/mock/",
+
+			"/example/",
+
+			"/demo/",
+
+			"vs/editor/browser/viewparts/minimap/minimap.ts",
+
+			"vs/workbench/contrib/notebook/browser/notebookoptions.ts",
+		].some((Pattern) => File.toLowerCase().indexOf(Pattern) !== -1),
 } satisfies Interface);
