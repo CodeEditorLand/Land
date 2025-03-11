@@ -1,0 +1,266 @@
+0|.|unknown|rust|.|Cargo.toml||
+1|@codeeditorland/benchmark|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/benchmark|package.json|[]|Dependency
+2|Biome|unknown|rust|Dependency/Biome/Dependency/Biome|Cargo.toml||Dependency
+3|biome_analyze|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_analyze|Cargo.toml||Dependency
+4|biome_aria|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_aria|Cargo.toml||Dependency
+5|biome_aria_metadata|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_aria_metadata|Cargo.toml||Dependency
+6|biome_cli|0.0.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_cli|Cargo.toml||Dependency
+7|biome_configuration|0.0.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_configuration|Cargo.toml||Dependency
+8|biome_console|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_console|Cargo.toml||Dependency
+9|biome_control_flow|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_control_flow|Cargo.toml||Dependency
+10|biome_css_analyze|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_css_analyze|Cargo.toml||Dependency
+11|biome_css_factory|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_css_factory|Cargo.toml||Dependency
+12|biome_css_formatter|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_css_formatter|Cargo.toml||Dependency
+13|biome_css_parser|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_css_parser|Cargo.toml||Dependency
+14|biome_css_semantic|0.0.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_css_semantic|Cargo.toml||Dependency
+15|biome_css_syntax|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_css_syntax|Cargo.toml||Dependency
+16|biome_dependency_graph|0.0.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_dependency_graph|Cargo.toml||Dependency
+17|biome_deserialize|0.6.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_deserialize|Cargo.toml||Dependency
+18|biome_deserialize_macros|0.6.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_deserialize_macros|Cargo.toml||Dependency
+19|biome_diagnostics|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_diagnostics|Cargo.toml||Dependency
+20|biome_diagnostics_categories|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_diagnostics_categories|Cargo.toml||Dependency
+21|biome_diagnostics_macros|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_diagnostics_macros|Cargo.toml||Dependency
+22|biome_flags|0.0.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_flags|Cargo.toml||Dependency
+23|biome_formatter|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_formatter|Cargo.toml||Dependency
+24|biome_formatter_test|0.0.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_formatter_test|Cargo.toml||Dependency
+25|prettier-tests|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/crates/biome_formatter_test/Source/prettier|package.json|[]|Dependency
+26|biome_fs|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_fs|Cargo.toml||Dependency
+27|biome_glob|0.1.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_glob|Cargo.toml||Dependency
+28|biome_graphql_analyze|0.0.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_graphql_analyze|Cargo.toml||Dependency
+29|biome_graphql_factory|0.1.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_graphql_factory|Cargo.toml||Dependency
+30|biome_graphql_formatter|0.1.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_graphql_formatter|Cargo.toml||Dependency
+31|biome_graphql_parser|0.1.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_graphql_parser|Cargo.toml||Dependency
+32|biome_graphql_semantic|0.0.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_graphql_semantic|Cargo.toml||Dependency
+33|biome_graphql_syntax|0.1.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_graphql_syntax|Cargo.toml||Dependency
+34|biome_grit_factory|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_grit_factory|Cargo.toml||Dependency
+35|biome_grit_formatter|0.0.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_grit_formatter|Cargo.toml||Dependency
+36|biome_grit_parser|0.1.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_grit_parser|Cargo.toml||Dependency
+37|biome_grit_patterns|0.0.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_grit_patterns|Cargo.toml||Dependency
+38|biome_grit_syntax|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_grit_syntax|Cargo.toml||Dependency
+39|biome_html_factory|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_html_factory|Cargo.toml||Dependency
+40|biome_html_formatter|0.0.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_html_formatter|Cargo.toml||Dependency
+41|biome_html_parser|0.0.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_html_parser|Cargo.toml||Dependency
+42|biome_html_syntax|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_html_syntax|Cargo.toml||Dependency
+43|biome_js_analyze|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_js_analyze|Cargo.toml||Dependency
+44|biome_js_factory|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_js_factory|Cargo.toml||Dependency
+45|biome_js_formatter|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_js_formatter|Cargo.toml||Dependency
+46|biome_js_parser|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_js_parser|Cargo.toml||Dependency
+47|biome_js_semantic|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_js_semantic|Cargo.toml||Dependency
+48|biome_js_syntax|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_js_syntax|Cargo.toml||Dependency
+49|biome_js_transform|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_js_transform|Cargo.toml||Dependency
+50|biome_json_analyze|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_json_analyze|Cargo.toml||Dependency
+51|biome_json_factory|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_json_factory|Cargo.toml||Dependency
+52|biome_json_formatter|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_json_formatter|Cargo.toml||Dependency
+53|biome_json_parser|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_json_parser|Cargo.toml||Dependency
+54|biome_json_syntax|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_json_syntax|Cargo.toml||Dependency
+55|biome_json_value|0.1.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_json_value|Cargo.toml||Dependency
+56|biome_lsp|0.0.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_lsp|Cargo.toml||Dependency
+57|biome_lsp_converters|0.1.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_lsp_converters|Cargo.toml||Dependency
+58|biome_markdown_factory|0.0.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_markdown_factory|Cargo.toml||Dependency
+59|biome_markdown_parser|0.0.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_markdown_parser|Cargo.toml||Dependency
+60|biome_markdown_syntax|0.0.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_markdown_syntax|Cargo.toml||Dependency
+61|biome_markup|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_markup|Cargo.toml||Dependency
+62|biome_migrate|0.0.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_migrate|Cargo.toml||Dependency
+63|biome_package|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_package|Cargo.toml||Dependency
+64|biome_parser|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_parser|Cargo.toml||Dependency
+65|biome_plugin_loader|0.0.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_plugin_loader|Cargo.toml||Dependency
+66|biome_project_layout|0.0.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_project_layout|Cargo.toml||Dependency
+67|biome_rowan|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_rowan|Cargo.toml||Dependency
+68|biome_service|0.0.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_service|Cargo.toml||Dependency
+69|biome_string_case|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_string_case|Cargo.toml||Dependency
+70|biome_suppression|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_suppression|Cargo.toml||Dependency
+71|biome_syntax_codegen|0.1.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_syntax_codegen|Cargo.toml||Dependency
+72|biome_test_utils|0.0.0|rust|Dependency/Biome/Dependency/Biome/crates/biome_test_utils|Cargo.toml||Dependency
+73|biome_text_edit|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_text_edit|Cargo.toml||Dependency
+74|biome_text_size|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_text_size|Cargo.toml||Dependency
+75|biome_ungrammar|0.3.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_ungrammar|Cargo.toml||Dependency
+76|biome_unicode_table|0.5.7|rust|Dependency/Biome/Dependency/Biome/crates/biome_unicode_table|Cargo.toml||Dependency
+77|biome_wasm|1.9.4|rust|Dependency/Biome/Dependency/Biome/crates/biome_wasm|Cargo.toml||Dependency
+78|biome_yaml_factory|0.0.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_yaml_factory|Cargo.toml||Dependency
+79|biome_yaml_parser|0.0.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_yaml_parser|Cargo.toml||Dependency
+80|biome_yaml_syntax|0.0.1|rust|Dependency/Biome/Dependency/Biome/crates/biome_yaml_syntax|Cargo.toml||Dependency
+81|tests_macros|0.0.0|rust|Dependency/Biome/Dependency/Biome/crates/tests_macros|Cargo.toml||Dependency
+82|rome_fuzz|0.0.0|rust|Dependency/Biome/Dependency/Biome/fuzz|Cargo.toml||Dependency
+83|@codeeditorland/monorepo|0.0.1|nodejs|Dependency/Biome/Dependency/Biome|package.json|[]|Dependency
+84|@codeeditorland/backend-jsonrpc|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/backend-jsonrpc|package.json|[]|Dependency
+85|@codeeditorland/biome|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/biome|package.json|[]|Dependency
+86|@codeeditorland/cli-darwin-arm64|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/cli-darwin-arm64|package.json|[]|Dependency
+87|@codeeditorland/cli-darwin-x64|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/cli-darwin-x64|package.json|[]|Dependency
+88|@codeeditorland/cli-linux-arm64|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/cli-linux-arm64|package.json|[]|Dependency
+89|@codeeditorland/cli-linux-arm64-musl|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/cli-linux-arm64-musl|package.json|[]|Dependency
+90|@codeeditorland/cli-linux-x64|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/cli-linux-x64|package.json|[]|Dependency
+91|@codeeditorland/cli-linux-x64-musl|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/cli-linux-x64-musl|package.json|[]|Dependency
+92|@codeeditorland/cli-win32-arm64|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/cli-win32-arm64|package.json|[]|Dependency
+93|@codeeditorland/cli-win32-x64|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/cli-win32-x64|package.json|[]|Dependency
+94|@codeeditorland/js-api|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/js-api|package.json|[]|Dependency
+95|@codeeditorland/wasm-bundler|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/wasm-bundler|package.json|[]|Dependency
+96|@codeeditorland/wasm-nodejs|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/wasm-nodejs|package.json|[]|Dependency
+97|@codeeditorland/wasm-web|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/@biomejs/wasm-web|package.json|[]|Dependency
+98|@codeeditorland/aria-data|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/aria-data|package.json|[]|Dependency
+99|tailwindcss-config-analyzer|0.0.1|nodejs|Dependency/Biome/Dependency/Biome/packages/tailwindcss-config-analyzer|package.json|[]|Dependency
+100|xtask_bench|0.0.0|rust|Dependency/Biome/Dependency/Biome/xtask/bench|Cargo.toml||Dependency
+101|xtask|0.0.0|rust|Dependency/Biome/Dependency/Biome/xtask|Cargo.toml||Dependency
+102|xtask_codegen|0.0.0|rust|Dependency/Biome/Dependency/Biome/xtask/codegen|Cargo.toml||Dependency
+103|xtask_coverage|0.0.0|rust|Dependency/Biome/Dependency/Biome/xtask/coverage|Cargo.toml||Dependency
+104|xtask_libs_bench|0.0.0|rust|Dependency/Biome/Dependency/Biome/xtask/libs_bench|Cargo.toml||Dependency
+105|rules_check|0.0.0|rust|Dependency/Biome/Dependency/Biome/xtask/rules_check|Cargo.toml||Dependency
+106|@biome-intellij-sandbox/bar|unknown|nodejs|Dependency/Biome/Dependency/BiomeIntelliJ/sandbox/bar|package.json|[]|Dependency
+107|@biome-intellij-sandbox/foo|unknown|nodejs|Dependency/Biome/Dependency/BiomeIntelliJ/sandbox/foo|package.json|[]|Dependency
+108|@biome-intellij-sandbox/workspace|unknown|nodejs|Dependency/Biome/Dependency/BiomeIntelliJ/sandbox|package.json|[]|Dependency
+109|biome|unknown|nodejs|Dependency/Biome/Dependency/BiomeLand|package.json|[]|Dependency
+110|@codeeditorland/discord-utils-bot|unknown|nodejs|Dependency/Biome/Dependency/DiscordUtilsBot|package.json|[]|Dependency
+111|@codeeditorland/pre-commit|unknown|nodejs|Dependency/Biome/Dependency/PreCommit|package.json|[]|Dependency
+112|setup-biome|unknown|nodejs|Dependency/Biome/Dependency/SetupBiome|package.json|[]|Dependency
+113|@codeeditorland/boards|unknown|nodejs|Dependency/Microsoft/Dependency/AzureBoardsLand|package.json|[]|Dependency
+114|docs|unknown|gemfile|Dependency/Microsoft/Dependency/AzureIOTDeveloperKit/docs|Gemfile|[]|Dependency
+115|docs||nodejs|Dependency/Microsoft/Dependency/AzureIOTDeveloperKit/docs|package.json||Dependency
+116|AzurePipelinesLand||nodejs|Dependency/Microsoft/Dependency/AzurePipelinesLand|package.json||Dependency
+117|extract-yaml-testcases|unknown|nodejs|Dependency/Microsoft/Dependency/AzurePipelinesLand/tools/extract-yaml-testcases|package.json|[]|Dependency
+118|team|unknown|nodejs|Dependency/Microsoft/Dependency/AzureReposLand|package.json|[]|Dependency
+119|codetour|unknown|nodejs|Dependency/Microsoft/Dependency/Codetour|package.json|[]|Dependency
+120|@codeeditorland/compose-language-service|unknown|nodejs|Dependency/Microsoft/Dependency/ComposeLanguageService|package.json|[]|Dependency
+121|deoptexplorer-vscode|unknown|nodejs|Dependency/Microsoft/Dependency/DeoptexplorerLand|package.json|[]|Dependency
+122|dexnode|unknown|nodejs|Dependency/Microsoft/Dependency/DeoptexplorerLand/tools/dexnode|package.json|[]|Dependency
+123|ManualGenerator|unknown|dotnet|Dependency/Microsoft/Dependency/DevSkim/DevSkim-DotNet/ManualGenerator|ManualUpdateSettingsGenerator.csproj|[]|Dependency
+124|devskim|unknown|dotnet|Dependency/Microsoft/Dependency/DevSkim/DevSkim-DotNet/Microsoft.DevSkim.CLI|Microsoft.DevSkim.CLI.csproj|[]|Dependency
+125|Microsoft.DevSkim.LanguageProtoInterop|unknown|dotnet|Dependency/Microsoft/Dependency/DevSkim/DevSkim-DotNet/Microsoft.DevSkim.LanguageProtoInterop|Microsoft.DevSkim.LanguageProtoInterop.csproj|[]|Dependency
+126|Microsoft.DevSkim.LanguageServer|unknown|dotnet|Dependency/Microsoft/Dependency/DevSkim/DevSkim-DotNet/Microsoft.DevSkim.LanguageServer|Microsoft.DevSkim.LanguageServer.csproj|[]|Dependency
+127|Microsoft.DevSkim.Tests|unknown|dotnet|Dependency/Microsoft/Dependency/DevSkim/DevSkim-DotNet/Microsoft.DevSkim.Tests|Microsoft.DevSkim.Tests.csproj|[]|Dependency
+128|Microsoft.DevSkim.VisualStudio.SourceGenerator|unknown|dotnet|Dependency/Microsoft/Dependency/DevSkim/DevSkim-DotNet/Microsoft.DevSkim.VisualStudio.SourceGenerator|Microsoft.DevSkim.VisualStudio.SourceGenerator.csproj|[]|Dependency
+129|Microsoft.DevSkim.VisualStudio|unknown|dotnet|Dependency/Microsoft/Dependency/DevSkim/DevSkim-DotNet/Microsoft.DevSkim.VisualStudio|Microsoft.DevSkim.VisualStudio.csproj|[]|Dependency
+130|Microsoft.DevSkim|unknown|dotnet|Dependency/Microsoft/Dependency/DevSkim/DevSkim-DotNet/Microsoft.DevSkim|Microsoft.DevSkim.csproj|[]|Dependency
+131|devskim-vscode-client|unknown|nodejs|Dependency/Microsoft/Dependency/DevSkim/DevSkim-VSCode-Plugin/client|package.json|[]|Dependency
+132|@codeeditorland/devskim|unknown|nodejs|Dependency/Microsoft/Dependency/DevSkim/DevSkim-VSCode-Plugin|package.json|[]|Dependency
+133|.azuredevops|N/A|python|Dependency/Microsoft/Dependency/DSToolkitDevContainers/.azuredevops|requirements.txt|[
+  {
+    "type": "prod",
+    "name": "bandit"
+  },
+  {
+    "type": "prod",
+    "name": "black"
+  },
+  {
+    "type": "prod",
+    "name": "flake8"
+  },
+  {
+    "type": "prod",
+    "name": "isort"
+  },
+  {
+    "type": "prod",
+    "name": "pre-commit"
+  },
+  {
+    "type": "prod",
+    "name": "pytest"
+  },
+  {
+    "type": "prod",
+    "name": "pytest-cov"
+  },
+  {
+    "type": "prod",
+    "name": ""
+  },
+  {
+    "type": "prod",
+    "name": "pytest-azurepipelines"
+  }
+]|Dependency
+134|common|N/A|python|Dependency/Microsoft/Dependency/DSToolkitDevContainers/Source/common|requirements.txt|[
+  {
+    "type": "prod",
+    "name": "bandit"
+  },
+  {
+    "type": "prod",
+    "name": "black"
+  },
+  {
+    "type": "prod",
+    "name": "flake8"
+  },
+  {
+    "type": "prod",
+    "name": "isort"
+  },
+  {
+    "type": "prod",
+    "name": "mypy"
+  },
+  {
+    "type": "prod",
+    "name": "pytest"
+  },
+  {
+    "type": "prod",
+    "name": "pytest-cov"
+  },
+  {
+    "type": "prod",
+    "name": "pre-commit"
+  },
+  {
+    "type": "prod",
+    "name": ""
+  },
+  {
+    "type": "prod",
+    "name": "ipykernel"
+  }
+]|Dependency
+135|builtin|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/build/builtin|package.json|[]|Dependency
+136|monaco-editor-core|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/build/monaco|package.json|[]|Dependency
+137|code-oss-dev-build|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/build/npm/gyp|package.json|[]|Dependency
+138|code-oss-dev-build|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/build|package.json|[]|Dependency
+139|inno_updater|0.12.1|rust|Dependency/Microsoft/Dependency/Editor/build/win32|Cargo.toml||Dependency
+140|code-cli|0.1.0|rust|Dependency/Microsoft/Dependency/Editor/cli|Cargo.toml||Dependency
+141|bat|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/bat|package.json|[]|Dependency
+142|clojure|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/clojure|package.json|[]|Dependency
+143|coffeescript|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/coffeescript|package.json|[]|Dependency
+144|configuration-editing|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/configuration-editing|package.json|[]|Dependency
+145|cpp|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/cpp|package.json|[]|Dependency
+146|csharp|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/csharp|package.json|[]|Dependency
+147|css|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/css|package.json|[]|Dependency
+148|css-language-features|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/css-language-features|package.json|[]|Dependency
+149|@codeeditorland/css-languageserver|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/css-language-features/server|package.json|[]|Dependency
+150|dart|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/dart|package.json|[]|Dependency
+151|debug-auto-launch|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/debug-auto-launch|package.json|[]|Dependency
+152|debug-server-ready|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/debug-server-ready|package.json|[]|Dependency
+153|diff|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/diff|package.json|[]|Dependency
+154|docker|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/docker|package.json|[]|Dependency
+155|emmet|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/emmet|package.json|[]|Dependency
+156|extension-editing|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/extension-editing|package.json|[]|Dependency
+157|fsharp|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/fsharp|package.json|[]|Dependency
+158|git|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/git|package.json|[]|Dependency
+159|git-base|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/git-base|package.json|[]|Dependency
+160|github|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/github|package.json|[]|Dependency
+161|github-authentication|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/github-authentication|package.json|[]|Dependency
+162|go|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/go|package.json|[]|Dependency
+163|groovy|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/groovy|package.json|[]|Dependency
+164|grunt|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/grunt|package.json|[]|Dependency
+165|gulp|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/gulp|package.json|[]|Dependency
+166|handlebars|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/handlebars|package.json|[]|Dependency
+167|hlsl|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/hlsl|package.json|[]|Dependency
+168|html|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/html|package.json|[]|Dependency
+169|html-language-features|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/html-language-features|package.json|[]|Dependency
+170|@codeeditorland/html-languageserver|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/html-language-features/server|package.json|[]|Dependency
+171|ini|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/ini|package.json|[]|Dependency
+172|ipynb|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/ipynb|package.json|[]|Dependency
+173|jake|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/jake|package.json|[]|Dependency
+174|java|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/java|package.json|[]|Dependency
+175|javascript|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/javascript|package.json|[]|Dependency
+176|json|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/json|package.json|[]|Dependency
+177|json-language-features|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/json-language-features|package.json|[]|Dependency
+178|@codeeditorland/json-languageserver|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/json-language-features/server|package.json|[]|Dependency
+179|julia|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/julia|package.json|[]|Dependency
+180|latex|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/latex|package.json|[]|Dependency
+181|less|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/less|package.json|[]|Dependency
+182|log|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/log|package.json|[]|Dependency
+183|lua|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/lua|package.json|[]|Dependency
+184|make|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/make|package.json|[]|Dependency
+185|markdown|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/markdown-basics|package.json|[]|Dependency
+186|markdown-language-features|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/markdown-language-features|package.json|[]|Dependency
+187|markdown-math|unknown|nodejs|Dependency/Microsoft/Dependency/Editor/extensions/markdown-math|package.json|[]|Dependency
