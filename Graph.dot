@@ -1,0 +1,45 @@
+digraph project_knowledge_tree {
+
+  // Graph styling
+  rankdir=LR;
+  splines=polyline;
+  concentrate=true;
+
+  // Default node styling
+  node [
+    shape=box,
+    style="filled,rounded",
+    fillcolor="#f5f5f5",
+    fontname="Arial",
+    margin="0.2,0.1"
+	
+	
+  ];
+
+  // Default edge styling
+  edge [
+    fontsize=10,
+    fontname="Arial",
+    fontcolor="#555555",
+    arrowsize=0.8
+  ];
+
+  // Legend subgraph
+  subgraph cluster_legend {
+  
+    label="Legend";
+    fontsize=12;
+    style=filled;
+    fillcolor="#efefef";
+
+    legend_package [label="Package", fillcolor="#e1f5fe"];
+    legend_directory [label="Directory", fillcolor="#e8f5e9"];
+    legend_dependency [label="Dependency", fillcolor="#fff8e1"];
+
+    legend_contains [label="contains", shape=plaintext];
+    legend_depends [label="depends on", shape=plaintext];
+    legend_references [label="references", shape=plaintext];
+
+    legend_package -> legend_directory [style=invis];
+    legend_directory -> legend_dependency [style=invis];
+  }
