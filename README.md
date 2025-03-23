@@ -50,7 +50,7 @@ run the Tauri app [`Mountain`](./Target/release/Mountain.exe)
 ## Graph
 
 ```mermaid
-graph TD
+graph LR
     A[Top Repo: Land]
 
     subgraph Element
