@@ -20,19 +20,19 @@ export default (
 			});
 		},
 
-		Wrote: async (On) => {
+		Wrote: async ({ Buffer, Output }) => {
 			try {
 				return (
 					await import(
 						"@playform/eliminate/Target/Function/Output.js"
 					)
-				).default(On.Buffer.toString(), {
+				).default(Buffer.toString(), {
 					Comment: true,
 				});
 			} catch (_Error) {
 				console.log(_Error);
 
-				return On.Buffer;
+				return Buffer;
 			}
 		},
 

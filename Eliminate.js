@@ -11,15 +11,16 @@ export default (await import("@playform/eliminate/Target/Function/Merge.js")).de
                 encoding: "utf-8",
             });
         },
-        Wrote: async (On) => {
+        Wrote: async ({ Buffer, Output }) => {
+            console.log(`Processing Wrote: ${Output}`);
             try {
-                return (await import("@playform/eliminate/Target/Function/Output.js")).default(On.Buffer.toString(), {
+                return (await import("@playform/eliminate/Target/Function/Output.js")).default(Buffer.toString(), {
                     Comment: true,
                 });
             }
             catch (_Error) {
                 console.log(_Error);
-                return On.Buffer;
+                return Buffer;
             }
         },
         Failed: async ({ Input }, _Error) => {
