@@ -20,7 +20,7 @@ export default (
 			});
 		},
 
-		Wrote: async ({ Buffer, Output }) => {
+		Wrote: async ({ Buffer }) => {
 			try {
 				return (
 					await import(
@@ -92,9 +92,5 @@ export default (
 			"/example/",
 
 			"/demo/",
-
-			"vs/editor/browser/viewparts/minimap/minimap.ts",
-
-			"vs/workbench/contrib/notebook/browser/notebookoptions.ts",
 		].some((Pattern) => File.toLowerCase().indexOf(Pattern) !== -1),
 } satisfies Interface);

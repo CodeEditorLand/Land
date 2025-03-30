@@ -11,8 +11,7 @@ export default (await import("@playform/eliminate/Target/Function/Merge.js")).de
                 encoding: "utf-8",
             });
         },
-        Wrote: async ({ Buffer, Output }) => {
-            console.log(`Processing Wrote: ${Output}`);
+        Wrote: async ({ Buffer }) => {
             try {
                 return (await import("@playform/eliminate/Target/Function/Output.js")).default(Buffer.toString(), {
                     Comment: true,
@@ -59,7 +58,5 @@ export default (await import("@playform/eliminate/Target/Function/Merge.js")).de
         "/mock/",
         "/example/",
         "/demo/",
-        "vs/editor/browser/viewparts/minimap/minimap.ts",
-        "vs/workbench/contrib/notebook/browser/notebookoptions.ts",
     ].some((Pattern) => File.toLowerCase().indexOf(Pattern) !== -1),
 });
