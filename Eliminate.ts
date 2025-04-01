@@ -27,7 +27,7 @@ export default (
 						"@playform/eliminate/Target/Function/Output.js"
 					)
 				).default(Buffer.toString(), {
-					Comment: true,
+					Comment: true
 				});
 			} catch (_Error) {
 				console.log(_Error);
