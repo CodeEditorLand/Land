@@ -1,7 +1,5 @@
 [workspace]
-exclude = [
-	"Dependency/Tauri/Dependency/Wry",
-]
+exclude = []
 members = [
 	# # Microsoft
 	# "Dependency/Microsoft/Dependency/Editor/cli",
@@ -99,26 +97,26 @@ members = [
 	# "Element/Maintain",
 	# "Element/Maintain/Dependency/CodeEditorLand/Dependency/Queue",
 
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/autostart",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/cli",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/clipboard-manager",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/deep-link",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/dialog",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/fs",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/global-shortcut",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/http",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/log",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/notification",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/os",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/process",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/single-instance",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/store",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/upload",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/websocket",
-	"Dependency/Tauri/Dependency/Tauri/crates/tauri",
-	"Dependency/Tauri/Dependency/Tauri/crates/tauri-plugin",
-	"Dependency/Tauri/Dependency/Tauri/crates/tauri-utils",
-	"Dependency/Tauri/Dependency/TauriPluginAuthenticator",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/autostart",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/cli",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/clipboard-manager",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/deep-link",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/dialog",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/fs",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/global-shortcut",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/http",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/log",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/notification",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/os",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/process",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/single-instance",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/store",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/upload",
+	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/websocket",
+	# "Dependency/Tauri/Dependency/Tauri/crates/tauri",
+	# "Dependency/Tauri/Dependency/Tauri/crates/tauri-plugin",
+	# "Dependency/Tauri/Dependency/Tauri/crates/tauri-utils",
+	# "Dependency/Tauri/Dependency/TauriPluginAuthenticator",
 
 	"Element/Mountain",
 	# "Element/Rest",
@@ -133,47 +131,51 @@ prun = { version = "*" }
 Echo = { path = "Element/Echo" }
 
 # Tauri (Mountain)
-tauri = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri" }
-tauri-plugin-authenticator = { path = "Dependency/Tauri/Dependency/TauriPluginAuthenticator" }
-tauri-plugin-autostart = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/autostart" }
-tauri-plugin-cli = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/cli" }
-tauri-plugin-clipboard-manager = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/clipboard-manager" }
-tauri-plugin-dialog = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/dialog" }
-tauri-plugin-fs = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/fs" }
-tauri-plugin-global-shortcut = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/global-shortcut" }
-tauri-plugin-http = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/http" }
-tauri-plugin-log = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/log" }
-tauri-plugin-notification = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/notification" }
-tauri-plugin-os = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/os" }
-tauri-plugin-process = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/process" }
-tauri-plugin-single-instance = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/single-instance" }
-tauri-plugin-store = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/store" }
-tauri-plugin-upload = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/upload" }
-tauri-plugin-websocket = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/websocket" }
-tauri-plugin-deep-link = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/deep-link" }
+# tauri = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri" }
+# tauri-plugin-authenticator = { path = "Dependency/Tauri/Dependency/TauriPluginAuthenticator" }
+# tauri-plugin-autostart = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/autostart" }
+# tauri-plugin-cli = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/cli" }
+# tauri-plugin-clipboard-manager = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/clipboard-manager" }
+# tauri-plugin-dialog = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/dialog" }
+# tauri-plugin-fs = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/fs" }
+# tauri-plugin-global-shortcut = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/global-shortcut" }
+# tauri-plugin-http = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/http" }
+# tauri-plugin-log = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/log" }
+# tauri-plugin-notification = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/notification" }
+# tauri-plugin-os = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/os" }
+# tauri-plugin-process = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/process" }
+# tauri-plugin-single-instance = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/single-instance" }
+# tauri-plugin-store = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/store" }
+# tauri-plugin-upload = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/upload" }
+# tauri-plugin-websocket = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/websocket" }
+# tauri-plugin-deep-link = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/deep-link" }
 
 # Global (Mountain, Tauri)
-log = { version = "0.4.27" }
-serde = { version = "1.0.219" }
+# log = { version = "0.4.27" }
+async-trait = "0.1.88"
+futures = { version = "0.3.31" }
+json5 = { version = "0.4.1" }
+portpicker = { version = "0.1.1" }
+regex = { version = "1.11.1" }
+serde = { version = "1.0.219", features = ["derive"] }
 serde_json = { version = "1.0.140" }
-thiserror = { version = "2.0.12" }
-dunce = { version = "1.0.5" }
-tokio = { version = "1.44.1", features = ["sync", "time", "macros"] }
-tracing = { version = "0.1.41" }
-zbus = { version = "5.5.0" }
-tauri-utils = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-utils" }
-wry = { path = "Dependency/Tauri/Dependency/Wry", default-features = false, features = [
-	"drag-drop",
-	"protocol",
-	"os-webview",
-	"linux-body",
-] }
-url = { version = "2.5.4" }
-glob = { version = "0.3.2" }
-schemars = { version = "0.8.22" }
+toml = { version = "0.8.20" }
+tokio = { version = "1.44.1" }
+tokio-tungstenite = { version = "0.26.2" }
+unbug = { version = "0.4.0" }
+
+# thiserror = { version = "2.0.12" }
+# dunce = { version = "1.0.5" }
+# tokio = { version = "1.44.1", features = ["sync", "time", "macros"] }
+# tracing = { version = "0.1.41" }
+# zbus = { version = "5.5.0" }
+# tauri-utils = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-utils" }
+# url = { version = "2.5.4" }
+# glob = { version = "0.3.2" }
+# schemars = { version = "0.8.22" }
 
 # Build Dependencies (Mountain, Tauri, Plugin)
-tauri-plugin = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-plugin" }
+# tauri-plugin = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-plugin" }
 
 [workspace.metadata]
 
