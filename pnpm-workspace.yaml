@@ -9,4 +9,4 @@ packages:
 
     - "Element/**"
 
-    - "Dependency/Microsoft/Dependency/Editor"
+    - "Dependency/Microsoft/Dependency/Editor/**"
