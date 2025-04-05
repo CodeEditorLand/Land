@@ -1,5 +1,7 @@
 [workspace]
-exclude = []
+exclude = [
+	"Dependency/Microsoft/Dependency/Editor/cli"
+]
 members = [
 	# # Microsoft
 	# "Dependency/Microsoft/Dependency/Editor/cli",

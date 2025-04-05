@@ -2,6 +2,9 @@
 	"$schema": "https://turbo.build/schema.json",
 	"extends": ["//"],
 	"globalEnv": [
+		"Clean",
+		"Dependency",
+		
 		"API_PRIVATE_KEYS_DIR",
 		"APPLE_API_ISSUER",
 		"APPLE_API_KEY",

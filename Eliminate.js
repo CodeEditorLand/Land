@@ -12,9 +12,10 @@ export default (await import("@playform/eliminate/Target/Function/Merge.js")).de
             });
         },
         Wrote: async ({ Buffer }) => {
+            console.log(`Wrote: ${Buffer}`);
             try {
                 return (await import("@playform/eliminate/Target/Function/Output.js")).default(Buffer.toString(), {
-                    Comment: true
+                    Comment: true,
                 });
             }
             catch (_Error) {
