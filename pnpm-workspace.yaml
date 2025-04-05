@@ -8,3 +8,5 @@ packages:
     - "Dependency/Vercel/NPM/**"
 
     - "Element/**"
+
+    - "Dependency/Microsoft/Dependency/Editor"
