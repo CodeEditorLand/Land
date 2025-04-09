@@ -68,14 +68,14 @@
 				"noDefaultExport": "off",
 				"noUselessElse": "off",
 				"useFilenamingConvention": {
-					"level": "error",
+					"level": "off",
 					"options": {
 						"filenameCases": ["PascalCase"],
 						"requireAscii": true,
 						"strictCase": true
 					}
 				},
-				"useImportType": "off",
+				"useImportType": "error",
 				"useNamingConvention": "off",
 				"useShorthandFunctionType": "off"
 			},
