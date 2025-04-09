@@ -5,6 +5,9 @@
 		"Clean",
 		"Dependency",
 
+		"ANDROID_HOME",
+		"NDK_HOME",
+		"JAVA_HOME",
 		"API_PRIVATE_KEYS_DIR",
 		"APPLE_API_ISSUER",
 		"APPLE_API_KEY",

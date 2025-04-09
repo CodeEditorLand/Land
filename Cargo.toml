@@ -162,7 +162,7 @@ regex = { version = "1.11.1" }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = { version = "1.0.140" }
 toml = { version = "0.8.20" }
-tokio = { version = "1.44.1" }
+tokio = { version = "1.44.2" }
 tokio-tungstenite = { version = "0.26.2" }
 unbug = { version = "0.4.0" }
 
