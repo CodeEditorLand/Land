@@ -28,6 +28,7 @@ export default (
 					)
 				).default(Buffer.toString(), {
 					Comment: true,
+					Debug: true,
 				});
 			} catch (_Error) {
 				console.log(_Error);
@@ -44,34 +45,63 @@ export default (
 	},
 
 	Path: new Map([
+		// [
+		// 	"./Dependency/Microsoft/Dependency/Editor/build",
+
+		// 	"./Dependency/Microsoft/Dependency/Editor/build",
+		// ],
+
+		// [
+		// 	"./Dependency/Microsoft/Dependency/Editor/extensions",
+
+		// 	"./Dependency/Microsoft/Dependency/Editor/extensions",
+		// ],
+
+		// [
+		// 	"./Dependency/Microsoft/Dependency/Editor/scripts",
+
+		// 	"./Dependency/Microsoft/Dependency/Editor/scripts",
+		// ],
+
+		// [
+		// 	"./Dependency/Microsoft/Dependency/Editor/Source",
+
+		// 	"./Dependency/Microsoft/Dependency/Editor/Source",
+		// ],
+
+		// [
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs",
+
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs",
+		// ],
+
+		// [
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs/base",
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs/base",
+		// ],
+		// [
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs/code",
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs/code",
+		// ],
+		// [
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs/editor",
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs/editor",
+		// ],
+		// [
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs/platform",
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs/platform",
+		// ],
+		// [
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs/server",
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs/server",
+		// ],
+		// [
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs/workbench",
+		// 	"./Dependency/Microsoft/Dependency/Editor/src/vs/workbench",
+		// ],
 		[
-			"./Dependency/Microsoft/Dependency/Editor/build",
-
-			"./Dependency/Microsoft/Dependency/Editor/build",
-		],
-
-		[
-			"./Dependency/Microsoft/Dependency/Editor/extensions",
-
-			"./Dependency/Microsoft/Dependency/Editor/extensions",
-		],
-
-		[
-			"./Dependency/Microsoft/Dependency/Editor/scripts",
-
-			"./Dependency/Microsoft/Dependency/Editor/scripts",
-		],
-
-		[
-			"./Dependency/Microsoft/Dependency/Editor/Source",
-
-			"./Dependency/Microsoft/Dependency/Editor/Source",
-		],
-
-		[
-			"./Dependency/Microsoft/Dependency/Editor/src",
-
-			"./Dependency/Microsoft/Dependency/Editor/src",
+			"./Dependency/Microsoft/Dependency/Editor/src/vs/base/node",
+			"./Dependency/Microsoft/Dependency/Editor/src/vs/base/node",
 		],
 	]),
 
@@ -93,4 +123,4 @@ export default (
 
 			"/demo/",
 		].some((Pattern) => File.toLowerCase().indexOf(Pattern) !== -1),
-} satisfies Interface);
+} satisfies Interface as Interface);
