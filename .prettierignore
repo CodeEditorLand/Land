@@ -35,9 +35,6 @@ Dependency/Microsoft/Dependency/LandGradle/extension/build/
 Dependency/Microsoft/Dependency/LandJupyter/Source/platform/pythonEnvironments/*
 Dependency/Microsoft/Dependency/LandJupyter/Source/test/pythonEnvironments/*
 
-Dependency/Microsoft/Dependency/LandJupyterLspMiddleware/Source/client/pythonEnvironments/*
-Dependency/Microsoft/Dependency/LandJupyterLspMiddleware/Source/test/pythonEnvironments/*
-
 Dependency/Microsoft/Dependency/LandPullRequestGithub/.vscode-test
 Dependency/Microsoft/Dependency/LandPullRequestGithub/dist
 Dependency/Microsoft/Dependency/LandPullRequestGithub/**/@types/*

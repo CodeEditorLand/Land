@@ -4960,9 +4960,9 @@ digraph G {
   }
 
   subgraph cluster_772 {
-    label="LandJupyterLSPMiddleware";
+    label="LandJupyterLSPMiddleware (Archived)";
     style=filled; color="#21618C"; fillcolor="#21618C20";
-    "n448" [label="LandJupyterLSPMiddleware", shape=folder, fillcolor="#21618C", penwidth=1.5];
+    "n448" [label="LandJupyterLSPMiddleware (Archived)", shape=folder, fillcolor="#21618C", penwidth=1.5];
     "n1405" [label="npm (./Dependency/Microsoft/Dependency/LandJupyterLSPMiddleware): @vscode/jupyter-lsp-middleware v0.2.50", shape=ellipse, fillcolor="#F4D03F", penwidth=1.5];
     "n449" [label="package.json", shape=note, fillcolor="#FADBD8", penwidth=1];
   }

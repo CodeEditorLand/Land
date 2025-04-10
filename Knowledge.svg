@@ -3867,7 +3867,7 @@
 <g id="clust772" class="cluster">
 <title>cluster_772</title>
 <polygon fill="#21618c" fill-opacity="0.125490" stroke="#21618c" stroke-width="2" points="1517.48,-82536 1517.48,-82720 2901.03,-82720 2901.03,-82536 1517.48,-82536"/>
-<text text-anchor="middle" x="2209.26" y="-82702.7" font-family="Arial" font-size="14.00">LandJupyterLSPMiddleware</text>
+<text text-anchor="middle" x="2209.26" y="-82702.7" font-family="Arial" font-size="14.00">LandJupyterLSPMiddleware (Archived)</text>
 </g>
 <g id="clust773" class="cluster">
 <title>cluster_773</title>
@@ -17840,7 +17840,7 @@
 <g id="node1104" class="node">
 <title>n448</title>
 <polygon fill="#21618c" stroke="black" stroke-width="1.5" points="1738.18,-82602.27 1735.18,-82606.27 1714.18,-82606.27 1711.18,-82602.27 1525.48,-82602.27 1525.48,-82557.73 1738.18,-82557.73 1738.18,-82602.27"/>
-<text text-anchor="middle" x="1631.83" y="-82574.57" font-family="Arial" font-size="14.00">LandJupyterLSPMiddleware</text>
+<text text-anchor="middle" x="1631.83" y="-82574.57" font-family="Arial" font-size="14.00">LandJupyterLSPMiddleware (Archived)</text>
 </g>
 <!-- n35&#45;&gt;n448 -->
 <g id="edge448" class="edge">
