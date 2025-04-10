@@ -1,0 +1,6 @@
+Target/debug/*.exe filter=lfs diff=lfs merge=lfs -text
+Target/release/*.exe filter=lfs diff=lfs merge=lfs -text
+Target/release/bundle/msi/*.msi filter=lfs diff=lfs merge=lfs -text
+Target/release/bundle/nsis/*.exe filter=lfs diff=lfs merge=lfs -text
+Target/debug/Mountain filter=lfs diff=lfs merge=lfs -text
+Target/release/Mountain filter=lfs diff=lfs merge=lfs -text
