@@ -23,7 +23,6 @@
 		"codemod": "node ./node_modules/@turbo/codemod/dist/cli.js",
 		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon"
 	},
-	"dependencies": {},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
 		"@ianvs/prettier-plugin-sort-imports": "4.4.1",
@@ -62,5 +61,10 @@
 	"publishConfig": {
 		"access": "public",
 		"provenance": true
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"workerd"
+		]
 	}
 }
