@@ -1,10 +1,13 @@
 {
 	"$schema": "https://turbo.build/schema.json",
-	"extends": ["//"],
+	"extends": [
+		"//"
+	],
 	"globalEnv": [
 		"Clean",
 		"Dependency",
-
+		"TAURI_DEV_HOST",
+		"RUST_BACKTRACE",
 		"ANDROID_HOME",
 		"NDK_HOME",
 		"JAVA_HOME",
@@ -48,15 +51,23 @@
 	"tasks": {
 		"Run": {
 			"cache": false,
-			"dependsOn": ["^prepublishOnly"],
+			"dependsOn": [
+				"^prepublishOnly"
+			],
 			"outputLogs": "new-only",
-			"outputs": ["Target/**"],
+			"outputs": [
+				"Target/**"
+			],
 			"persistent": true
 		},
 		"prepublishOnly": {
-			"dependsOn": ["^prepublishOnly"],
+			"dependsOn": [
+				"^prepublishOnly"
+			],
 			"outputLogs": "new-only",
-			"outputs": ["Target/**"]
+			"outputs": [
+				"Target/**"
+			]
 		}
 	},
 	"ui": "stream"
