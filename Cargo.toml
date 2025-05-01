@@ -1,6 +1,8 @@
 [workspace]
 exclude = [
-	"Dependency/Microsoft/Dependency/Editor/cli"
+	"Dependency/Microsoft/Dependency/Editor/cli",
+	"Dependency/Tauri/Dependency/Tauri",
+	"Dependency/Tauri/Dependency/Tauri/crates/tauri",
 ]
 members = [
 	# # Microsoft
