@@ -1,11 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$/Element/Mountain/gen/android/buildSrc" name="buildSrc">
+                <projects>
+                  <project path="$PROJECT_DIR$/Element/Mountain/gen/android/buildSrc" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
+        <option name="testRunner" value="CHOOSE_PER_TEST" />
         <option name="externalProjectPath" value="$PROJECT_DIR$/Element/Mountain/gen/android" />
         <option name="gradleJvm" value="#JAVA_HOME" />
-        <option name="resolveExternalAnnotations" value="false" />
+        <option name="modules">
+          <set>
+            <option value="$USER_HOME$/.cargo/git/checkouts/tauri-69fbbe4d0942e697/c162c6f/crates/tauri/mobile/android" />
+            <option value="$PROJECT_DIR$/Element/Mountain/gen/android" />
+            <option value="$PROJECT_DIR$/Element/Mountain/gen/android/app" />
+            <option value="$PROJECT_DIR$/Element/Mountain/gen/android/buildSrc" />
+          </set>
+        </option>
       </GradleProjectSettings>
     </option>
   </component>
