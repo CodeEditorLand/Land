@@ -64,6 +64,10 @@
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [
+			"@biomejs/biome",
+			"@swc/core",
+			"esbuild",
+			"sharp",
 			"workerd"
 		]
 	}
