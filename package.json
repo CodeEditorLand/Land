@@ -3,9 +3,9 @@
 	"version": "0.0.1",
 	"private": false,
 	"description": "Land 🏞️",
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/Land#readme",
+	"homepage": "https://GitHub.Com/CodeEditorLand/Land#readme",
 	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/Land/issues"
+		"url": "https://GitHub.Com/CodeEditorLand/Land/issues"
 	},
 	"repository": {
 		"type": "git",
@@ -15,7 +15,7 @@
 	"author": {
 		"name": "Source 🖋️ Open 👐🏻",
 		"email": "Source/Open@Editor.Land",
-		"url": "HTTPS://Editor.Land"
+		"url": "https://Editor.Land"
 	},
 	"type": "module",
 	"scripts": {

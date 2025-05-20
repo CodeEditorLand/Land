@@ -186,9 +186,9 @@ unbug = { version = "0.4.0" }
 [workspace.package]
 authors = ["Source 🖋️ Open 👐🏻 <Source/Open@Editor.Land>"]
 categories = []
-documentation = "HTTPS://Documentation.Editor.Land"
+documentation = "https://Documentation.Editor.Land"
 edition = "2024"
-homepage = "HTTPS://Editor.Land/"
+homepage = "https://Editor.Land/"
 license-file = "LICENSE"
 publish = false
 readme = "README.md"
