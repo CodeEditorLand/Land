@@ -242,7 +242,7 @@
 </picture>
 </a><br><a href="https://github.com/CodeEditorLand/Wind" target="_blank"><b>Wind 🌬️</b></a></td></tr></table><a href="https://fossa.app/projects/git%2Bgithub.com%2FCodeEditorLand%2FDependency?ref=badge_large&issueType=license"><img src="https://fossa.app/api/projects/git%2Bgithub.com%2FCodeEditorLand%2FDependency.svg?type=large&issueType=license" alt="FOSSA Status"></a>
 
-# Land 🏞️ — The Next-Generation Code Editor
+# Land 🏞️ — The Next-Generation Code Editor
 
 Welcome to Land! We are building a high-performance, resource-efficient, and
 cross-platform code editor inspired by the best of VS Code. Land is engineered
@@ -289,7 +289,7 @@ open and edit files, and see the groundwork for future extension support and
 advanced features. The focus is on validating the core architecture and
 providing a stable base for future development.
 
-## Our Journey: Phased Evolution 🗺️
+## Our Journey: Phased Evolution 🗺️
 
 Land's development is a phased journey towards its full vision:
 
@@ -314,7 +314,7 @@ with an eye towards these future evolutions.
 
 ---
 
-## Core Architecture Principles 🏗️
+## Core Architecture Principles 🏗️
 
 No matter the extension host flavor, Land's core architecture (`Mountain`,
 `Sky`, `Echo`, `Track`, `Vine`, `River`, `Sun`, `Mist`) is designed for
@@ -332,7 +332,7 @@ modularity and performance:
 
 ---
 
-## Current Focus: MVP Path A - The `Cocoon` (Node.js Sidecar) 🦋
+## Current Focus: MVP Path A - The `Cocoon` (Node.js Sidecar) 🦋
 
 Our immediate goal is to deliver a functional Land editor by running existing VS
 Code extensions within **`Cocoon`**, a dedicated Node.js sidecar process. This
@@ -366,13 +366,13 @@ extensions by providing them with a familiar environment and API surface.
 
 ---
 
-## Future Extension Host Paths & Feature Parity 🚀
+## Future Extension Host Paths & Feature Parity 🚀
 
 While `Cocoon` (Node.js sidecar) is our Path A for MVP, Land is designed with
 future flexibility in mind to achieve greater performance, security, and
 potentially support different classes of extensions.
 
-**Path B: `Grove` - The Native Rust Extension Host 🌳**
+**Path B: `Grove` - The Native Rust Extension Host 🌳**
 
 - **Concept:** A complete rewrite of the VS Code extension host logic in Rust.
   `Grove` aims to run extensions (potentially those recompiled to WASM or new
@@ -384,7 +384,7 @@ potentially support different classes of extensions.
 - **Status:** A longer-term vision. This involves reimplementing the entire
   `vscode.*` API surface in Rust.
 
-**Alternative Runtimes (Conceptual Exploration) 🧪**
+**Alternative Runtimes (Conceptual Exploration) 🧪**
 
 - **Deno Sidecar:** Explore Deno for its security model and TypeScript-first
   approach.
@@ -409,7 +409,7 @@ comparison against VS Code.)_
 
 ---
 
-## Project Structure Overview (`Land/Element/*`) 🗺️
+## Project Structure Overview (`Land/Element/*`) 🗺️
 
 Our codebase is organized into "Elements," each with a distinct purpose:
 
@@ -434,7 +434,7 @@ Our codebase is organized into "Elements," each with a distinct purpose:
 
 ---
 
-## Getting Started 🚀
+## Getting Started 🚀
 
 Follow these steps to get Land up and running on your system.
 
@@ -523,7 +523,7 @@ deeper dive into component interactions!)_
 
 ---
 
-## System Architecture Diagram (MVP Path A) 🗺️
+## System Architecture Diagram (MVP Path A) 🗺️
 
 This diagram illustrates the build-time and runtime components for the MVP
 focused on Path A (`Cocoon` sidecar).
@@ -609,12 +609,12 @@ focused on Path A (`Cocoon` sidecar).
 
 ---
 
-## Changelog 📜
+## Changelog 📜
 
 Stay updated with our progress! See [`CHANGELOG.md`](CHANGELOG.md) for a history
 of changes.
 
-## Funding & Acknowledgements 🙏
+## Funding & Acknowledgements 🙏
 
 Land is proud to be an open-source endeavor. Our journey is significantly
 supported by:
