@@ -242,7 +242,7 @@
 </picture>
 </a><br><a href="https://github.com/CodeEditorLand/Wind" target="_blank"><b>Wind 🌬️</b></a></td></tr></table><a href="https://fossa.app/projects/git%2Bgithub.com%2FCodeEditorLand%2FDependency?ref=badge_large&issueType=license"><img src="https://fossa.app/api/projects/git%2Bgithub.com%2FCodeEditorLand%2FDependency.svg?type=large&issueType=license" alt="FOSSA Status"></a>
 
-# **Land** 🏞️ — The Next-Generation Code Editor
+# **Land** 🏞️ The Next-Generation Code Editor
 
 Welcome to **Land**! We are building a high-performance, resource-efficient, and
 cross-platform code editor inspired by the best of VS Code. **Land** is
