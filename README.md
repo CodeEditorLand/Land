@@ -430,7 +430,7 @@ the main **Land** repository.
 | [`Land/Element/Grove`][Grove]                           | _(Future - Path B)_ Planned **Rust**-based **WASM**/Native extension runtime. (Submodule)                                                 |
 | [`Land/Element/Mist`][Mist]                             | Component for **WebSocket** communication logic (native or sidecar). (Submodule)                                                          |
 | [`Land/Element/Mountain`][Mountain]                     | The core **Rust**/**Tauri** backend application (`Track` dispatcher, `Vine` **IPC**, native handlers). (Submodule)                        |
-| [`Land/Element/Output`][Output]                         | Default directory for build artifacts. (Local directory)                                                                                  |
+| [`Land/Element/Output`][Output]                         | Our TypeScript build of VS Code's original source code. (Submodule)                                                                       |
 | [`Land/Element/Rest`][Rest]                             | Scripts and configuration for the **JS** Bundler (bundling VS Code platform code for `Cocoon`). (Submodule)                               |
 | [`Land/Element/River`][River]                           | **Rust** library for native filesystem _read_ operations. (Submodule)                                                                     |
 | [`Land/Element/Shim`][Shim]                             | **TypeScript** definitions (`vscode.ts`) for the VS Code **API** surface targeted by `Cocoon` `Shims`. (Submodule)                        |
