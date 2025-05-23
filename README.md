@@ -426,7 +426,6 @@ Our codebase is organized into "Elements," each with a distinct purpose:
 | `Land/Element/Shim/`         | TypeScript definitions (`vscode.ts`) for the VS Code API surface targeted by `Cocoon` shims.                      |
 | `Land/Element/Sky/`          | Astro-based frontend UI application.                                                                              |
 | `Land/Element/Sun/`          | Rust library for native filesystem _write_ operations.                                                            |
-| `Land/Element/Document/`     | Project documentation (`ARCHITECTURE.md`, `Glossary.md`, planning docs like `MoU_MVP.md`, etc.).                  |
 | `Land/Element/Maintain/`     | Build scripts (`GritQL` queries here), CI/CD configuration, development utilities.                                |
 | `Land/Element/Wind/`         | _(Conceptual)_ Potentially a UI component library or design system for `Sky`.                                     |
 | `Land/Element/Worker/`       | _(Conceptual)_ For web worker implementations used by `Sky`.                                                      |
