@@ -156,16 +156,9 @@ Echo = { path = "Element/Echo" }
 
 # Global (Mountain, Tauri)
 # log = { version = "0.4.27" }
-async-trait = "0.1.88"
 futures = { version = "0.3.31" }
-json5 = { version = "0.4.1" }
 portpicker = { version = "0.1.1" }
 regex = { version = "1.11.1" }
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = { version = "1.0.140" }
-toml = { version = "0.8.20" }
-tokio = { version = "1.44.2" }
-tokio-tungstenite = { version = "0.26.2" }
 unbug = { version = "0.4.0" }
 
 # thiserror = { version = "2.0.12" }
@@ -180,6 +173,28 @@ unbug = { version = "0.4.0" }
 
 # Build Dependencies (Mountain, Tauri, Plugin)
 # tauri-plugin = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-plugin" }
+
+async-trait = { version = "0.1.88" }
+base64 = { version = "0.22.1" }
+chrono = { version = "0.4.41" }
+colored = { version = "3.0.0" }
+dirs = { version = "6.0.0" }
+env_logger = { version = "0.11.8" }
+futures-util = { version = "0.3.31" }
+globset = { version = "0.4.16" }
+ignore = { version = "0.4.23" }
+json5 = { version = "0.4.1" }
+keyring = { version = "3.6.2" }
+log = { version = "0.4.27" }
+once_cell = { version = "1.21.3" }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = { version = "1.0.140"}
+thiserror = { version = "2.0.12" }
+tokio = { version = "1.45.1" }
+tokio-tungstenite = { version = "0.26.2" }
+toml = { version = "0.8.22" }
+url = { version = "2.5.4" }
+uuid = { version = "1.17.0" }
 
 [workspace.metadata]
 
