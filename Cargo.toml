@@ -122,6 +122,7 @@ members = [
 	# "Dependency/Tauri/Dependency/Tauri/crates/tauri-utils",
 	# "Dependency/Tauri/Dependency/TauriPluginAuthenticator",
 
+	"Element/Maintain",
 	"Element/Mountain",
 	# "Element/Rest",
 	"Element/River",
@@ -188,13 +189,16 @@ keyring = { version = "3.6.2" }
 log = { version = "0.4.27" }
 once_cell = { version = "1.21.3" }
 serde = { version = "1.0.219", features = ["derive"] }
-serde_json = { version = "1.0.140"}
+serde_json = { version = "1.0.140" }
+tauri-build = { version = "2.2.0" }
 thiserror = { version = "2.0.12" }
 tokio = { version = "1.45.1" }
 tokio-tungstenite = { version = "0.26.2" }
 toml = { version = "0.8.22" }
+toml_edit = { version = "0.22.26" }
 url = { version = "2.5.4" }
 uuid = { version = "1.17.0" }
+clap = { version = "4.5.39", features = ["derive", "env"] }
 
 [workspace.metadata]
 
@@ -208,4 +212,4 @@ license-file = "LICENSE"
 publish = false
 readme = "README.md"
 repository = "https://github.com/CodeEditorLand/Land"
-rust-version = "1.88.0"
+rust-version = "1.89.0"

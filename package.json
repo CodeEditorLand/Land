@@ -21,7 +21,9 @@
 	"scripts": {
 		"Run": "turbo run Run --framework-inference=false --no-daemon",
 		"codemod": "node ./node_modules/@turbo/codemod/dist/cli.js",
-		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon"
+		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon",
+		"Debug:Mountain": "cross-env Browser=true Bundle=true Clean=true Dependency=Microsoft/VSCode NODE_ENV=development NODE_OPTIONS=--max-old-space-size=16384 ./Target/debug/Maintain -- pnpm tauri build --debug",
+		"Release:Mountain": "cross-env Browser=true Bundle=true Clean=true Dependency=Microsoft/VSCode NODE_ENV=production NODE_OPTIONS=--max-old-space-size=16384 ./Target/debug/Maintain -- pnpm tauri build"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
@@ -37,7 +39,7 @@
 		"@tailwindcss/typography": "0.5.16",
 		"@trivago/prettier-plugin-sort-imports": "5.2.2",
 		"@turbo/codemod": "2.5.3",
-		"@vue/compiler-sfc": "3.5.14",
+		"@vue/compiler-sfc": "3.5.15",
 		"cross-env": "7.0.3",
 		"prettier": "3.5.3",
 		"prettier-plugin-astro": "0.14.1",
