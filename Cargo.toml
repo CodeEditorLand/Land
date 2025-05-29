@@ -200,6 +200,7 @@ url = { version = "2.5.4" }
 uuid = { version = "1.17.0" }
 clap = { version = "4.5.39", features = ["derive", "env"] }
 
+
 [workspace.metadata]
 
 [workspace.package]

@@ -22,8 +22,8 @@
 		"Run": "turbo run Run --framework-inference=false --no-daemon",
 		"codemod": "node ./node_modules/@turbo/codemod/dist/cli.js",
 		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon",
-		"Debug:Mountain": "cross-env Browser=true Bundle=true Clean=true Dependency=Microsoft/VSCode NODE_ENV=development NODE_OPTIONS=--max-old-space-size=16384 ./Target/debug/Maintain -- pnpm tauri build --debug",
-		"Release:Mountain": "cross-env Browser=true Bundle=true Clean=true Dependency=Microsoft/VSCode NODE_ENV=production NODE_OPTIONS=--max-old-space-size=16384 ./Target/debug/Maintain -- pnpm tauri build"
+		"Debug": "sh Maintain/Debug.sh",
+		"Release": "sh Maintain/Release.sh"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
