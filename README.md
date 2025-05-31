@@ -433,7 +433,6 @@ the main **Land** repository.
 | [`Land/Element/Output`][Output]                         | Our TypeScript build of VS Code's original source code. (Submodule)                                                                       |
 | [`Land/Element/Rest`][Rest]                             | Scripts and configuration for the **JS** Bundler (bundling VS Code platform code for `Cocoon`). (Submodule)                               |
 | [`Land/Element/River`][River]                           | **Rust** library for native filesystem _read_ operations. (Submodule)                                                                     |
-| [`Land/Element/Shim`][Shim]                             | **TypeScript** definitions (`vscode.ts`) for the VS Code **API** surface targeted by `Cocoon` `Shims`. (Submodule)                        |
 | [`Land/Element/Sky`][Sky]                               | **Astro**-based frontend UI application. (Submodule)                                                                                      |
 | [`Land/Element/Sun`][Sun]                               | **Rust** library for native filesystem _write_ operations. (Submodule)                                                                    |
 | [`Land/Element/Maintain`][Maintain]                     | Build scripts (`GritQL` queries here), CI/CD configuration, development utilities. (Submodule)                                            |
@@ -449,7 +448,6 @@ the main **Land** repository.
 [Output]: https://github.com/CodeEditorLand/Output
 [Rest]: https://github.com/CodeEditorLand/Rest
 [River]: https://github.com/CodeEditorLand/River
-[Shim]: https://github.com/CodeEditorLand/Shim
 [Sky]: https://github.com/CodeEditorLand/Sky
 [Sun]: https://github.com/CodeEditorLand/Sun
 [Maintain]: https://github.com/CodeEditorLand/Maintain

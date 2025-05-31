@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 pnpm cross-env \
-	Browser=true \
+	Browser=false \
 	Bundle=true \
 	Clean=true \
 	Dependency=Microsoft/VSCode \
