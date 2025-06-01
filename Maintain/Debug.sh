@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
 pnpm cross-env \
-	Browser=false \
+	Browser=true \
 	Bundle=true \
 	Clean=true \
+	Compile=false \
 	Dependency=Microsoft/VSCode \
 	NODE_ENV=development \
 	NODE_OPTIONS=--max-old-space-size=16384 \
