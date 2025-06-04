@@ -97,7 +97,6 @@ members = [
 
 	# Element
 	# "Element/Document",
-	"Element/Echo",
 	# "Element/Maintain",
 	# "Element/Maintain/Dependency/CodeEditorLand/Dependency/Queue",
 
@@ -122,6 +121,8 @@ members = [
 	# "Dependency/Tauri/Dependency/Tauri/crates/tauri-utils",
 	# "Dependency/Tauri/Dependency/TauriPluginAuthenticator",
 
+	"Element/Common",
+	"Element/Echo",
 	"Element/Maintain",
 	"Element/Mountain",
 	# "Element/Rest",
