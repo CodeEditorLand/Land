@@ -1,0 +1,112 @@
+# Land Project Architecture
+
+Welcome to the Land project! This document provides a high-level overview of the
+architecture and the core workflows that drive the application. Our system is
+composed of three primary components:
+
+- **`Common` (Rust Crate):** The abstract core library. It defines the
+  architectural "language" of the application through traits, data structures
+  (DTOs), and a declarative Effect system. It has no knowledge of the final
+  implementation.
+- **`Mountain` (Rust Application):** The native backend. It is a Tauri
+  application that implements the abstract traits from `Common`, manages the
+  native OS interactions, runs a gRPC server, and orchestrates the `Cocoon`
+  sidecar process.
+- **`Wind` & `Sky` (TypeScript UI):** The frontend. `Wind` is a
+  re-implementation of the VS Code workbench services using `Effect-TS`,
+  providing the application logic for the UI. `Sky` is the declarative UI
+  component layer (e.g., React, Vue) that renders the state managed by `Wind`.
+- **`Cocoon` (TypeScript Application):** A Node.js sidecar process managed by
+  `Mountain`. It is responsible for running extensions in a sandboxed
+  environment and providing them with a high-fidelity `vscode` API.
+
+Communication between `Mountain` and `Cocoon` is handled via **gRPC**, while
+communication between `Mountain` and `Wind/Sky` is handled via **Tauri Events
+and Commands**.
+
+---
+
+## Table of Contents
+
+### Core Workflows
+
+1.  [**Application Startup & Handshake**](./Workflow/Application%20Startup%20&%20Handshake.md)
+
+    - _Describes the complete end-to-end process of launching `Mountain`,
+      spawning `Cocoon`, and establishing a stable, initialized state for both
+      the UI and the extension host._
+
+2.  [**Opening a File from the UI**](./Workflow/Opening%20a%20File%20from%20the%20UI.md)
+
+    - _Details the flow from a user clicking a file in the explorer to the
+      content being read from disk by `Mountain` and rendered in an editor by
+      `Wind`._
+
+3.  [**Invoking a Language Feature (Hover Provider)**](<./Workflow/Invoking%20a%20Language%20Feature%20(Hover%20Provider).md>)
+
+    - _A key example of bi-directional communication, showing how an extension
+      in `Cocoon` registers a feature, `Mountain` orchestrates the request, and
+      the result is displayed in the `Wind` UI._
+
+4.  [**Saving a File with Save Participants**](./Workflow/Saving%20a%20File%20with%20Save%20Participants.md)
+
+    - _Explains the advanced process of intercepting a save event, allowing an
+      extension in `Cocoon` to modify a file (e.g., for formatting) before
+      `Mountain` writes it to disk._
+
+5.  [**Executing a Command from the Command Palette**](./Workflow/Executing%20a%20Command%20from%20the%20Command%20Palette.md)
+
+    - _Illustrates the unified command system, showing how `Mountain`'s command
+      registry can seamlessly dispatch execution to either a native Rust handler
+      or a proxied command in `Cocoon`._
+
+6.  [**Creating and Interacting with a Webview Panel**](./Workflow/Creating%20and%20Interacting%20with%20a%20Webview%20Panel.md)
+
+    - _Details the full lifecycle of extension-contributed UI, from `Cocoon`
+      requesting a panel to `Mountain` managing the native webview window and
+      proxying messages back and forth._
+
+7.  [**Creating and Interacting with an Integrated Terminal**](./Workflow/Creating%20and%20Interacting%20with%20an%20Integrated%20Terminal.md)
+
+    - _A deep dive into native process management, showing how `Mountain` spawns
+      a PTY process and streams its I/O to both the `Wind` frontend and the
+      `Cocoon` extension host._
+
+8.  [**Source Control Management (SCM)**](<./Workflow/Source%20Control%20Management%20(SCM).md>)
+
+    - _Outlines how the built-in Git extension in `Cocoon` uses `Mountain` as a
+      service to run native `git` commands and then populates the SCM view in
+      the UI with the results._
+
+9.  [**User Data Synchronization**](./Workflow/User%20Data%20Synchronization.md)
+
+    - _Describes the end-to-end process of syncing user settings. It covers user
+      authentication, fetching data from a remote store, performing a three-way
+      merge, applying changes locally, and notifying all parts of the
+      application._
+
+10. [**Running Extension Tests**](./Workflow/Running%20Extension%20Tests.md)
+    - _Explains the "Extension Development Host" model, where a second, isolated
+      instance of the application is launched to run tests, with the test
+      `Cocoon` instance remote-controlling the main UI._
+
+### Work in Progress (Documentation)
+
+The following workflows are implemented in the codebase but are pending detailed
+documentation.
+
+- **Tree View Data Flow**
+    - _Describes how the UI requests children for a tree view node, and how
+      `Mountain` proxies this request to the correct `TreeDataProvider` in
+      `Cocoon`._
+- **Custom Editor Lifecycle**
+    - _Details the process of opening a file in a custom editor, handling edits,
+      saving custom document data, and managing backups and reverts._
+- **Debugging Session Lifecycle**
+    - _Outlines the flow from launching a debug configuration to `Mountain`
+      starting a debug adapter, and how debug events (breakpoints, step, pause)
+      are communicated between the UI, `Mountain`, and `Cocoon`._
+- **Task Execution**
+    - _Explains how tasks defined in `tasks.json` or by extensions are
+      discovered and executed, including how their output is piped to a terminal
+      view._
