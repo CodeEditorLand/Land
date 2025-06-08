@@ -664,7 +664,7 @@ This project is funded through
 
 This project would not be possible without the incredible work of the
 open-source community. We are especially grateful for the following foundational
-technologies:
+technologies and projects:
 
 - [**Tauri**](https://tauri.app/): For providing a secure, performant, and
   resource-efficient framework for building our native desktop application with
