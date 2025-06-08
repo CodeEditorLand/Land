@@ -243,7 +243,7 @@
 </picture>
 </a><br><a href="https://github.com/CodeEditorLand/Wind" target="_blank"><b>Wind 🍃</b></a></td></tr></table>
 
-# **Land** 🏞️ The Next-Generation Code Editor
+---
 
 <table><tr>
 <td colspan="1"> <h3 align="center"> <picture>
@@ -253,6 +253,10 @@
 </picture> </h3> </td> <td colspan="3" valign="top"> <h3 align="center"> Land 🏞️
 </h3> </td>
 </tr></table>
+
+---
+
+# **Land** 🏞️ The Next-Generation Code Editor
 
 Welcome to **Land**! We are building a high-performance, resource-efficient, and
 cross-platform code editor inspired by the architecture of VS Code, but
@@ -409,7 +413,7 @@ development and versioning.
 | ⛰️  | [`Land/Element/Mountain`][Mountain]                     | **The Native Backend Application (Rust).** This is the main Tauri application. It **implements** the traits from `Common`, manages the application window, orchestrates native OS operations, hosts the gRPC server, and manages the lifecycle of all sidecar processes.           |
 | 🦋  | [`Land/Element/Cocoon`][Cocoon]                         | **The Node.js Extension Host (TypeScript).** A sidecar process that runs standard VS Code extensions. It is built entirely with `Effect-TS` and provides a high-fidelity `vscode` API, proxying privileged calls to `Mountain` via gRPC.                                           |
 | 🍃  | [`Land/Element/Wind`][Wind]                             | **The UI Service Layer (TypeScript).** A complete, `Effect-TS` native re-implementation of the VS Code workbench services. It runs in the Tauri webview and manages the entire state and logic of the user interface.                                                              |
-| 🌌  | [`Land/Element/Sky`][Sky]                               | **The UI Component Layer (Astro).** This project contains the actual UI components that render the editor, side bar, status bar, etc. It is driven by the state managed in the `Wind` service layer.                                                                          |
+| 🌌  | [`Land/Element/Sky`][Sky]                               | **The UI Component Layer (Astro).** This project contains the actual UI components that render the editor, side bar, status bar, etc. It is driven by the state managed in the `Wind` service layer.                                                                               |
 | 🌿  | [`Land/Element/Vine`][Vine]                             | **The IPC Protocol Definition.** This element is conceptual and its contents are realized within `Mountain` and `Cocoon`. It defines the **gRPC** contract (`.proto` files) for all communication between the backend and the extension host.                                      |
 | 👣  | [`Land/Element/Track`][Track]                           | **The Command Dispatcher (Rust).** A core module within `Mountain`. It acts as the central router for all incoming requests, whether from the `Wind` UI (via Tauri commands) or the `Cocoon` sidecar (via gRPC), and dispatches them to the correct `ActionEffect` or RPC handler. |
 | 📣  | [`Land/Element/Echo`][Echo]                             | **The UI-to-Backend API Contract.** A conceptual library that defines the set of Tauri command names and event payloads for all communication between `Wind`/`Sky` and `Mountain`.                                                                                                 |
@@ -562,8 +566,6 @@ These variables are passed to our build scripts to configure their behavior:
 | `Compile`      | If `true`, this bundles the code into single, self-contained files. This is typically used for production builds to reduce the number of network requests and simplify deployment. When `false` (for `tauri dev`), it allows for faster, incremental builds and hot-reloading. |
 | `NODE_OPTIONS` | Used to increase the default memory limit for Node.js. The bundling process, especially for the entire VS Code platform, can be memory-intensive.                                                                                                                              |
 
----
-
 **Development Build:**
 
 This command creates a full development build of the application. The output is
@@ -581,8 +583,6 @@ pnpm cross-env \
 	pnpm tauri build
 ```
 
----
-
 **Production Build (Release):**
 
 This command creates a fully optimized, minified, and production-ready version
@@ -599,8 +599,6 @@ pnpm cross-env \
 	NODE_OPTIONS=--max-old-space-size=16384 \
 	pnpm tauri build --release
 ```
-
----
 
 ### **4. Run Land for Development**
 
@@ -657,8 +655,6 @@ This project is funded through
 | **Land**                                                                                                                                            | PlayForm                                                                                                                                                 | NLnet                                                                                      | NGI0 Commons Fund                                                                                                                                 |
 | :-------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [<img src="https://raw.githubusercontent.com/CodeEditorLand/Asset/refs/heads/Current/Logo/Land.svg" height="80px" alt="Land">](https://editor.land) | [<img src="https://raw.githubusercontent.com/PlayForm/Asset/refs/heads/Current/Logo/PlayForm.svg" height="80px" alt="PlayForm">](https://playform.cloud) | [<img width="240px" src="https://nlnet.nl/logo/banner.svg" alt="NLnet">](https://nlnet.nl) | [<img width="240px" src="https://nlnet.nl/image/logos/NGI0CommonsFund_tag_black_mono.svg" alt="NGI0 Commons Fund">](https://nlnet.nl/commonsfund) |
-
----
 
 ### Technology Acknowledgements 🙌🏻
 
