@@ -1,3 +1,4 @@
+<!-- TODO: Update this table -->
 <table><tr>
 
 <td colspan="1"> <h3 align="center"> <picture>
@@ -402,7 +403,7 @@ component or library with a clear purpose. Most Elements are managed as Git
 submodules within the main **Land** repository, allowing for independent
 development and versioning.
 
-| ⤵️  | Path                                                    | Component / Purpose                                                                                                                                                                                                                                                                |
+|     | Path                                                    | Component / Purpose                                                                                                                                                                                                                                                                |
 | :-- | :------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 👨🏻‍🏭  | [`Land/Element/Common`][Common]                         | **The Abstract Core Library (Rust).** This is the architectural heart of the native backend. It contains no concrete logic, only `trait` definitions, the `ActionEffect` system, and shared Data Transfer Objects (DTOs). All other Rust components depend on it.                  |
 | ⛰️  | [`Land/Element/Mountain`][Mountain]                     | **The Native Backend Application (Rust).** This is the main Tauri application. It **implements** the traits from `Common`, manages the application window, orchestrates native OS operations, hosts the gRPC server, and manages the lifecycle of all sidecar processes.           |
@@ -417,7 +418,7 @@ development and versioning.
 | 🌫️  | [`Land/Element/Mist`][Mist]                             | **WebSocket Communication Logic.** This component handles WebSocket communication. It can be implemented either as a native module within `Mountain` or as a separate sidecar.                                                                                                     |
 | ⛱️  | [`Land/Element/Rest`][Rest]                             | **The JS Bundler Configuration.** This element contains the build scripts and configurations (e.g., for `esbuild`) used to bundle the necessary VS Code platform code from the `Dependency` submodule for `Cocoon` to consume.                                                     |
 | ⚫  | [`Land/Element/Output`][Output]                         | **The Bundled JS Output.** This directory is the destination for the bundled JavaScript artifacts created by the `Rest` build process. It is the code that `Cocoon` actually loads at runtime.                                                                                     |
-| 🌳  | [`Land/Element/Grove`][Grove]                           | **(Future Vision) The Native Rust Extension Host.** A planned project to build a high-performance, secure extension host in Rust, capable of running extensions compiled to WASM.                                                                                                  |
+| 🌳  | [`Land/Element/Grove`][Grove]                           | **(Future Vision) The Native Rust Extension Host.** A planned project to build a high-performance, secure extension host in Rust, capable of running extensions compiled to WASM or statically linked as a Rust library.                                                           |
 | 💪🏻  | [`Land/Element/Maintain`][Maintain]                     | **Project Maintenance & CI/CD.** Contains development utilities, `GritQL` queries for automated refactoring, CI/CD pipeline configurations, and other maintenance scripts.                                                                                                         |
 | 🍩  | [`Land/Element/Worker`][Worker]                         | **Web Worker Implementations.** This element holds the source code for any dedicated web workers used by the `Wind`/`Sky` frontend for computationally intensive tasks.                                                                                                            |
 | 💻  | [`Land/Dependency/Microsoft/Dependency/Editor`][Editor] | **The VS Code Source Submodule.** Contains a specific version of the Microsoft VS Code source code. This is a critical dependency used by `Rest` to build `Cocoon`'s runtime and by `Wind` to leverage VS Code's core UI components and services.                                  |
@@ -643,8 +644,9 @@ of changes.
 
 ## Funding & Acknowledgements 🙏🏻
 
-**Land** is proud to be an open-source endeavor. Our journey is significantly
-supported by:
+**Land** 🏞️ is proud to be an open-source endeavor. Our journey is significantly
+supported by the organizations and projects that believe in the future of
+open-source software.
 
 This project is funded through
 [NGI0 Commons Fund](https://nlnet.nl/commonsfund), a fund established by
@@ -655,6 +657,37 @@ This project is funded through
 | **Land**                                                                                                                                            | PlayForm                                                                                                                                                 | NLnet                                                                                      | NGI0 Commons Fund                                                                                                                                 |
 | :-------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [<img src="https://raw.githubusercontent.com/CodeEditorLand/Asset/refs/heads/Current/Logo/Land.svg" height="80px" alt="Land">](https://editor.land) | [<img src="https://raw.githubusercontent.com/PlayForm/Asset/refs/heads/Current/Logo/PlayForm.svg" height="80px" alt="PlayForm">](https://playform.cloud) | [<img width="240px" src="https://nlnet.nl/logo/banner.svg" alt="NLnet">](https://nlnet.nl) | [<img width="240px" src="https://nlnet.nl/image/logos/NGI0CommonsFund_tag_black_mono.svg" alt="NGI0 Commons Fund">](https://nlnet.nl/commonsfund) |
+
+---
+
+### Technology Acknowledgements 🙌🏻
+
+This project would not be possible without the incredible work of the
+open-source community. We are especially grateful for the following foundational
+technologies:
+
+- [**Tauri**](https://tauri.app/): For providing a secure, performant, and
+  resource-efficient framework for building our native desktop application with
+  a web frontend.
+- [**Microsoft Visual Studio Code**](https://github.com/microsoft/vscode): For
+  open-sourcing their workbench UI and platform code, which provides the
+  foundation for our user interface and extension host compatibility.
+- [**Effect-TS**](https://www.effect.website/): For enabling us to build a
+  robust, type-safe, and declarative application with a powerful structured
+  concurrency and dependency management system in TypeScript.
+- [**Rust**](https://www.rust-lang.org/): For the performance, safety, and
+  modern tooling that powers our entire native backend.
+- [**Tokio**](https://tokio.rs/) &
+  [**Tonic**](https://github.com/hyperium/tonic): For providing the asynchronous
+  runtime and gRPC framework that are the backbone of our high-performance IPC.
+- [**Astro**](https://astro.build/): For its content-driven approach that allows
+  us to build a fast and modern user interface for the `Sky` component.
+- [**PNPM**](https://pnpm.io/): For efficient and reliable management of our
+  JavaScript dependencies.
+- and many many more... <!-- TODO: Add a full list -->
+
+We extend our sincere gratitude to the maintainers and contributors of these
+and all the other dependencies we use.
 
 ---
 
