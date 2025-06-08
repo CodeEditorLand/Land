@@ -269,7 +269,7 @@ testable, and composable way.
 
 ---
 
-## Key Features & Architectural Highlights
+## Key Features & Architectural Highlights 🔐
 
 - **Declarative Effect System:** The entire application, from the Rust backend
   to the TypeScript frontend, is built on an effects-based architecture. We use
