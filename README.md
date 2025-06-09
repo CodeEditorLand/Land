@@ -577,8 +577,8 @@ pnpm cross-env \
 	Clean=true \
 	Browser=true \
 	Dependency=Microsoft/VSCode \
-	Bundle=true \
-	Compile=true \
+	Bundle=false \
+	Compile=false \
 	NODE_OPTIONS=--max-old-space-size=16384 \
 	pnpm tauri build
 ```
