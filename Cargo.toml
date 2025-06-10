@@ -134,8 +134,6 @@ resolver = "2"
 [workspace.dependencies]
 prun = { version = "*" }
 
-Echo = { path = "Element/Echo" }
-
 # Tauri (Mountain)
 # tauri = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri" }
 # tauri-plugin-authenticator = { path = "Dependency/Tauri/Dependency/TauriPluginAuthenticator" }
@@ -156,52 +154,42 @@ Echo = { path = "Element/Echo" }
 # tauri-plugin-websocket = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/websocket" }
 # tauri-plugin-deep-link = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/deep-link" }
 
-# Global (Mountain, Tauri)
-# log = { version = "0.4.27" }
-futures = { version = "0.3.31" }
-portpicker = { version = "0.1.1" }
-regex = { version = "1.11.1" }
-unbug = { version = "0.4.0" }
-
-# thiserror = { version = "2.0.12" }
-# dunce = { version = "1.0.5" }
-# tokio = { version = "1.44.1", features = ["sync", "time", "macros"] }
-# tracing = { version = "0.1.41" }
-# zbus = { version = "5.5.0" }
-# tauri-utils = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-utils" }
-# url = { version = "2.5.4" }
-# glob = { version = "0.3.2" }
-# schemars = { version = "0.8.22" }
-
-# Build Dependencies (Mountain, Tauri, Plugin)
-# tauri-plugin = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-plugin" }
-
-async-trait = { version = "0.1.88" }
-base64 = { version = "0.22.1" }
-chrono = { version = "0.4.41" }
-colored = { version = "3.0.0" }
-dirs = { version = "6.0.0" }
-env_logger = { version = "0.11.8" }
-futures-util = { version = "0.3.31" }
-globset = { version = "0.4.16" }
-ignore = { version = "0.4.23" }
-json5 = { version = "0.4.1" }
-keyring = { version = "3.6.2" }
-log = { version = "0.4.27" }
-once_cell = { version = "1.21.3" }
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = { version = "1.0.140" }
-tauri-build = { version = "2.2.0" }
-thiserror = { version = "2.0.12" }
-tokio = { version = "1.45.1" }
-tokio-tungstenite = { version = "0.26.2" }
-toml = { version = "0.8.22" }
-toml_edit = { version = "0.22.26" }
-url = { version = "2.5.4" }
-uuid = { version = "1.17.0" }
-clap = { version = "4.5.39", features = ["derive", "env"] }
-
-tauri-plugin-dialog = { version = "2.2.2" }
+async_trait = { version = "*" }
+base64 = { version = "*" }
+chrono = { version = "*" }
+clap = { version = "*", features = ["derive", "env"] }
+colored = { version = "*" }
+config = { version = "*" }
+crossbeam_deque = { version = "*" }
+dashmap = { version = "*" }
+dirs = { version = "*" }
+Echo = { path = "Element/Echo" }
+env_logger = { version = "*" }
+futures = { version = "*" }
+futures_util = { version = "*" }
+globset = { version = "*" }
+ignore = { version = "*" }
+json5 = { version = "*" }
+keyring = { version = "*" }
+log = { version = "*" }
+metrics = { version = "*" }
+once_cell = { version = "*" }
+portpicker = { version = "*" }
+rand = { version = "*" }
+regex = { version = "*" }
+serde = { version = "*", features = ["derive"] }
+serde_json = { version = "*" }
+tauri_build = { version = "*" }
+tauri_plugin_dialog = { version = "*" }
+thiserror = { version = "*" }
+tokio = { version = "*" }
+tokio_console = { version = "*" }
+tokio_tungstenite = { version = "*" }
+toml = { version = "*" }
+toml_edit = { version = "*" }
+unbug = { version = "*" }
+url = { version = "*" }
+uuid = { version = "*" }
 
 [workspace.metadata]
 
