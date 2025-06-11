@@ -154,19 +154,19 @@ prun = { version = "*" }
 # tauri-plugin-websocket = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/websocket" }
 # tauri-plugin-deep-link = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/deep-link" }
 
-async_trait = { version = "*" }
+async-trait = { version = "*" }
 base64 = { version = "*" }
 chrono = { version = "*" }
 clap = { version = "*", features = ["derive", "env"] }
 colored = { version = "*" }
 config = { version = "*" }
-crossbeam_deque = { version = "*" }
+crossbeam-deque = { version = "*" }
 dashmap = { version = "*" }
 dirs = { version = "*" }
 Echo = { path = "Element/Echo" }
 env_logger = { version = "*" }
 futures = { version = "*" }
-futures_util = { version = "*" }
+futures-util = { version = "*" }
 globset = { version = "*" }
 ignore = { version = "*" }
 json5 = { version = "*" }
@@ -179,17 +179,18 @@ rand = { version = "*" }
 regex = { version = "*" }
 serde = { version = "*", features = ["derive"] }
 serde_json = { version = "*" }
-tauri_build = { version = "*" }
-tauri_plugin_dialog = { version = "*" }
+tauri-build = { version = "*" }
+tauri-plugin-dialog = { version = "*" }
 thiserror = { version = "*" }
-tokio = { version = "*" }
-tokio_console = { version = "*" }
-tokio_tungstenite = { version = "*" }
+tokio = { version = "*", features = ["full"] }
+tokio-console = { version = "*" }
+tokio-tungstenite = { version = "*" }
 toml = { version = "*" }
 toml_edit = { version = "*" }
 unbug = { version = "*" }
 url = { version = "*" }
 uuid = { version = "*" }
+num_cpus = { version = "*" }
 
 [workspace.metadata]
 
