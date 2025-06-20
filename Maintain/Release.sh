@@ -8,4 +8,4 @@ pnpm cross-env \
 	Dependency=Microsoft/VSCode \
 	NODE_ENV=production \
 	NODE_OPTIONS=--max-old-space-size=16384 \
-	./Target/release/Build -- pnpm tauri build
+	./Element/Maintain/Target/release/Build -- pnpm tauri build
