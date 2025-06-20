@@ -1,140 +1,27 @@
 [workspace]
-exclude = [
-	"Dependency/Microsoft/Dependency/Editor/cli",
-	"Dependency/Tauri/Dependency/Tauri",
-	"Dependency/Tauri/Dependency/Tauri/crates/tauri",
-]
+exclude = ["Dependency/Microsoft/Dependency/Editor/cli"]
 members = [
-	# # Microsoft
-	# "Dependency/Microsoft/Dependency/Editor/cli",
-	# "Dependency/Microsoft/Dependency/LandDevContainers/containers/rust-postgres/test-project",
-	# "Dependency/Microsoft/Dependency/LandDevContainers/containers/rust",
-	# "Dependency/Microsoft/Dependency/LandExtensionSamples/wasm-component-model-async",
-	# "Dependency/Microsoft/Dependency/LandExtensionSamples/wasm-component-model-resource",
-	# "Dependency/Microsoft/Dependency/LandExtensionSamples/wasm-component-model",
-	# "Dependency/Microsoft/Dependency/LandExtensionSamples/wasm-language-server/server",
-	# "Dependency/Microsoft/Dependency/LandRemoteTryRust",
-	# "Dependency/Microsoft/Dependency/LandSecretServiceRs",
-	# "Dependency/Microsoft/Dependency/LandWASM/rust-api/rust",
-	# "Dependency/Microsoft/Dependency/LandWASM/testbeds/component-model-async",
-	# "Dependency/Microsoft/Dependency/LandWASM/testbeds/component-model-performance",
-	# "Dependency/Microsoft/Dependency/LandWASM/testbeds/component-model-vscode-2",
-	# "Dependency/Microsoft/Dependency/LandWASM/testbeds/component-model-vscode",
-	# "Dependency/Microsoft/Dependency/LandWASM/testbeds/component-model",
-	# "Dependency/Microsoft/Dependency/LandWASM/testbeds/lsp-rust/server",
-	# "Dependency/Microsoft/Dependency/LandWASM/testbeds/rust-threads",
-	# "Dependency/Microsoft/Dependency/LandWASM/testbeds/rust",
-
-	# # OXC
-	# "Dependency/OXC/Dependency/AriaQuery",
-	# "Dependency/OXC/Dependency/BenchJavaScriptParserWrittenInRust",
-
-	# # Rolldown
-	# "Dependency/Rolldown/Dependency/StringWizard",
-	# "Dependency/Rolldown/Dependency/Testcase",
-
-	# # SWC
-	# "Dependency/SWC/Dependency/Ddt",
-
-	# # Tauri
-	# "Dependency/Tauri/Dependency/CargoMobile2",
-	# "Dependency/Tauri/Dependency/RustICNS",
-	# "Dependency/Tauri/Dependency/Soup2RS",
-	# "Dependency/Tauri/Dependency/Soup2RS/sys",
-	# "Dependency/Tauri/Dependency/TauriInlinerRS",
-	# "Dependency/Tauri/Dependency/TauriInvokeHTTP",
-	# "Dependency/Tauri/Dependency/TauriInvokeHTTP/examples/vanilla/src-tauri",
-	# "Dependency/Tauri/Dependency/TauriPluginApp",
-	# "Dependency/Tauri/Dependency/TauriPluginAuthenticator",
-	# "Dependency/Tauri/Dependency/TauriPluginAutostart",
-	# "Dependency/Tauri/Dependency/TauriPluginCLI",
-	# "Dependency/Tauri/Dependency/TauriPluginClipboardManager",
-	# "Dependency/Tauri/Dependency/TauriPluginDialog",
-	# "Dependency/Tauri/Dependency/TauriPluginFS",
-	# "Dependency/Tauri/Dependency/TauriPluginFSExtra",
-	# "Dependency/Tauri/Dependency/TauriPluginFSWatch",
-	# "Dependency/Tauri/Dependency/TauriPluginGlobalShortCut",
-	# "Dependency/Tauri/Dependency/TauriPluginHTTP",
-	# "Dependency/Tauri/Dependency/TauriPluginLocalhost",
-	# "Dependency/Tauri/Dependency/TauriPluginLog",
-	# "Dependency/Tauri/Dependency/TauriPluginNotification",
-	# "Dependency/Tauri/Dependency/TauriPluginOS",
-	# "Dependency/Tauri/Dependency/TauriPluginPersistedScope",
-	# "Dependency/Tauri/Dependency/TauriPluginPositioner",
-	# "Dependency/Tauri/Dependency/TauriPluginProcess",
-	# "Dependency/Tauri/Dependency/TauriPluginShell",
-	# "Dependency/Tauri/Dependency/TauriPluginSingleInstance",
-	# "Dependency/Tauri/Dependency/TauriPluginSingleInstance/examples/emit-event/src-tauri",
-	# "Dependency/Tauri/Dependency/TauriPluginSingleInstance/examples/vanilla/src-tauri",
-	# "Dependency/Tauri/Dependency/TauriPluginSQL",
-	# "Dependency/Tauri/Dependency/TauriPluginStore",
-	# "Dependency/Tauri/Dependency/TauriPluginStore/examples/AppSettingsManager/src-tauri",
-	# "Dependency/Tauri/Dependency/TauriPluginStrongHold",
-	# "Dependency/Tauri/Dependency/TauriPluginUpdater",
-	# "Dependency/Tauri/Dependency/TauriPluginUpload",
-	# "Dependency/Tauri/Dependency/TauriPluginWebSocket",
-	# "Dependency/Tauri/Dependency/TauriPluginWebSocket/examples/tauri-app/src-tauri",
-	# "Dependency/Tauri/Dependency/TauriPluginWindow",
-	# "Dependency/Tauri/Dependency/TauriPluginWindowState",
-	# "Dependency/Tauri/Dependency/TauriSearch/packages/scraper",
-	# "Dependency/Tauri/Dependency/TauriTheia/src-tauri",
-	# "Dependency/Tauri/Dependency/TrayIcon",
-	# "Dependency/Tauri/Dependency/WebKit2GTKRS",
-	# "Dependency/Tauri/Dependency/WebKit2GTKRS/sys",
-	# "Dependency/Tauri/Dependency/WebView",
-	# "Dependency/Tauri/Dependency/WebView/examples/todo-yew/todomvc",
-	# "Dependency/Tauri/Dependency/WebView/webview-sys",
-	# "Dependency/Tauri/Dependency/Win7Notifications",
-	# "Dependency/Tauri/Dependency/WindowShadows",
-	# "Dependency/Tauri/Dependency/WindowShadows/examples/tauri/src-tauri",
-	# "Dependency/Tauri/Dependency/WindowVibrancy",
-	# "Dependency/Tauri/Dependency/WindowVibrancy/examples/tauri/src-tauri",
-	# "Dependency/Tauri/Dependency/Winit",
-	# "Dependency/Tauri/Dependency/WinRes",
-	# "Dependency/Tauri/Dependency/WinRes/example",
-	# "Dependency/Tauri/Dependency/WinRTNotification",
-	# "Dependency/Tauri/Dependency/WryMobile",
-
-	# Element
-	# "Element/Document",
-	# "Element/Maintain",
-	# "Element/Maintain/Dependency/CodeEditorLand/Dependency/Queue",
-
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/autostart",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/cli",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/clipboard-manager",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/deep-link",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/dialog",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/fs",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/global-shortcut",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/http",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/log",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/notification",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/os",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/process",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/single-instance",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/store",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/upload",
-	# "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/websocket",
-	# "Dependency/Tauri/Dependency/Tauri/crates/tauri",
-	# "Dependency/Tauri/Dependency/Tauri/crates/tauri-plugin",
-	# "Dependency/Tauri/Dependency/Tauri/crates/tauri-utils",
-	# "Dependency/Tauri/Dependency/TauriPluginAuthenticator",
-
 	"Element/Common",
 	"Element/Echo",
 	"Element/Maintain",
 	"Element/Mountain",
-	# "Element/Rest",
 	"Element/River",
 	"Element/Sun",
 ]
 resolver = "2"
 
 [workspace.dependencies]
-prun = { version = "*" }
-
 # Tauri (Mountain)
+tauri = { version = "2.5.1", features = [
+	"wry",
+	"tray-icon",
+	"devtools",
+	"rustls-tls",
+	"compression",
+], default-features = false }
+
+tauri-plugin-dialog = { version = "2.2.2" }
+
 # tauri = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri" }
 # tauri-plugin-authenticator = { path = "Dependency/Tauri/Dependency/TauriPluginAuthenticator" }
 # tauri-plugin-autostart = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/autostart" }
@@ -154,43 +41,52 @@ prun = { version = "*" }
 # tauri-plugin-websocket = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/websocket" }
 # tauri-plugin-deep-link = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/deep-link" }
 
-async-trait = { version = "*" }
-base64 = { version = "*" }
-chrono = { version = "*" }
-clap = { version = "*", features = ["derive", "env"] }
-colored = { version = "*" }
-config = { version = "*" }
-crossbeam-deque = { version = "*" }
-dashmap = { version = "*" }
-dirs = { version = "*" }
+http = { version = "1.3.1" }
+async-trait = { version = "0.1.88" }
+base64 = { version = "0.22.1" }
+chrono = { version = "0.4.41" }
+clap = { version = "4.5.40", features = ["derive", "env"] }
+colored = { version = "3.0.0" }
+Common = { path = "Element/Common" }
+config = { version = "0.15.11" }
+crossbeam-deque = { version = "0.8.6" }
+dashmap = { version = "6.1.0" }
+dirs = { version = "6.0.0" }
 Echo = { path = "Element/Echo" }
-env_logger = { version = "*" }
-futures = { version = "*" }
-futures-util = { version = "*" }
-globset = { version = "*" }
-ignore = { version = "*" }
-json5 = { version = "*" }
-keyring = { version = "*" }
-log = { version = "*" }
-metrics = { version = "*" }
-once_cell = { version = "*" }
-portpicker = { version = "*" }
-rand = { version = "*" }
-regex = { version = "*" }
-serde = { version = "*", features = ["derive"] }
-serde_json = { version = "*" }
-tauri-build = { version = "*" }
-tauri-plugin-dialog = { version = "*" }
-thiserror = { version = "*" }
-tokio = { version = "*", features = ["full"] }
-tokio-console = { version = "*" }
-tokio-tungstenite = { version = "*" }
-toml = { version = "*" }
-toml_edit = { version = "*" }
-unbug = { version = "*" }
-url = { version = "*" }
-uuid = { version = "*" }
-num_cpus = { version = "*" }
+env_logger = { version = "0.11.8" }
+futures = { version = "0.3.31" }
+futures-util = { version = "0.3.31" }
+globset = { version = "0.4.16" }
+ignore = { version = "0.4.23" }
+json5 = { version = "0.4.1" }
+keyring = { version = "3.6.2" }
+lazy_static = { version = "1.5.0" }
+log = { version = "0.4.27" }
+md5 = { version = "0.7.0" }
+metrics = { version = "0.24.2" }
+num_cpus = { version = "1.17.0" }
+once_cell = { version = "1.21.3" }
+parking_lot = { version = "0.12.4" }
+portable-pty = { version = "0.9.0" }
+portpicker = { version = "0.1.1" }
+prost = { version = "0.13.5" }                                      # TODO: NEVER UPDATE
+prun = { version = "0.1.6" }
+rand = { version = "0.9.1" }
+regex = { version = "1.11.1" }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = { version = "1.0.140" }
+tauri-build = { version = "2.2.0" }
+thiserror = { version = "2.0.12" }
+tokio = { version = "1.45.1", features = ["full"] }
+tokio-console = { version = "0.1.13" }
+tokio-tungstenite = { version = "0.27.0" }
+toml = { version = "0.8.23" }
+toml_edit = { version = "0.22.27" }
+tonic = { version = "0.13.1", features = ["transport", "codegen"] }
+tonic-build = { version = "0.13.1", features = ["transport"] }
+unbug = { version = "0.4.0" }
+url = { version = "2.5.4" }
+uuid = { version = "1.17.0" }
 
 [workspace.metadata]
 
