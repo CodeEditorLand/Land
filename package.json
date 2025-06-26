@@ -19,11 +19,11 @@
 	},
 	"type": "module",
 	"scripts": {
+		"Debug": "sh Maintain/Debug.sh",
+		"Release": "sh Maintain/Release.sh",
 		"Run": "turbo run Run --framework-inference=false --no-daemon",
 		"codemod": "node ./node_modules/@turbo/codemod/dist/cli.js",
-		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon",
-		"Debug": "sh Maintain/Debug.sh",
-		"Release": "sh Maintain/Release.sh"
+		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.0.4",
