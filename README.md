@@ -313,61 +313,53 @@ concert to deliver a modern editing experience.
 ## Architectural Workflows 📄
 
 To understand how these components interact, please refer to the detailed
-workflow descriptions in [`docs/Workflow.md`](docs/Workflow.md). The following
-provides a table of contents for these essential processes.
+workflow descriptions in
+[`docs/Workflow.md`](https://github.com/CodeEditorLand/Land/tree/Current/docs/Workflow.md).
+The following provides a table of contents for these essential processes.
 
 ### Table of Contents
 
 1.  **Application Startup & Handshake**
-
     - _Describes the complete end-to-end process of launching `Mountain`,
       spawning `Cocoon`, and establishing a stable, initialized state for both
       the UI and the extension host._
 
 2.  **Opening a File from the UI**
-
     - _Details the flow from a user clicking a file in the explorer to the
       content being read from disk by `Mountain` and rendered in an editor by
       `Wind`._
 
 3.  **Invoking a Language Feature (Hover Provider)**
-
     - _A key example of bi-directional communication, showing how an extension
       in `Cocoon` registers a feature, `Mountain` orchestrates the request, and
       the result is displayed in the `Wind` UI._
 
 4.  **Saving a File with Save Participants**
-
     - _Explains the advanced process of intercepting a save event, allowing an
       extension in `Cocoon` to modify a file (e.g., for formatting) before
       `Mountain` writes it to disk._
 
 5.  **Executing a Command from the Command Palette**
-
     - _Illustrates the unified command system, showing how `Mountain`'s command
       registry can seamlessly dispatch execution to either a native Rust handler
       or a proxied command in `Cocoon`._
 
 6.  **Creating and Interacting with a Webview Panel**
-
     - _Details the full lifecycle of extension-contributed UI, from `Cocoon`
       requesting a panel to `Mountain` managing the native webview window and
       proxying messages back and forth._
 
 7.  **Creating and Interacting with an Integrated Terminal**
-
     - _A deep dive into native process management, showing how `Mountain` spawns
       a PTY process and streams its I/O to both the `Wind` frontend and the
       `Cocoon` extension host._
 
 8.  **Source Control Management (SCM)**
-
     - _Outlines how the built-in Git extension in `Cocoon` uses `Mountain` as a
       service to run native `git` commands and then populates the SCM view in
       the UI with the results._
 
 9.  **User Data Synchronization**
-
     - _Describes the end-to-end process of syncing user settings. It covers user
       authentication, fetching data from a remote store, performing a three-way
       merge, applying changes locally, and notifying all parts of the
@@ -557,6 +549,7 @@ These variables are passed to our build scripts to configure their behavior:
 
 | Variable       | Purpose                                                                                                                                                                                                                                                                        |
 | :------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NODE_VERSION` | Sets the `Node.js` version for the `SideCar` picked from - https://github.com/CodeEditorLand/SideCar to be included in the final build in `Mountain`.                                                                                                                          |
 | `NODE_ENV`     | Sets the build mode. `development` includes source maps and skips minification for easier debugging. `production` creates smaller, optimized files for release.                                                                                                                |
 | `Clean`        | If `true`, the build script will first delete the `Land/Element/Output` directory to ensure a completely fresh build without any old artifacts.                                                                                                                                |
 | `Browser`      | If `true`, configures the TypeScript and bundler settings to produce code compatible with a browser environment, which is necessary for `Wind`/`Sky` running in Tauri's webview.                                                                                               |
@@ -573,6 +566,7 @@ not as optimized as a release build but is ideal for debugging.
 ```sh
 pnpm cross-env \
 	NODE_ENV=development \
+	NODE_VERSION=22 \
 	Clean=true \
 	Browser=true \
 	Dependency=Microsoft/VSCode \
@@ -590,6 +584,7 @@ of **Land**, suitable for packaging and distribution.
 ```sh
 pnpm cross-env \
 	NODE_ENV=production \
+	NODE_VERSION=22 \
 	Clean=true \
 	Browser=true \
 	Dependency=Microsoft/VSCode \
@@ -628,14 +623,16 @@ pnpm cross-env \
 This project is released into the public domain under the **Creative Commons CC0
 Universal** license. You are free to use, modify, distribute, and build upon
 this work for any purpose, without any restrictions. For the full legal text,
-see the [`LICENSE`](LICENSE) file.
+see the [`LICENSE`](https://github.com/CodeEditorLand/Land/tree/Current/LICENSE)
+file.
 
 ---
 
 ## Changelog 📜
 
-Stay updated with our progress! See [`CHANGELOG.md`](CHANGELOG.md) for a history
-of changes.
+Stay updated with our progress! See
+[`CHANGELOG.md`](https://github.com/CodeEditorLand/Land/tree/Current/CHANGELOG.md)
+for a history of changes.
 
 ---
 
