@@ -6,13 +6,14 @@ members = [
 	"Element/Maintain",
 	"Element/Mountain",
 	"Element/River",
+	"Element/SideCar",
 	"Element/Sun",
 ]
 resolver = "2"
 
 [workspace.dependencies]
 # Tauri (Mountain)
-tauri = { version = "2.5.1", features = [
+tauri = { version = "2.6.2", features = [
 	"wry",
 	"tray-icon",
 	"devtools",
@@ -20,11 +21,8 @@ tauri = { version = "2.5.1", features = [
 	"compression",
 ], default-features = false }
 
-tauri-plugin-dialog = { version = "2.2.2" }
-tauri-plugin-fs = { version = "2.3.0" }
-
-# TEMPORARY DISABLE
-# tauri-plugin-updater = { version = "2.8.1" }
+tauri-plugin-dialog = { version = "2.3.0" }
+tauri-plugin-fs = { version = "2.4.0" }
 
 # tauri = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri" }
 # tauri-plugin-authenticator = { path = "Dependency/Tauri/Dependency/TauriPluginAuthenticator" }
@@ -45,6 +43,7 @@ tauri-plugin-fs = { version = "2.3.0" }
 # tauri-plugin-websocket = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/websocket" }
 # tauri-plugin-deep-link = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/deep-link" }
 
+anyhow = { version = "1.0.98" }
 async-trait = { version = "0.1.88" }
 base64 = { version = "0.22.1" }
 chrono = { version = "0.4.41" }
@@ -57,6 +56,7 @@ dashmap = { version = "6.1.0" }
 dirs = { version = "6.0.0" }
 Echo = { path = "Element/Echo" }
 env_logger = { version = "0.11.8" }
+flate2 = { version = "1.1.2" }
 futures = { version = "0.3.31" }
 futures-util = { version = "0.3.31" }
 globset = { version = "0.4.16" }
@@ -68,7 +68,7 @@ json5 = { version = "0.4.1" }
 keyring = { version = "3.6.2" }
 lazy_static = { version = "1.5.0" }
 log = { version = "0.4.27" }
-md5 = { version = "0.7.0" }
+md5 = { version = "0.8.0" }
 metrics = { version = "0.24.2" }
 num_cpus = { version = "1.17.0" }
 once_cell = { version = "1.21.3" }
@@ -79,9 +79,12 @@ prost = { version = "0.13.5" }                                      # TODO: NEVE
 prun = { version = "0.1.6" }
 rand = { version = "0.9.1" }
 regex = { version = "1.11.1" }
+reqwest = { version = "0.12.20", features = ["json"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = { version = "1.0.140" }
+tar = { version = "0.4.44" }
 tauri-build = { version = "2.2.0" }
+tempfile = { version = "3.20.0" }
 thiserror = { version = "2.0.12" }
 tokio = { version = "1.45.1", features = ["full"] }
 tokio-console = { version = "0.1.13" }
@@ -93,6 +96,8 @@ tonic-build = { version = "0.13.1", features = ["transport"] }
 unbug = { version = "0.4.0" }
 url = { version = "2.5.4" }
 uuid = { version = "1.17.0" }
+zip = { version = "4.2.0" }
+fs_extra = { version = "1.3.0" }
 
 [workspace.metadata]
 
