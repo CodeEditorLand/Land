@@ -17,6 +17,8 @@
 
 	"files": [],
 
+	"include": ["./Element/"],
+
 	"references": [
 		{
 			"path": "./Element/Output"
@@ -32,6 +34,10 @@
 
 		{
 			"path": "./Element/Sky"
+		},
+
+		{
+			"path": "./Element/Worker"
 		}
 	],
 
