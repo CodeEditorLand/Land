@@ -75,6 +75,9 @@
 			"protobufjs",
 			"sharp",
 			"workerd"
-		]
+		],
+		"overrides": {
+			"effect": "3.16.11"
+		}
 	}
 }

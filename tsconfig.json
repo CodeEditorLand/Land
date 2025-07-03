@@ -1,24 +1,41 @@
 {
 	"compilerOptions": {
-		"emitDeclarationOnly": false,
+		"emitDeclarationOnly": true,
+
 		"jsx": "preserve",
+
 		"noEmit": true,
+
 		"outDir": "Target",
+
 		"rootDir": "."
 	},
-	"exclude": ["**/node_modules/**", "**/Target/**"],
+
+	"exclude": ["**/node_modules/**"],
+
 	"extends": "@playform/build/tsconfig",
-	"include": [
-		"./Element/"
-		// "./Dependency/",
-		// "./Dependency/Biome/",
-		// "./Dependency/Microsoft/",
-		// "./Dependency/OXC/",
-		// "./Dependency/Rolldown/",
-		// "./Dependency/SWC/",
-		// "./Dependency/Tauri/",
+
+	"files": [],
+
+	"references": [
+		{
+			"path": "./Element/Output"
+		},
+
+		{
+			"path": "./Element/Cocoon"
+		},
+
+		{
+			"path": "./Element/Wind"
+		},
+
+		{
+			"path": "./Element/Sky"
+		}
 	],
+
 	"watchOptions": {
-		"excludeDirectories": ["**/node_modules/**", "**/Target/**"]
+		"excludeDirectories": ["**/node_modules/**"]
 	}
 }

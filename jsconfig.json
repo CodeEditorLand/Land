@@ -1,16 +1,43 @@
 {
 	"$schema": "https://json.schemastore.org/jsconfig",
+
 	"compilerOptions": {
-		"baseUrl": "./",
-		"emitDeclarationOnly": false,
+		"emitDeclarationOnly": true,
+
+		"jsx": "preserve",
+
 		"noEmit": true,
+
 		"outDir": "Target",
+
 		"rootDir": "."
 	},
-	"exclude": ["**/node_modules/**", "**/Target/**"],
-	"extends": "@playform/build/jsconfig",
-	"include": ["./Element/"],
+
+	"exclude": ["**/node_modules/**"],
+
+	"extends": "@playform/build/tsconfig",
+
+	"files": [],
+
+	"references": [
+		{
+			"path": "./Element/Output"
+		},
+
+		{
+			"path": "./Element/Cocoon"
+		},
+
+		{
+			"path": "./Element/Wind"
+		},
+
+		{
+			"path": "./Element/Sky"
+		}
+	],
+
 	"watchOptions": {
-		"excludeDirectories": ["**/node_modules/**", "**/Target/**"]
+		"excludeDirectories": ["**/node_modules/**"]
 	}
 }
