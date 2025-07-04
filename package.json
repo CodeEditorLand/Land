@@ -48,7 +48,7 @@
 		"prettier-plugin-java": "2.7.1",
 		"prettier-plugin-kotlin": "2.1.0",
 		"prettier-plugin-organize-attributes": "1.0.0",
-		"prettier-plugin-packagejson": "2.5.17",
+		"prettier-plugin-packagejson": "2.5.18",
 		"prettier-plugin-pkg": "0.21.1",
 		"prettier-plugin-sh": "0.18.0",
 		"prettier-plugin-sort-imports": "1.8.8",
@@ -60,7 +60,7 @@
 		"turbo": "2.5.4",
 		"typescript": "5.8.3"
 	},
-	"packageManager": "pnpm@10.10.0",
+	"packageManager": "pnpm@10.12.4",
 	"publishConfig": {
 		"access": "public",
 		"provenance": true

@@ -75,18 +75,18 @@ once_cell = { version = "1.21.3" }
 parking_lot = { version = "0.12.4" }
 portable-pty = { version = "0.9.0" }
 portpicker = { version = "0.1.1" }
-prost = { version = "0.13.5" }                                      # TODO: NEVER UPDATE
-prun = { version = "0.1.6" }
+prost = { version = "=0.13.5" }
+prun = { version = "0.1.9" }
 rand = { version = "0.9.1" }
 regex = { version = "1.11.1" }
-reqwest = { version = "0.12.20", features = ["json"] }
+reqwest = { version = "0.12.22", features = ["json"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = { version = "1.0.140" }
 tar = { version = "0.4.44" }
-tauri-build = { version = "2.2.0" }
+tauri-build = { version = "2.3.0" }
 tempfile = { version = "3.20.0" }
 thiserror = { version = "2.0.12" }
-tokio = { version = "1.45.1", features = ["full"] }
+tokio = { version = "1.46.1", features = ["full"] }
 tokio-console = { version = "0.1.13" }
 tokio-tungstenite = { version = "0.27.0" }
 toml = { version = "0.8.23" }
