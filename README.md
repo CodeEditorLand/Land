@@ -17,7 +17,7 @@
 			<h3 align="left"> Land 🏞️</h3>
 		</td>
 		<td align="left" valign="middle"> </td>
-		<td align="left" valign="middle">
+		<td align="left" valign="middle" width="190">
 			<h3 align="center">
 				<picture>
 					<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Tauri/Made.svg">
