@@ -433,22 +433,22 @@ This project is funded through
 	</thead>
 	<tbody>
 		<tr>
-			<td align="center" valign="top">
+			<td align="center" valign="middle">
 				<a href="https://Editor.Land">
-					<img src="https://raw.githubusercontent.com/CodeEditorLand/Asset/refs/heads/Current/Logo/Land.svg" height="80" alt="Land" style="heigth: 80px;">
+					<img width="60" src="https://raw.githubusercontent.com/CodeEditorLand/Asset/refs/heads/Current/Logo/Land.svg" alt="Land">
 				</a>
 			</td>
-			<td align="center" valign="top">
+			<td align="center" valign="middle">
 				<a href="https://PlayForm.Cloud">
-					<img src="https://raw.githubusercontent.com/PlayForm/Asset/refs/heads/Current/Logo/PlayForm.svg" height="80" alt="PlayForm" style="heigth: 80px;">
+					<img width="76" src="https://raw.githubusercontent.com/PlayForm/Asset/refs/heads/Current/Logo/PlayForm.svg" alt="PlayForm">
 				</a>
 			</td>
-			<td align="center" valign="top">
+			<td align="center" valign="middle">
 				<a href="https://NLnet.NL">
 					<img width="240" src="https://NLnet.NL/logo/banner.svg" alt="NLnet">
 				</a>
 			</td>
-			<td align="center" valign="top">
+			<td align="center" valign="middle">
 				<a href="https://NLnet.NL/commonsfund">
 					<img width="240" src="https://NLnet.NL/image/logos/NGI0CommonsFund_tag_black_mono.svg" alt="NGI0 Commons Fund">
 				</a>
