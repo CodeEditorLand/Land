@@ -4,7 +4,7 @@
 
 <table>
 	<tr>
-		<td>
+		<td valign="middle">
 			<h3 align="center">
 				<picture>
 					<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Land.svg">
@@ -13,10 +13,10 @@
 				</picture>
 			</h3>
 		</td>
-		<td valign="top">
+		<td valign="middle">
 			<h3 align="center"> Land 🏞️</h3>
 		</td>
-		<td valign="top">
+		<td valign="middle">
 			<h3 align="center">
 				<picture>
 					<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Tauri/Made.svg">
