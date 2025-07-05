@@ -2,7 +2,7 @@
 
 ---
 
-<table>
+<table width="100%">
 	<tr>
 		<td valign="middle">
 			<h3 align="center">
@@ -15,6 +15,9 @@
 		</td>
 		<td valign="middle">
 			<h3 align="center"> Land 🏞️</h3>
+		</td>
+		<td valign="middle">
+			
 		</td>
 		<td valign="middle">
 			<h3 align="center">
