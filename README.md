@@ -21,7 +21,7 @@
 				<picture>
 					<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Tauri/Made.svg">
 					<source media="(prefers-color-scheme: light)" srcset="https://PlayForm.Cloud/Image/GitHub/Tauri/Made.svg">
-					<img width="260" alt="Made With Tauri" src="https://PlayForm.Cloud/Image/GitHub/Tauri/Made.svg">
+					<img width="160" alt="Made With Tauri" src="https://PlayForm.Cloud/Image/GitHub/Tauri/Made.svg">
 				</picture>
 			</h3>
 		</td>
