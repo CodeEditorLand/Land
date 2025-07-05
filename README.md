@@ -417,14 +417,45 @@ supported by the organizations and projects that believe in the future of
 open-source software.
 
 This project is funded through
-[NGI0 Commons Fund](https://nlnet.nl/commonsfund), a fund established by
-[NLnet](https://nlnet.nl) with financial support from the European Commission's
+[NGI0 Commons Fund](https://NLnet.NL/commonsfund), a fund established by
+[NLnet](https://NLnet.NL) with financial support from the European Commission's
 [Next Generation Internet](https://ngi.eu) program. Learn more at the
-[NLnet project page](https://nlnet.nl/project/Land).
+[NLnet project page](https://NLnet.NL/project/Land).
 
-| **Land**                                                                                                                                            | PlayForm                                                                                                                                                 | NLnet                                                                                      | NGI0 Commons Fund                                                                                                                                 |
-| :-------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [<img src="https://raw.githubusercontent.com/CodeEditorLand/Asset/refs/heads/Current/Logo/Land.svg" height="80px" alt="Land">](https://editor.land) | [<img src="https://raw.githubusercontent.com/PlayForm/Asset/refs/heads/Current/Logo/PlayForm.svg" height="80px" alt="PlayForm">](https://playform.cloud) | [<img width="240px" src="https://nlnet.nl/logo/banner.svg" alt="NLnet">](https://nlnet.nl) | [<img width="240px" src="https://nlnet.nl/image/logos/NGI0CommonsFund_tag_black_mono.svg" alt="NGI0 Commons Fund">](https://nlnet.nl/commonsfund) |
+<table border="0" cellpadding="10" cellspacing="0" width="100%">
+	<thead>
+		<tr>
+			<th align="center"><strong>Land</strong></th>
+			<th align="center"><strong>PlayForm</strong></th>
+			<th align="center"><strong>NLnet</strong></th>
+			<th align="center"><strong>NGI0 Commons Fund</strong></th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td align="center" valign="top">
+				<a href="https://Editor.Land">
+					<img src="https://raw.githubusercontent.com/CodeEditorLand/Asset/refs/heads/Current/Logo/Land.svg" height="80" alt="Land" style="max-width: none;">
+				</a>
+			</td>
+			<td align="center" valign="top">
+				<a href="https://PlayForm.Cloud">
+					<img src="https://raw.githubusercontent.com/PlayForm/Asset/refs/heads/Current/Logo/PlayForm.svg" height="80" alt="PlayForm" style="max-width: none;">
+				</a>
+			</td>
+			<td align="center" valign="top">
+				<a href="https://NLnet.NL">
+					<img width="240" src="https://NLnet.NL/logo/banner.svg" alt="NLnet" style="max-width: none;">
+				</a>
+			</td>
+			<td align="center" valign="top">
+				<a href="https://NLnet.NL/commonsfund">
+					<img width="240" src="https://NLnet.NL/image/logos/NGI0CommonsFund_tag_black_mono.svg" alt="NGI0 Commons Fund" style="max-width: none;">
+				</a>
+			</td>
+		</tr>
+	</tbody>
+</table>
 
 ### Technology Acknowledgements 🙌🏻
 
