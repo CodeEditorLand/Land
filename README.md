@@ -18,11 +18,13 @@
 		</td>
 		<td align="left" valign="middle" width="190">
 			<h3 align="left">
-				<picture>
-					<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Tauri/Made.svg">
-					<source media="(prefers-color-scheme: light)" srcset="https://PlayForm.Cloud/Image/GitHub/Tauri/Made.svg">
-					<img width="160" alt="Made With Tauri" src="https://PlayForm.Cloud/Image/GitHub/Tauri/Made.svg">
-				</picture>
+				<a href="https://Tauri.App">
+					<picture>
+						<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Tauri/Made.svg">
+						<source media="(prefers-color-scheme: light)" srcset="https://PlayForm.Cloud/Image/GitHub/Tauri/Made.svg">
+						<img width="160" alt="Made With Tauri" src="https://PlayForm.Cloud/Image/GitHub/Tauri/Made.svg">
+					</picture>
+				</a>
 			</h3>
 		</td>
 	</tr>
