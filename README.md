@@ -6,11 +6,13 @@
 	<tr>
 		<td align="left" valign="middle">
 			<h3 align="left">
-				<picture>
-					<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Land.svg">
-					<source media="(prefers-color-scheme: light)" srcset="https://PlayForm.Cloud/Image/GitHub/Land.svg">
-					<img width="28" alt="Land Logo" src="https://PlayForm.Cloud/Image/GitHub/Land.svg">
-				</picture>
+				<a href="https://Editor.Land" target="_blank">
+					<picture>
+						<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Land.svg">
+						<source media="(prefers-color-scheme: light)" srcset="https://PlayForm.Cloud/Image/GitHub/Land.svg">
+						<img width="28" alt="Land Logo" src="https://PlayForm.Cloud/Image/GitHub/Land.svg">
+					</picture>
+				</a>
 			</h3>
 		</td>
 		<td align="left" valign="middle">
@@ -18,7 +20,7 @@
 		</td>
 		<td align="left" valign="middle" width="190">
 			<h3 align="left">
-				<a href="https://Tauri.App">
+				<a href="https://Tauri.App" target="_blank">
 					<picture>
 						<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Tauri/Made.svg">
 						<source media="(prefers-color-scheme: light)" srcset="https://PlayForm.Cloud/Image/GitHub/Tauri/Made.svg">
