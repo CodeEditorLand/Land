@@ -18,7 +18,7 @@
 		</td>
 		<td align="left" valign="middle"> </td>
 		<td align="left" valign="middle" width="190">
-			<h3 align="center">
+			<h3 align="left">
 				<picture>
 					<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Tauri/Made.svg">
 					<source media="(prefers-color-scheme: light)" srcset="https://PlayForm.Cloud/Image/GitHub/Tauri/Made.svg">
