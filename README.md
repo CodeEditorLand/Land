@@ -2,7 +2,7 @@
 
 ---
 
-<table style="width: 100% !important; display: table !important;">
+<table>
 	<tr>
 		<td align="left" valign="middle">
 			<h3 align="left">
@@ -16,7 +16,6 @@
 		<td align="left" valign="middle">
 			<h3 align="left"> Land 🏞️</h3>
 		</td>
-		<td align="left" valign="middle"> </td>
 		<td align="left" valign="middle" width="190">
 			<h3 align="left">
 				<picture>
@@ -423,7 +422,7 @@ This project is funded through
 [Next Generation Internet](https://ngi.eu) program. Learn more at the
 [NLnet project page](https://NLnet.NL/project/Land).
 
-<table border="0" cellpadding="10" cellspacing="0" width="100%">
+<table>
 	<thead>
 		<tr>
 			<th align="left"><strong>Land</strong></th>
