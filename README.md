@@ -16,7 +16,19 @@
 			</h3>
 		</td>
 		<td align="left" valign="middle">
-			<h3 align="left"> Land 🏞️</h3>
+			<h3 align="left">
+				<a href="https://Editor.Land" target="_blank">
+					Land
+				</a>
+			</h3>
+		</td>
+		<td align="left" valign="middle">
+			<h3 align="left">
+				🏞️
+			</h3>
+		</td>
+		<td align="left" valign="middle">
+			<h3 align="left"> + </h3>
 		</td>
 		<td align="left" valign="middle" width="190">
 			<h3 align="left">
