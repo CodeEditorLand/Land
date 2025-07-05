@@ -16,7 +16,7 @@
 		<td valign="middle">
 			<h3 align="center"> Land 🏞️</h3>
 		</td>
-		<td></td>
+		<td> </td>
 		<td valign="middle">
 			<h3 align="center">
 				<picture>
