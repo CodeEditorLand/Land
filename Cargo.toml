@@ -54,7 +54,7 @@ chrono = { version = "0.4.41" }
 clap = { version = "4.5.40", features = ["derive", "env"] }
 colored = { version = "3.0.0" }
 Common = { path = "Element/Common" }
-config = { version = "0.15.11" }
+config = { version = "0.15.12" }
 crossbeam-deque = { version = "0.8.6" }
 dashmap = { version = "6.1.0" }
 dirs = { version = "6.0.0" }
@@ -93,8 +93,8 @@ thiserror = { version = "2.0.12" }
 tokio = { version = "1.46.1", features = ["full"] }
 tokio-console = { version = "0.1.13" }
 tokio-tungstenite = { version = "0.27.0" }
-toml = { version = "0.8.23" }
-toml_edit = { version = "0.22.27" }
+toml = { version = "0.9.0" }
+toml_edit = { version = "0.23.0" }
 tonic = { version = "0.13.1", features = ["transport", "codegen"] }
 tonic-build = { version = "0.13.1", features = ["transport"] }
 unbug = { version = "0.4.0" }
