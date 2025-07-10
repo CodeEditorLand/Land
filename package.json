@@ -77,7 +77,10 @@
 			"workerd"
 		],
 		"overrides": {
-			"effect": "3.16.11"
+			"@effect/cluster": "*",
+			"@effect/rpc": "*",
+			"@effect/sql": "*",
+			"effect": "*"
 		}
 	}
 }
