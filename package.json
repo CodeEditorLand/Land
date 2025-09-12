@@ -60,7 +60,7 @@
 		"turbo": "2.5.5",
 		"typescript": "5.8.3"
 	},
-	"packageManager": "pnpm@10.13.1",
+	"packageManager": "pnpm@10.15.1",
 	"publishConfig": {
 		"access": "public",
 		"provenance": true
