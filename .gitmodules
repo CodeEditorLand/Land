@@ -1,7 +1,9 @@
 [submodule "Dependency"]
 path = Dependency
 url = ssh://git@github.com/CodeEditorLand/Dependency.git
+ignore = all
 
 [submodule "Element"]
 path = Element
 url = ssh://git@github.com/CodeEditorLand/Element.git
+ignore = all
