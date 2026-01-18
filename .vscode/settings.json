@@ -18,5 +18,5 @@
         "**/vendor": true,
         "**/node_modules": true
     },
-    "explorer.excludeGitIgnore": true
+    "explorer.excludeGitIgnore": false
 }
