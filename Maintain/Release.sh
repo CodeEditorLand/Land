@@ -9,4 +9,4 @@ pnpm cross-env \
 	NODE_ENV=production \
 	NODE_VERSION=22 \
 	NODE_OPTIONS=--max-old-space-size=16384 \
-	./Element/Maintain/Target/release/Maintain -- pnpm tauri build
+	./Target/release/Maintain -- pnpm tauri build
