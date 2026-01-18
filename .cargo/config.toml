@@ -1,5 +1,6 @@
 [build]
 target-dir = "Target"
+cache-dir = "Target"
 
 [cargo-new]
 vcs = "git"
