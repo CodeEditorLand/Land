@@ -16,7 +16,6 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
-# Tauri (Mountain)
 tauri = { version = "2.9.5", features = [
 	"wry",
 	"tray-icon",
@@ -28,6 +27,8 @@ tauri = { version = "2.9.5", features = [
 
 tauri-plugin-dialog = { version = "2.6.0" }
 tauri-plugin-fs = { version = "2.4.5" }
+tauri-plugin-localhost = { version = "2.3.2" }
+tauri-plugin-log = { version = "2.8.0" }
 
 # tauri = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri" }
 # tauri-plugin-authenticator = { path = "Dependency/Tauri/Dependency/TauriPluginAuthenticator" }
@@ -118,4 +119,4 @@ license-file = "LICENSE"
 publish = false
 readme = "README.md"
 repository = "https://github.com/CodeEditorLand/Land"
-rust-version = "1.89.0"
+rust-version = "1.95.0"
