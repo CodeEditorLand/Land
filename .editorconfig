@@ -9,3 +9,11 @@ indent_style = tab
 
 [*.{yaml,yml}]
 indent_style = space
+
+[*.rs]
+# indent_style = unset
+# indent_size = unset
+# tab_width = unset
+end_of_line = unset
+# trim_trailing_whitespace = unset
+insert_final_newline = unset

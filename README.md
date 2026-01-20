@@ -57,8 +57,8 @@ engineered with **Rust** and **Tauri** for the native backend (`Mountain`) and
 
 Our vision is to deliver a lightning-fast and deeply reliable editing experience
 by leveraging declarative, effects-based programming across the entire
-application. This architecture ensures that all side effects—from filesystem
-operations to UI updates and network requests—are handled in a structured,
+application. This architecture ensures that all side effects from filesystem
+operations to UI updates and network requests are handled in a structured,
 testable, and composable way.
 
 ---

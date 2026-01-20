@@ -1,22 +1,106 @@
 {
-    "files.exclude": {
-        "**/.git": true,
-        "**/.svn": true,
-        "**/.hg": true,
-        "**/.DS_Store": true,
-        "**/Thumbs.db": true,
-        "**/.trunk/*actions/": true,
-        "**/.trunk/*logs/": true,
-        "**/.trunk/*notifications/": true,
-        "**/.trunk/*out/": true,
-        "**/.trunk/*plugins/": true,
-        "**/CVS": true,
-        "**/cache": true,
-        "**/target": true,
-        "**/temp": true,
-        "**/tmp": true,
-        "**/vendor": true,
-        "**/node_modules": true
-    },
-    "explorer.excludeGitIgnore": false
+	"files.exclude": {
+		"**/.git": true,
+		"**/.svn": true,
+		"**/.hg": true,
+		"**/.DS_Store": true,
+		"**/Thumbs.db": true,
+		"**/.trunk/*actions/": true,
+		"**/.trunk/*logs/": true,
+		"**/.trunk/*notifications/": true,
+		"**/.trunk/*out/": true,
+		"**/.trunk/*plugins/": true,
+		"**/CVS": true,
+		"**/cache": true,
+		"**/target": false,
+		"**/temp": true,
+		"**/tmp": true,
+		"**/vendor": true,
+		"**/Target": false,
+		"**/node_modules": false
+	},
+
+	"explorer.excludeGitIgnore": false,
+
+	"files.watcherExclude": {
+		"**/.cargo/registry/**": true,
+
+		"**/.git/objects/**": true,
+
+		"**/.git/subtree-cache/**": true,
+
+		"**/dist/**": true,
+
+		"**/node_modules/**": true,
+
+		"**/target/**": true,
+
+		"**/Target/**": true
+	},
+
+	"rust-analyzer.procMacro.enable": true,
+
+	"rust-analyzer.procMacro.attributes.enable": true,
+
+	"rust-analyzer.check.overrideCommand": [
+		"cargo",
+
+		"check",
+
+		"--workspace",
+
+		"--message-format=human",
+
+		"--all-targets",
+
+		"--target-dir",
+
+		"Target/analyzer"
+	],
+
+	"rust-analyzer.check.allTargets": false,
+
+	"rust-analyzer.checkOnSave": true,
+
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+
+	"[rust]": {
+		"editor.defaultFormatter": "rust-lang.rust-analyzer"
+	},
+
+	"prettier.enable": true,
+
+	"prettier.documentSelectors": [
+		"**/*.astro",
+
+		"**/*.svelte",
+
+		"**/*.toml",
+
+		"**/*.html",
+
+		"**/*.md"
+	],
+
+	"scm.autoReveal": true,
+
+	"search.exclude": {
+		"**/*.code-search": true,
+
+		"**/*.d.ts": true,
+
+		"**/Documentation": true,
+
+		"**/Target": true,
+
+		"**/dist": true,
+
+		"**/node_modules": true,
+
+		"**/target": true
+	},
+
+	"typescript.tsc.autoDetect": "on",
+
+	"typescript.tsserver.experimental.enableProjectDiagnostics": true
 }
