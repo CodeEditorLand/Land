@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["ApplyWorkSpaceEdit","FindFilesInWorkSpace","GetWorkSpaceConfigurationPath","GetWorkSpaceFolderInfo","GetWorkSpaceFoldersInfo","GetWorkSpaceName","IsWorkSpaceTrusted","OpenFile","RequestWorkSpaceTrust","WorkSpaceEditApplier","WorkSpaceProvider"]};

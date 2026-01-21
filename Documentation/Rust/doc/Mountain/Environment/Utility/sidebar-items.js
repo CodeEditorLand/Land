@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["DetectLanguageIdentifierFromFilePath","GetURLFromURIComponentsDTO","IsPathAllowedForAccess","MapApplicationStateLockErrorToCommonError"]};

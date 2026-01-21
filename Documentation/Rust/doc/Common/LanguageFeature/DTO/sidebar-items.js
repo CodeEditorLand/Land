@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["CompletionContextDTO","CompletionItemDTO","CompletionListDTO","HoverResultDTO","IMarkdownStringDTO","LocationDTO","PositionDTO","ProviderType","RangeDTO","TextEditDTO"]};

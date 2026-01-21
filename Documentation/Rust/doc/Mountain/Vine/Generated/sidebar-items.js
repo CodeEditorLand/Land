@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["cocoon_service_client","cocoon_service_server","mountain_service_client","mountain_service_server"],"struct":["CancelOperationRequest","Empty","GenericNotification","GenericRequest","GenericResponse","RpcDataPayload","RpcError"]};

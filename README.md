@@ -104,7 +104,7 @@ concert to deliver a modern editing experience.
 
 To understand how these components interact, please refer to the detailed
 workflow descriptions in
-[`docs/Workflow.md`](https://github.com/CodeEditorLand/Land/tree/Current/docs/Workflow.md).
+[`Documentation/GitHub/Workflow.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow.md).
 The following provides a table of contents for these essential processes.
 
 ### Table of Contents

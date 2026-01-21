@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["AnalyzeTextLinesAndEOL","LoadInitialMementoFromDisk","ResolveMementoStorageFilePath","ScanAndPopulateExtensions"],"mod":["URLSerializationHelper"]};

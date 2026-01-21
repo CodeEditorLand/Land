@@ -1,11 +1,18 @@
 [build]
 target-dir = "Target"
+rustdocflags = [
+	"-Zunstable-options",
+	"--enable-index-page",
+]
 
 [net]
 git-fetch-with-cli = true
 
 [cargo-new]
 vcs = "git"
+
+[unstable]
+rustdoc-scrape-examples = true
 
 [profile.dev]
 incremental = true

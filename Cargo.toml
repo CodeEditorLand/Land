@@ -120,3 +120,8 @@ publish = false
 readme = "README.md"
 repository = "https://github.com/CodeEditorLand/Land"
 rust-version = "1.95.0"
+
+[workspace.metadata.docs.rs]
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

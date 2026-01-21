@@ -17,7 +17,7 @@
 		"**/tmp": true,
 		"**/vendor": true,
 		"**/Target": false,
-		"**/node_modules": false
+		"**/node_modules": true
 	},
 
 	"explorer.excludeGitIgnore": false,

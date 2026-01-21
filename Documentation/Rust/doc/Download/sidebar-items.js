@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["LogEnv"],"enum":["ArchiveType"],"fn":["DownloadFile","ExtractArchive","FetchNodeVersions","Fn","GetBaseSidecarDirectory","GetPlatformMatrix","GetSidecarsToFetch","Logger","ProcessDownloadTask","ResolveLatestPatchVersion","UpdateGitattributes","main"],"struct":["DownloadCache","DownloadTask","NodeVersionInfo","PlatformTarget"]};

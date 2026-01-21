@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["AppendToOutputChannel","ClearOutputChannel","CloseOutputChannelView","DisposeOutputChannel","OutputChannelManager","RegisterOutputChannel","ReplaceOutputChannelContent","RevealOutputChannel"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["DTO","ShowInputBox","ShowMessage","ShowOpenDialog","ShowQuickPick","ShowSaveDialog","UserInterfaceProvider"]};
