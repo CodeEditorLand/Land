@@ -7,3 +7,8 @@ ignore = all
 path = Element
 url = ssh://git@github.com/CodeEditorLand/Element.git
 ignore = all
+
+[submodule "Documentation/Rust"]
+path = Documentation/Rust
+url = ssh://git@github.com/CodeEditorLand/RustDocumentationLand.git
+ignore = all
