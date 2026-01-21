@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["MountainProvideCompletions","MountainProvideDefinition","MountainProvideHover","MountainProvideReferences"]};

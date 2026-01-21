@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["ConfigurationInitializationDTO","ConfigurationOverridesDTO","ConfigurationScope","ConfigurationTarget","InspectResultDataDTO"]};

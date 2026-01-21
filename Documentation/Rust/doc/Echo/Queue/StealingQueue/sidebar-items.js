@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["Priority"],"struct":["Context","Share","StealingQueue"],"trait":["Prioritized"]};

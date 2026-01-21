@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["DTO","EstablishHostConnection","IPCProvider","ProxyCallToSideCar","SendNotificationToSideCar","SendRequestToSideCar"]};

@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"mod":["DialogOptionsDTO","FileFilterDTO","InputBoxOptionsDTO","MessageOptionsDTO","MessageSeverity","OpenDialogOptionsDTO","QuickPickItemDTO","QuickPickOptionsDTO","SaveDialogOptionsDTO"]};
