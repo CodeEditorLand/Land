@@ -9,9 +9,7 @@ members = [
 	"Element/Echo",
 	"Element/Maintain",
 	"Element/Mountain",
-	"Element/River",
 	"Element/SideCar",
-	"Element/Sun",
 ]
 resolver = "2"
 

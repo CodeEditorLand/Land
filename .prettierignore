@@ -5,7 +5,6 @@
 .env.test.local
 .eslintcache
 .pnpm-debug.log
-.vscode
 ~*.docx
 ~*.tmp
 Cargo.lock

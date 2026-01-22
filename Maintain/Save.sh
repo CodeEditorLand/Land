@@ -40,9 +40,7 @@ Dependency=(
 	"./Element/Mountain/"
 	"./Element/Output/"
 	"./Element/Rest/"
-	"./Element/River/"
 	"./Element/Sky/"
-	"./Element/Sun/"
 	"./Element/Wind/"
 )
 

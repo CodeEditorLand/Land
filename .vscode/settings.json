@@ -1,26 +1,53 @@
 {
-	"files.exclude": {
-		"**/.git": true,
-		"**/.svn": true,
-		"**/.hg": true,
-		"**/.DS_Store": true,
-		"**/Thumbs.db": true,
-		"**/.trunk/*actions/": true,
-		"**/.trunk/*logs/": true,
-		"**/.trunk/*notifications/": true,
-		"**/.trunk/*out/": true,
-		"**/.trunk/*plugins/": true,
-		"**/CVS": true,
-		"**/cache": true,
-		"**/target": false,
-		"**/temp": true,
-		"**/tmp": true,
-		"**/vendor": true,
-		"**/Target": false,
-		"**/node_modules": true
+	"[rust]": {
+		"editor.defaultFormatter": "rust-lang.rust-analyzer"
 	},
 
+	"[xml]": {
+		"editor.defaultFormatter": "redhat.vscode-xml"
+	},
+
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+
 	"explorer.excludeGitIgnore": false,
+
+	"files.exclude": {
+		"**/.DS_Store": true,
+
+		"**/.git": true,
+
+		"**/.hg": true,
+
+		"**/.svn": true,
+
+		"**/.trunk/*actions/": true,
+
+		"**/.trunk/*logs/": true,
+
+		"**/.trunk/*notifications/": true,
+
+		"**/.trunk/*out/": true,
+
+		"**/.trunk/*plugins/": true,
+
+		"**/CVS": true,
+
+		"**/Target": false,
+
+		"**/Thumbs.db": true,
+
+		"**/cache": true,
+
+		"**/node_modules": true,
+
+		"**/target": false,
+
+		"**/temp": true,
+
+		"**/tmp": true,
+
+		"**/vendor": true
+	},
 
 	"files.watcherExclude": {
 		"**/.cargo/registry/**": true,
@@ -29,18 +56,30 @@
 
 		"**/.git/subtree-cache/**": true,
 
+		"**/Target/**": true,
+
 		"**/dist/**": true,
 
 		"**/node_modules/**": true,
 
-		"**/target/**": true,
-
-		"**/Target/**": true
+		"**/target/**": true
 	},
 
-	"rust-analyzer.procMacro.enable": true,
+	"prettier.documentSelectors": [
+		"**/*.astro",
 
-	"rust-analyzer.procMacro.attributes.enable": true,
+		"**/*.svelte",
+
+		"**/*.toml",
+
+		"**/*.html",
+
+		"**/*.md"
+	],
+
+	"prettier.enable": true,
+
+	"rust-analyzer.check.allTargets": false,
 
 	"rust-analyzer.check.overrideCommand": [
 		"cargo",
@@ -58,29 +97,11 @@
 		"Target/analyzer"
 	],
 
-	"rust-analyzer.check.allTargets": false,
-
 	"rust-analyzer.checkOnSave": true,
 
-	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"rust-analyzer.procMacro.attributes.enable": true,
 
-	"[rust]": {
-		"editor.defaultFormatter": "rust-lang.rust-analyzer"
-	},
-
-	"prettier.enable": true,
-
-	"prettier.documentSelectors": [
-		"**/*.astro",
-
-		"**/*.svelte",
-
-		"**/*.toml",
-
-		"**/*.html",
-
-		"**/*.md"
-	],
+	"rust-analyzer.procMacro.enable": true,
 
 	"scm.autoReveal": true,
 
