@@ -473,7 +473,8 @@ This project is funded through
 				</a>
 			</td>
 		</tr>
-	</tbody></table>
+	</tbody>
+</table>
 
 ### Technology Acknowledgements 🙌🏻
 
