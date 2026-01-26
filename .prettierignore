@@ -148,10 +148,4 @@ Dependency/Microsoft/Dependency/MonacoEditor/website/typedoc/monaco.d.ts
 Dependency/Microsoft/Dependency/MonacoEditor/test/smoke/vite/dist
 Dependency/Microsoft/Dependency/MonacoEditor/test/smoke/parcel/dist
 
-Documentation
-# Target
-WordPress
-docs
-# test
-# test_data
 vendor
