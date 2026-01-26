@@ -12,3 +12,8 @@ ignore = all
 path = Documentation/Rust
 url = ssh://git@github.com/CodeEditorLand/RustDocumentationLand.git
 ignore = all
+
+[submodule "Module/Effect/WebSite"]
+path = Module/Effect/WebSite
+url = ssh://git@github.com/Effect-TS/website.git
+ignore = all
