@@ -1,8 +1,28 @@
 [build]
 target-dir = "Target"
+rustdocflags = [
+	"-Zunstable-options",
+	"--enable-index-page",
+]
+
+[net]
+git-fetch-with-cli = true
 
 [cargo-new]
 vcs = "git"
+
+[unstable]
+rustdoc-scrape-examples = true
+
+[profile.dev]
+incremental = true
+split-debuginfo = "unpacked"
+debug = 0
+strip = "debuginfo"
+panic = "abort"
+
+[profile.dev.package."*"]
+opt-level = 3
 
 [profile.release]
 opt-level = 3
@@ -11,3 +31,9 @@ debug = false
 lto = true
 panic = "abort"
 strip = true
+
+[target.aarch64-apple-darwin]
+rustflags = ["-Zshare-generics=y"]
+
+[target.x86_64-apple-darwin]
+rustflags = ["-Zshare-generics=y"]

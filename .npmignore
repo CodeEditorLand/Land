@@ -24,7 +24,7 @@ Maintain/
 Target/debug
 Target/release
 biome.json
-docs/
+Documentation/
 jsconfig.json
 pnpm-workspace.yaml
 prettier.config.js

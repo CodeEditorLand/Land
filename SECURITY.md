@@ -59,7 +59,7 @@ not limited to):**
 - **Denial of Service (DoS):** If an Element can be made unresponsive or crash
   due to specially crafted input or excessive resource consumption.
 - **Path Traversal/Arbitrary File Access:** For Elements interacting with the
-  filesystem (like `River`, `Sun`, or `Mountain`'s FS handlers), ensuring that
+  filesystem (like `Mountain`'s FS handlers), ensuring that
   path inputs are properly sanitized.
 - **Insecure IPC/Communication:** For Elements involved in inter-process
   communication (`Vine`, `Track`, `Echo`, `Mist`), vulnerabilities in the

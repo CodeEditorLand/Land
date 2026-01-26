@@ -1,22 +1,127 @@
 {
-    "files.exclude": {
-        "**/.git": true,
-        "**/.svn": true,
-        "**/.hg": true,
-        "**/.DS_Store": true,
-        "**/Thumbs.db": true,
-        "**/.trunk/*actions/": true,
-        "**/.trunk/*logs/": true,
-        "**/.trunk/*notifications/": true,
-        "**/.trunk/*out/": true,
-        "**/.trunk/*plugins/": true,
-        "**/CVS": true,
-        "**/cache": true,
-        "**/target": true,
-        "**/temp": true,
-        "**/tmp": true,
-        "**/vendor": true,
-        "**/node_modules": true
-    },
-    "explorer.excludeGitIgnore": true
+	"[rust]": {
+		"editor.defaultFormatter": "rust-lang.rust-analyzer"
+	},
+
+	"[xml]": {
+		"editor.defaultFormatter": "redhat.vscode-xml"
+	},
+
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+
+	"explorer.excludeGitIgnore": false,
+
+	"files.exclude": {
+		"**/.DS_Store": true,
+
+		"**/.git": true,
+
+		"**/.hg": true,
+
+		"**/.svn": true,
+
+		"**/.trunk/*actions/": true,
+
+		"**/.trunk/*logs/": true,
+
+		"**/.trunk/*notifications/": true,
+
+		"**/.trunk/*out/": true,
+
+		"**/.trunk/*plugins/": true,
+
+		"**/CVS": true,
+
+		"**/Target": false,
+
+		"**/Thumbs.db": true,
+
+		"**/cache": true,
+
+		"**/node_modules": true,
+
+		"**/target": false,
+
+		"**/temp": true,
+
+		"**/tmp": true,
+
+		"**/vendor": true
+	},
+
+	"files.watcherExclude": {
+		"**/.cargo/registry/**": true,
+
+		"**/.git/objects/**": true,
+
+		"**/.git/subtree-cache/**": true,
+
+		"**/Target/**": true,
+
+		"**/dist/**": true,
+
+		"**/node_modules/**": true,
+
+		"**/target/**": true
+	},
+
+	"prettier.documentSelectors": [
+		"**/*.astro",
+
+		"**/*.svelte",
+
+		"**/*.toml",
+
+		"**/*.html",
+
+		"**/*.md"
+	],
+
+	"prettier.enable": true,
+
+	"rust-analyzer.check.allTargets": false,
+
+	"rust-analyzer.check.overrideCommand": [
+		"cargo",
+
+		"check",
+
+		"--workspace",
+
+		"--message-format=human",
+
+		"--all-targets",
+
+		"--target-dir",
+
+		"Target/analyzer"
+	],
+
+	"rust-analyzer.checkOnSave": true,
+
+	"rust-analyzer.procMacro.attributes.enable": true,
+
+	"rust-analyzer.procMacro.enable": true,
+
+	"scm.autoReveal": true,
+
+	"search.exclude": {
+		"**/*.code-search": true,
+
+		"**/*.d.ts": true,
+
+		"**/Documentation": true,
+
+		"**/Target": true,
+
+		"**/dist": true,
+
+		"**/node_modules": true,
+
+		"**/target": true
+	},
+
+	"typescript.tsc.autoDetect": "on",
+
+	"typescript.tsserver.experimental.enableProjectDiagnostics": true
 }

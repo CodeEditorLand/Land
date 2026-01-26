@@ -40,27 +40,25 @@ Dependency=(
 	"./Element/Mountain/"
 	"./Element/Output/"
 	"./Element/Rest/"
-	"./Element/River/"
 	"./Element/Sky/"
-	"./Element/Sun/"
 	"./Element/Wind/"
 )
 
 for Dependency in "${Dependency[@]}"; do
 	# (
-		\cd "$Current/../$Dependency" || \exit
+	\cd "$Current/../$Dependency" || \exit
 
-		\pwd
+	\pwd
 
-		\git add .
+	\git add .
 
-		\git ecommit
+	\git ecommit
 
-		\git push
+	\git push
 
-		\git pull
+	\git pull
 
-		\cd - || \exit
+	\cd - || \exit
 	# ) &
 done
 

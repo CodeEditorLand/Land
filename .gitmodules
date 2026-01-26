@@ -1,7 +1,19 @@
 [submodule "Dependency"]
 path = Dependency
 url = ssh://git@github.com/CodeEditorLand/Dependency.git
+ignore = all
 
 [submodule "Element"]
 path = Element
 url = ssh://git@github.com/CodeEditorLand/Element.git
+ignore = all
+
+[submodule "Documentation/Rust"]
+path = Documentation/Rust
+url = ssh://git@github.com/CodeEditorLand/RustDocumentationLand.git
+ignore = all
+
+[submodule "Module/Effect/WebSite"]
+path = Module/Effect/WebSite
+url = ssh://git@github.com/Effect-TS/website.git
+ignore = all
