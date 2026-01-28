@@ -10,3 +10,21 @@ Target/release/bundle/nsis/*.exe filter=lfs diff=lfs merge=lfs -text
 
 Target/debug/Mountain filter=lfs diff=lfs merge=lfs -text
 Target/release/Mountain filter=lfs diff=lfs merge=lfs -text
+
+
+# --- Rules Automatically Added by Vendor Script ---
+**/NODE/**/bin/node filter=lfs diff=lfs merge=lfs -text
+**/NODE/**/node.exe filter=lfs diff=lfs merge=lfs -text
+**/NODE/**/bin/npm filter=lfs diff=lfs merge=lfs -text
+**/NODE/**/bin/npx filter=lfs diff=lfs merge=lfs -text
+**/NODE/**/bin/corepack filter=lfs diff=lfs merge=lfs -text
+**/NODE/**/npm filter=lfs diff=lfs merge=lfs -text
+**/NODE/**/npm.cmd filter=lfs diff=lfs merge=lfs -text
+**/NODE/**/npx filter=lfs diff=lfs merge=lfs -text
+**/NODE/**/npx.cmd filter=lfs diff=lfs merge=lfs -text
+**/NODE/**/corepack filter=lfs diff=lfs merge=lfs -text
+**/NODE/**/corepack.cmd filter=lfs diff=lfs merge=lfs -text
+Target/debug/SideCar filter=lfs diff=lfs merge=lfs -text
+Target/release/SideCar filter=lfs diff=lfs merge=lfs -text
+Target/debug/Download filter=lfs diff=lfs merge=lfs -text
+Target/release/Download filter=lfs diff=lfs merge=lfs -text
