@@ -10,6 +10,7 @@ members = [
 	"Element/Maintain",
 	"Element/Mountain",
 	"Element/SideCar",
+	"Element/Air",
 ]
 resolver = "2"
 
@@ -51,7 +52,7 @@ anyhow = { version = "1.0.100" }
 async-trait = { version = "0.1.89" }
 base64 = { version = "0.22.1" }
 chrono = { version = "0.4.43" }
-clap = { version = "4.5.54", features = ["derive", "env"] }
+clap = { version = "4.5.55", features = ["derive", "env"] }
 colored = { version = "3.1.1" }
 Common = { path = "Element/Common" }
 config = { version = "0.15.19" }
@@ -87,6 +88,8 @@ regex = { version = "1.12.2" }
 reqwest = { version = "0.13.1", features = ["json"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.149" }
+sha2 = { version = "0.10.9" }
+hostname = { version = "0.4.2" }
 tar = { version = "0.4.44" }
 tauri-build = { version = "2.5.3" }
 tempfile = { version = "3.24.0" }
@@ -94,15 +97,15 @@ thiserror = { version = "2.0.18" }
 tokio = { version = "1.49.0", features = ["full"] }
 tokio-console = { version = "0.1.14" }
 tokio-tungstenite = { version = "0.28.0" }
-toml = { version = "0.9.8" }
-toml_edit = { version = "0.23.9" }
+toml = { version = "0.9.11" }
+toml_edit = { version = "0.24.0" }
 tonic = { version = "0.14.2", features = ["transport", "codegen"] }
 tonic-build = { version = "0.14.2", features = ["transport"] }
 tonic-prost-build = { version = "0.14.2" }
 unbug = { version = "0.4.0" }
 url = { version = "2.5.8" }
-uuid = { version = "1.19.0" }
-zip = { version = "7.1.0" }
+uuid = { version = "1.20.0" }
+zip = { version = "7.2.0" }
 tonic-prost = { version = "0.14.2" }
 
 [workspace.metadata]
