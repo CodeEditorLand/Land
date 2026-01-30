@@ -12,41 +12,25 @@
 	"explorer.excludeGitIgnore": false,
 
 	"files.exclude": {
-		"**/.DS_Store": true,
-
 		"**/.git": true,
-
-		"**/.hg": true,
-
 		"**/.svn": true,
-
-		"**/.trunk/*actions/": true,
-
-		"**/.trunk/*logs/": true,
-
-		"**/.trunk/*notifications/": true,
-
-		"**/.trunk/*out/": true,
-
-		"**/.trunk/*plugins/": true,
-
-		"**/CVS": true,
-
-		"**/Target": false,
-
+		"**/.hg": true,
+		"**/.DS_Store": true,
 		"**/Thumbs.db": true,
-
+		"**/CVS": true,
+		"**/.ruby-lsp": true,
+		"**/.trunk/*actions/": true,
+		"**/.trunk/*logs/": true,
+		"**/.trunk/*notifications/": true,
+		"**/.trunk/*out/": true,
+		"**/.trunk/*plugins/": true,
 		"**/cache": true,
-
-		"**/node_modules": true,
-
 		"**/target": false,
-
 		"**/temp": true,
-
 		"**/tmp": true,
-
-		"**/vendor": true
+		"**/vendor": true,
+		"**/Target": false,
+		"**/node_modules": true
 	},
 
 	"files.watcherExclude": {
