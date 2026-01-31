@@ -102,7 +102,9 @@
 
 		"**/node_modules": true,
 
-		"**/target": true
+		"**/target": true,
+
+		"**/.turbo": true
 	},
 
 	"typescript.tsc.autoDetect": "on",
