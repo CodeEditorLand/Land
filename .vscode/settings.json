@@ -29,7 +29,8 @@
 		"**/target": false,
 		"**/temp": true,
 		"**/tmp": true,
-		"**/vendor": true
+		"**/vendor": true,
+		"**/Dependency/Microsoft/Dependency/Editor": true
 	},
 	"files.watcherExclude": {
 		"**/.cargo/registry/**": true,
@@ -38,7 +39,8 @@
 		"**/Target/**": true,
 		"**/dist/**": true,
 		"**/node_modules/**": true,
-		"**/target/**": true
+		"**/target/**": true,
+		"**/Dependency/Microsoft/Dependency/Editor": true
 	},
 	"prettier.documentSelectors": [
 		"**/*.astro",
