@@ -30,7 +30,7 @@
 		"**/temp": true,
 		"**/tmp": true,
 		"**/vendor": true,
-		"**/Dependency/Microsoft/Dependency/Editor": true
+		// "**/Dependency/Microsoft/Dependency/Editor": true
 	},
 	"files.watcherExclude": {
 		"**/.cargo/registry/**": true,
