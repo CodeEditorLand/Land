@@ -396,15 +396,15 @@ digraph G {
   }
 
   subgraph cluster_60 {
-    label="WebView";
+    label="Webview";
     style=filled; color="#21618C"; fillcolor="#21618C20";
-    "n1304" [label="WebView", shape=folder, fillcolor="#21618C", penwidth=1.5];
-    "n1550" [label="cargo (./Dependency/Tauri/Dependency/WebView): web-view v0.6.2", shape=ellipse, fillcolor="#EB984E", penwidth=1.5];
+    "n1304" [label="Webview", shape=folder, fillcolor="#21618C", penwidth=1.5];
+    "n1550" [label="cargo (./Dependency/Tauri/Dependency/Webview): web-view v0.6.2", shape=ellipse, fillcolor="#EB984E", penwidth=1.5];
   subgraph cluster_61 {
     label="webview-sys";
     style=filled; color="#21618C"; fillcolor="#21618C20";
     "n1306" [label="webview-sys", shape=folder, fillcolor="#21618C", penwidth=1.5];
-    "n1551" [label="cargo (./Dependency/Tauri/Dependency/WebView/webview-sys): webview-sys v0.5.0", shape=ellipse, fillcolor="#EB984E", penwidth=1.5];
+    "n1551" [label="cargo (./Dependency/Tauri/Dependency/Webview/webview-sys): webview-sys v0.5.0", shape=ellipse, fillcolor="#EB984E", penwidth=1.5];
     "n1307" [label="Cargo.toml", shape=note, fillcolor="#FADBD8", penwidth=1];
   }
 
@@ -3552,15 +3552,15 @@ digraph G {
   }
 
   subgraph cluster_555 {
-    label="LandWebViewUIToolkitSamples";
+    label="LandWebviewUIToolkitSamples";
     style=filled; color="#21618C"; fillcolor="#21618C20";
-    "n719" [label="LandWebViewUIToolkitSamples", shape=folder, fillcolor="#21618C", penwidth=1.5];
+    "n719" [label="LandWebviewUIToolkitSamples", shape=folder, fillcolor="#21618C", penwidth=1.5];
   }
 
   subgraph cluster_556 {
-    label="LandWebViewUIToolkit";
+    label="LandWebviewUIToolkit";
     style=filled; color="#21618C"; fillcolor="#21618C20";
-    "n718" [label="LandWebViewUIToolkit", shape=folder, fillcolor="#21618C", penwidth=1.5];
+    "n718" [label="LandWebviewUIToolkit", shape=folder, fillcolor="#21618C", penwidth=1.5];
   }
 
   subgraph cluster_557 {

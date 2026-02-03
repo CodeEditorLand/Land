@@ -307,7 +307,7 @@
 <g id="clust60" class="cluster">
 <title>cluster_60</title>
 <polygon fill="#21618c" fill-opacity="0.125490" stroke="#21618c" stroke-width="2" points="1573.73,-6892 1573.73,-7240 4027.88,-7240 4027.88,-6892 1573.73,-6892"/>
-<text text-anchor="middle" x="2800.81" y="-7222.7" font-family="Arial" font-size="14.00">WebView</text>
+<text text-anchor="middle" x="2800.81" y="-7222.7" font-family="Arial" font-size="14.00">Webview</text>
 </g>
 <g id="clust61" class="cluster">
 <title>cluster_61</title>
@@ -2782,12 +2782,12 @@
 <g id="clust555" class="cluster">
 <title>cluster_555</title>
 <polygon fill="#21618c" fill-opacity="0.125490" stroke="#21618c" stroke-width="2" points="1506.23,-57704 1506.23,-57788 1757.43,-57788 1757.43,-57704 1506.23,-57704"/>
-<text text-anchor="middle" x="1631.83" y="-57770.7" font-family="Arial" font-size="14.00">LandWebViewUIToolkitSamples</text>
+<text text-anchor="middle" x="1631.83" y="-57770.7" font-family="Arial" font-size="14.00">LandWebviewUIToolkitSamples</text>
 </g>
 <g id="clust556" class="cluster">
 <title>cluster_556</title>
 <polygon fill="#21618c" fill-opacity="0.125490" stroke="#21618c" stroke-width="2" points="1532.86,-57796 1532.86,-57880 1730.81,-57880 1730.81,-57796 1532.86,-57796"/>
-<text text-anchor="middle" x="1631.83" y="-57862.7" font-family="Arial" font-size="14.00">LandWebViewUIToolkit</text>
+<text text-anchor="middle" x="1631.83" y="-57862.7" font-family="Arial" font-size="14.00">LandWebviewUIToolkit</text>
 </g>
 <g id="clust557" class="cluster">
 <title>cluster_557</title>
@@ -7164,7 +7164,7 @@
 <g id="node100" class="node">
 <title>n1304</title>
 <polygon fill="#21618c" stroke="black" stroke-width="1.5" points="1681.93,-7174.27 1678.93,-7178.27 1657.93,-7178.27 1654.93,-7174.27 1581.73,-7174.27 1581.73,-7129.73 1681.93,-7129.73 1681.93,-7174.27"/>
-<text text-anchor="middle" x="1631.83" y="-7146.57" font-family="Arial" font-size="14.00">WebView</text>
+<text text-anchor="middle" x="1631.83" y="-7146.57" font-family="Arial" font-size="14.00">Webview</text>
 </g>
 <!-- n1116&#45;&gt;n1304 -->
 <g id="edge1304" class="edge">
@@ -8621,7 +8621,7 @@
 <g id="node101" class="node">
 <title>n1550</title>
 <ellipse fill="#eb984e" stroke="black" stroke-width="1.5" cx="2376.17" cy="-6932" rx="318.52" ry="31.5"/>
-<text text-anchor="middle" x="2376.17" y="-6926.57" font-family="Arial" font-size="14.00">cargo (./Dependency/Tauri/Dependency/WebView): web&#45;view v0.6.2</text>
+<text text-anchor="middle" x="2376.17" y="-6926.57" font-family="Arial" font-size="14.00">cargo (./Dependency/Tauri/Dependency/Webview): web&#45;view v0.6.2</text>
 </g>
 <!-- n1304&#45;&gt;n1550 -->
 <g id="edge1550" class="edge">
@@ -8662,7 +8662,7 @@
 <g id="node103" class="node">
 <title>n1551</title>
 <ellipse fill="#eb984e" stroke="black" stroke-width="1.5" cx="3622.3" cy="-7012" rx="389.58" ry="31.5"/>
-<text text-anchor="middle" x="3622.3" y="-7006.57" font-family="Arial" font-size="14.00">cargo (./Dependency/Tauri/Dependency/WebView/webview&#45;sys): webview&#45;sys v0.5.0</text>
+<text text-anchor="middle" x="3622.3" y="-7006.57" font-family="Arial" font-size="14.00">cargo (./Dependency/Tauri/Dependency/Webview/webview&#45;sys): webview&#45;sys v0.5.0</text>
 </g>
 <!-- n1306&#45;&gt;n1551 -->
 <g id="edge1551" class="edge">
@@ -16111,7 +16111,7 @@
 <g id="node781" class="node">
 <title>n719</title>
 <polygon fill="#21618c" stroke="black" stroke-width="1.5" points="1749.43,-57756.28 1746.43,-57760.28 1725.43,-57760.28 1722.43,-57756.28 1514.23,-57756.28 1514.23,-57711.72 1749.43,-57711.72 1749.43,-57756.28"/>
-<text text-anchor="middle" x="1631.83" y="-57728.57" font-family="Arial" font-size="14.00">LandWebViewUIToolkitSamples</text>
+<text text-anchor="middle" x="1631.83" y="-57728.57" font-family="Arial" font-size="14.00">LandWebviewUIToolkitSamples</text>
 </g>
 <!-- n35&#45;&gt;n719 -->
 <g id="edge719" class="edge">
@@ -16124,7 +16124,7 @@
 <g id="node782" class="node">
 <title>n718</title>
 <polygon fill="#21618c" stroke="black" stroke-width="1.5" points="1722.81,-57848.28 1719.81,-57852.28 1698.81,-57852.28 1695.81,-57848.28 1540.86,-57848.28 1540.86,-57803.72 1722.81,-57803.72 1722.81,-57848.28"/>
-<text text-anchor="middle" x="1631.83" y="-57820.57" font-family="Arial" font-size="14.00">LandWebViewUIToolkit</text>
+<text text-anchor="middle" x="1631.83" y="-57820.57" font-family="Arial" font-size="14.00">LandWebviewUIToolkit</text>
 </g>
 <!-- n35&#45;&gt;n718 -->
 <g id="edge718" class="edge">
