@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 pnpm cross-env \
-	Browser=false \
+	Browser=true \
 	Bundle=true \
 	Clean=true \
 	Compile=false \
