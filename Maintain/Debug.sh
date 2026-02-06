@@ -5,6 +5,7 @@ pnpm cross-env \
 	Bundle=true \
 	Clean=true \
 	Compile=false \
+	Debug=true \
 	Dependency=Microsoft/VSCode \
 	NODE_ENV=development \
 	NODE_VERSION=22 \
