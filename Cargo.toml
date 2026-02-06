@@ -52,7 +52,7 @@ Air = { path = "Element/Air" }
 Common = { path = "Element/Common" }
 Echo = { path = "Element/Echo" }
 
-anyhow = { version = "1.0.100" }
+anyhow = { version = "1.0.101" }
 async-trait = { version = "0.1.89" }
 base64 = { version = "0.22.1" }
 bincode = { version = "=2.0.1", features = [
