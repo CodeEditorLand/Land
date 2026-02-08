@@ -109,6 +109,7 @@ tokio = { version = "1.49.0", features = ["full"] }
 tokio-console = { version = "0.1.14" }
 tokio-stream = { version = "0.1.18" }
 tokio-tungstenite = { version = "0.28.0" }
+tokio-util = { version = "0.7.13", features = ["full"] }
 toml = { version = "0.9.11" }
 toml_edit = { version = "0.24.0" }
 tonic = { version = "0.14.3", features = ["transport", "codegen"] }
@@ -116,6 +117,9 @@ tonic-build = { version = "0.14.3", features = ["transport"] }
 tonic-prost = { version = "0.14.3" }
 tonic-prost-build = { version = "0.14.3" }
 unbug = { version = "0.4.0" }
+rustls = { version = "0.23" }
+rustls-pemfile = { version = "2.2" }
+tokio-rustls = { version = "0.26" }
 url = { version = "2.5.8" }
 uuid = { version = "1.20.0" }
 zip = { version = "7.2.0" }
