@@ -29,7 +29,7 @@
 		"**/target": false,
 		"**/temp": true,
 		"**/tmp": true,
-		"**/vendor": true,
+		"**/vendor": true
 		// "**/Dependency/Microsoft/Dependency/Editor": true
 	},
 	"files.watcherExclude": {
@@ -75,5 +75,15 @@
 		"**/target": true
 	},
 	"typescript.tsc.autoDetect": "on",
-	"typescript.tsserver.experimental.enableProjectDiagnostics": true
+	"typescript.tsserver.experimental.enableProjectDiagnostics": true,
+	"formatFiles.excludedFolders": [
+		"node_modules",
+		".vscode",
+		".git",
+		"dist",
+		".chrome",
+		"Target",
+		"target"
+	],
+	"formatFiles.excludePattern": "**/Generated/*.rs,**/Documentation/Rust/*.rs"
 }
