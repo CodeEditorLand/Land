@@ -1,0 +1,195 @@
+{
+  /**
+   * Land Configuration - Single Source of Truth
+   * 
+   * This file serves as the central configuration for the entire monorepo:
+   * - Build process configuration
+   * - Environment variable management
+   * - Profile-based settings
+   * - Dynamic Rhai script integration
+   * 
+   * Supported features:
+   * - Comments (lines starting with // or /**\/ blocks)
+   * - Trailing commas
+   * - Multiple configuration profiles
+   * - Template-based default values
+   * - Environment variable prefixes per crate
+   * 
+   * Version history:
+   * v1.0.0 - Initial configuration structure
+   */
+  "version": "1.0.0",
+  
+  /**
+   * Configuration profiles for different build scenarios.
+   * Each profile contains static environment variables and optional Rhai script references.
+   */
+  "profiles": {
+    /**
+     * Debug build profile
+     * Optimized for development with verbose logging and source maps
+     */
+    "debug": {
+      "description": "Debug build profile with full logging and development features",
+      "env": {
+        "Debug": "true",
+        "Browser": "true",
+        "Bundle": "true",
+        "Clean": "true",
+        "Compile": "false",
+        "NODE_ENV": "development",
+        "NODE_VERSION": "22",
+        "NODE_OPTIONS": "--max-old-space-size=16384",
+        "RUST_LOG": "debug",
+        "AIR_LOG_JSON": "false",
+        "AIR_LOG_FILE": "",
+        "Level": "silent",
+        "Dependency": "Microsoft/VSCode"
+      },
+      "rhai_script": "scripts/profiles/debug-profile.rhai"
+    },
+
+    /**
+     * Production build profile
+     * Optimized for release with minimal logging
+     */
+    "production": {
+      "description": "Production build profile optimized for release deployment",
+      "env": {
+        "Debug": "false",
+        "Browser": "false",
+        "Bundle": "true",
+        "Clean": "true",
+        "Compile": "true",
+        "NODE_ENV": "production",
+        "NODE_VERSION": "22",
+        "NODE_OPTIONS": "--max-old-space-size=8192",
+        "RUST_LOG": "info",
+        "AIR_LOG_JSON": "false",
+        "Dependency": "Microsoft/VSCode"
+      },
+      "rhai_script": "scripts/profiles/production-profile.rhai"
+    },
+
+    /**
+     * Release build profile
+     * Complete release with all packaging steps
+     */
+    "release": {
+      "description": "Release build profile with complete packaging and signing",
+      "env": {
+        "Debug": "false",
+        "Browser": "false",
+        "Bundle": "true",
+        "Clean": "true",
+        "Compile": "true",
+        "NODE_ENV": "production",
+        "NODE_VERSION": "22",
+        "NODE_OPTIONS": "--max-old-space-size=8192",
+        "RUST_LOG": "warn",
+        "AIR_LOG_JSON": "false",
+        "Dependency": "Microsoft/VSCode"
+      },
+      "rhai_script": "scripts/profiles/release-profile.rhai"
+    },
+
+    /**
+     * Bundler Preparation Profile
+     * Sets up environment for SWC or OXC bundler integration
+     */
+    "bundler-preparation": {
+      "description": "Prepares build system for SWC/OXC bundler integration",
+      "env": {
+        "BUNDLER_TYPE": "swc",
+        "SWC_TARGET": "esnext",
+        "SWC_MODULE": "esnext",
+        "SWC_SOURCE_MAPS": "true",
+        "SWC_MINIFY": "false",
+        "SWC_TREE_SHAKING": "true"
+      },
+      "rhai_script": "scripts/bundler/bundler-preparation.rhai"
+    },
+
+    /**
+     * SWC Bundle Profile
+     * Uses SWC (Speedy Web Compiler) for high-performance bundling
+     */
+    "swc-bundle": {
+      "description": "SWC bundler for ultra-fast compilation and bundling",
+      "env": {
+        "BUNDLER_TYPE": "swc",
+        "SWC_TARGET": "es2022",
+        "SWC_MODULE": "esnext",
+        "SWC_SOURCE_MAPS": "true",
+        "SWC_MINIFY": "true",
+        "SWC_TREE_SHAKING": "true",
+        "NODE_ENV": "production",
+        "RUST_LOG": "info"
+      },
+      "rhai_script": "scripts/bundler/swc-bundle.rhai"
+    },
+
+    /**
+     * OXC Bundle Profile
+     * Uses OXC (next-generation toolchain by Boshen) for bundling
+     */
+    "oxc-bundle": {
+      "description": "OXC bundler for next-generation JavaScript toolchain",
+      "env": {
+        "BUNDLER_TYPE": "oxc",
+        "OXC_TARGET": "es2022",
+        "OXC_MODULE": "esmodule",
+        "OXC_SOURCE_MAPS": "true",
+        "OXC_MINIFY": "true",
+        "OXC_TREE_SHAKING": "true",
+        "NODE_ENV": "production",
+        "RUST_LOG": "info"
+      },
+      "rhai_script": "scripts/bundler/oxc-bundle.rhai"
+    }
+  },
+
+  /**
+   * Default template values used across all profiles.
+   * These serve as base values that can be overridden by profile-specific env vars.
+   */
+  "templates": {
+    "env": {
+      "MOUNTAIN_DIR": "Element/Mountain",
+      "MOUNTAIN_ORIGINAL_BASE_NAME": "Mountain",
+      "MOUNTAIN_BUNDLE_ID_PREFIX": "land.editor.binary",
+      "MOUNTAIN_HOST": "localhost",
+      "MOUNTAIN_PORT": "50051",
+      "MOUNTAIN_CONNECTION_TIMEOUT": "30000",
+      "MOUNTAIN_MAX_RETRIES": "3",
+      "MOUNTAIN_ENABLE_TLS": "false",
+      "MOUNTAIN_HEALTH_CHECK_PERIOD": "30000",
+      "AIR_LOG_DIR": "",
+      "VSCODE_APP_ROOT": ""
+    }
+  },
+
+  /**
+   * Environment variable prefixes for each crate/package.
+   * Used to namespace environment variables and avoid conflicts.
+   */
+  "env_prefixes": {
+    "air": "AIR_",
+    "cocoon": "MOUNTAIN_",
+    "grove": "VSCODE_",
+    "maintain": "LAND_"
+  },
+
+  /**
+   * Build command templates.
+   * These are pre-configured command sequences that can be referenced by profiles.
+   */
+  "build_commands": {
+    "debug": "pnpm tauri build --debug",
+    "production": "pnpm tauri build",
+    "release": "pnpm tauri build",
+    "dev": "pnpm tauri dev",
+    "swc-bundle": "pnpm tauri build",
+    "oxc-bundle": "pnpm tauri build"
+  }
+}

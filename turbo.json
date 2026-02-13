@@ -136,7 +136,9 @@
 
 		"MACOSX_DEPLOYMENT_TARGET",
 
-		"Wind"
+		"Wind",
+
+		"Level"
 	],
 
 	"tasks": {

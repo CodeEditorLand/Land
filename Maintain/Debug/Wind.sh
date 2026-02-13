@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 
 pnpm cross-env \
-	Browser=true \
+	Browser=false \
 	Bundle=true \
 	Clean=true \
 	Compile=false \
-	Debug=false \
+	Debug=true \
+	Wind=true \
 	Level=silent \
 	Dependency=Microsoft/VSCode \
-	NODE_ENV=production \
+	NODE_ENV=development \
 	NODE_VERSION=22 \
 	NODE_OPTIONS=--max-old-space-size=16384 \
-	./Target/release/Maintain -- pnpm tauri build
+	./Target/release/Maintain -- pnpm tauri build --debug
