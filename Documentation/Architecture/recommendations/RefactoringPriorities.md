@@ -13,16 +13,18 @@
 
 ## Overview
 
-This document consolidates all critical issues, known problems, and improvement opportunities identified across all Code Editor Land components. Priorities are based on impact, urgency, and effort required.
+This document consolidates all critical issues, known problems, and improvement
+opportunities identified across all Code Editor Land components. Priorities are
+based on impact, urgency, and effort required.
 
 ### Priority Definitions
 
-| Priority | Description | Timeframe |
-|----------|-------------|-----------|
-| **Critical** | Blocks functionality or causes instability | Immediate (1-2 weeks) |
-| **High** | Significant impact on user experience | Short-term (1-2 months) |
-| **Medium** | Important but not blocking | Medium-term (3-6 months) |
-| **Low** | Nice-to-have improvements | Long-term (6+ months) |
+| Priority     | Description                                | Timeframe                |
+| ------------ | ------------------------------------------ | ------------------------ |
+| **Critical** | Blocks functionality or causes instability | Immediate (1-2 weeks)    |
+| **High**     | Significant impact on user experience      | Short-term (1-2 months)  |
+| **Medium**   | Important but not blocking                 | Medium-term (3-6 months) |
+| **Low**      | Nice-to-have improvements                  | Long-term (6+ months)    |
 
 ---
 
@@ -33,16 +35,18 @@ This document consolidates all critical issues, known problems, and improvement 
 #### 1. Mountain IPC Layer Code Duplication
 
 **Component**: Mountain  
-**Location**: [`Element/Mountain/Source/IPC/`](../../Element/Mountain/Source/IPC/)
+**Location**: [`Element/Mountain/Source/IPC/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC)
 
 **Issue**: Significant code duplication across IPC modules
 
 **Impact**:
+
 - Maintenance burden
 - Inconsistent error handling
 - Difficulty in ensuring consistent behavior
 
 **Recommendation**:
+
 ```rust
 // Consolidate common IPC logic into shared modules
 pub mod common {
@@ -54,7 +58,8 @@ pub mod common {
 
 **Estimated Effort**: 2 weeks
 
-**Related Refactoring**: See [`Element/Mountain/Source/IPC/REFACTORING_SUMMARY.md`](../../Element/Mountain/Source/IPC/REFACTORING_SUMMARY.md)
+**Related Refactoring**: See
+[`Element/Mountain/Source/IPC/RefactoringSummary.md`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/RefactoringSummary.md)
 
 #### 2. Cocoon API Parity Gaps
 
@@ -63,14 +68,14 @@ pub mod common {
 
 **Issue**: Missing VS Code API implementations
 
-**Missing APIs**:
-| API Category | Status | Impact |
-|--------------|--------|--------|
-| Debug API | ❌ Not Implemented | Cannot debug extensions |
-| Test API | ❌ Not Implemented | Cannot run extension tests in-editor |
-| Advanced Language Features | ⚠️ Partial | Limited code intelligence |
+**Missing APIs**: | API Category | Status | Impact |
+|--------------|--------|--------| | Debug API | ❌ Not Implemented | Cannot
+debug extensions | | Test API | ❌ Not Implemented | Cannot run extension tests
+in-editor | | Advanced Language Features | ⚠️ Partial | Limited code
+intelligence |
 
 **Recommendation**:
+
 1. Implement Debug Adapter Protocol (DAP) support
 2. Implement Test Runner integration
 3. Complete remaining language feature providers
@@ -85,6 +90,7 @@ pub mod common {
 **Issue**: Not all VS Code workbench services implemented
 
 **Missing Services**:
+
 - Status Bar Service
 - Activity Bar Service
 - Sidebar Service
@@ -99,16 +105,18 @@ pub mod common {
 #### 4. Air Indexing Performance
 
 **Component**: Air  
-**Location**: [`Element/Air/Source/Indexing/`](../../Element/Air/Source/Indexing/)
+**Location**: [`Element/Air/Source/Indexing/`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing)
 
 **Issue**: Large projects can be slow to index
 
 **Impact**:
+
 - Poor first-launch experience
 - Delayed symbol navigation
 - High memory consumption
 
 **Recommendation**:
+
 1. Implement incremental indexing
 2. Add indexing progress indicators
 3. Optimize symbol extraction
@@ -126,6 +134,7 @@ pub mod common {
 **Issue**: Inconsistent error handling across handlers
 
 **Recommendation**:
+
 1. Establish consistent error types
 2. Implement error recovery mechanisms
 3. Add comprehensive error logging
@@ -136,11 +145,12 @@ pub mod common {
 #### 6. Sky Component Coverage
 
 **Component**: Sky  
-**Location**: [`Element/Sky/Source/`](../../Element/Sky/Source/)
+**Location**: [`Element/Sky/Source/`](https://github.com/CodeEditorLand/Sky/tree/main/Source)
 
 **Issue**: Not all UI components implemented
 
 **Missing Components**:
+
 - Status bar components
 - Activity bar components
 - Panel components
@@ -160,6 +170,7 @@ pub mod common {
 **Issue**: Module interceptor needs comprehensive module whitelist
 
 **Recommendation**:
+
 1. Audit all Node.js module usage
 2. Create comprehensive whitelist
 3. Implement sandbox enforcement verification
@@ -174,11 +185,13 @@ pub mod common {
 **Issue**: Terminal output is sent to multiple destinations (Cocoon, Wind, Sky)
 
 **Impact**:
+
 - Unnecessary duplication
 - Reduced performance
 - Increased complexity
 
 **Recommendation**:
+
 1. Consolidate terminal output routing
 2. Determine single source of truth for display
 3. Simplify notification flow
@@ -192,11 +205,13 @@ pub mod common {
 #### 1. Mountain Command System Consolidation
 
 **Component**: Mountain  
-**Location**: [`Element/Mountain/Source/Command/`](../../Element/Mountain/Source/Command/) and registry
+**Location**: [`Element/Mountain/Source/Command/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Command)
+and registry
 
 **Issue**: Multiple command execution paths
 
 **Recommendation**:
+
 1. Unify command registration logic
 2. Consolidate command execution paths
 3. Simplify command dispatch
@@ -211,6 +226,7 @@ pub mod common {
 **Issue**: Effect execution overhead and memory usage
 
 **Recommendation**:
+
 1. Profile Effect execution
 2. Optimize service layer
 3. Reduce unnecessary allocations
@@ -226,6 +242,7 @@ pub mod common {
 **Issue**: Module interception causes overhead
 
 **Recommendation**:
+
 1. Profile interceptor performance
 2. Optimize lookup logic
 3. Cache resolved modules
@@ -236,11 +253,12 @@ pub mod common {
 #### 4. Air Language Support Expansion
 
 **Component**: Air  
-**Location**: [`Element/Air/Source/Indexing/Language/`](../../Element/Air/Source/Indexing/Language/)
+**Location**: [`Element/Air/Source/Indexing/Language/`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language)
 
 **Issue**: Limited language support (Rust, TypeScript only)
 
 **Recommendation**:
+
 1. Add C# parser
 2. Add Python parser
 3. Add support for more languages
@@ -256,6 +274,7 @@ pub mod common {
 **Issue**: No dark mode support
 
 **Recommendation**:
+
 1. Implement dark mode toggle
 2. Create CSS variables for theming
 3. Update all components for dark mode
@@ -266,11 +285,12 @@ pub mod common {
 #### 6. Mountain Connection Pool Implementation
 
 **Component**: Mountain  
-**Location**: [`Element/Mountain/Source/IPC/Connection/Pool/`](../../Element/Mountain/Source/IPC/Connection/Pool/)
+**Location**: [`Element/Mountain/Source/IPC/Connection/Pool/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/Connection/Pool)
 
 **Issue**: Connection pool implementation incomplete
 
 **Recommendation**:
+
 1. Complete pool implementation
 2. Add pool statistics
 3. Implement health monitoring
@@ -285,6 +305,7 @@ pub mod common {
 **Issue**: Extension crashes can affect stability
 
 **Recommendation**:
+
 1. Implement extension isolation
 2. Add crash detection
 3. Implement automatic restart
@@ -300,6 +321,7 @@ pub mod common {
 **Issue**: Limited component tests
 
 **Recommendation**:
+
 1. Add component unit tests
 2. Add integration tests
 3. Add visual regression tests
@@ -314,11 +336,12 @@ pub mod common {
 #### 1. Mountain Message Compression
 
 **Component**: Mountain  
-**Location**: [`Element/Mountain/Source/IPC/Encryption/`](../../Element/Mountain/Source/IPC/Encryption/)
+**Location**: [`Element/Mountain/Source/IPC/Encryption/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/Encryption)
 
 **Issue**: Message compression not fully utilized
 
 **Recommendation**:
+
 1. Enable compression for large messages
 2. Add compression statistics
 3. Tune compression levels
@@ -328,11 +351,12 @@ pub mod common {
 #### 2. Air Configuration Hot Reload Testing
 
 **Component**: Air  
-**Location**: [`Element/Air/Source/Configuration/HotReload.rs`](../../Element/Air/Source/Configuration/HotReload.rs)
+**Location**: [`Element/Air/Source/Configuration/HotReload.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Configuration/HotReload.rs)
 
 **Issue**: Configuration hot-reload not fully tested
 
 **Recommendation**:
+
 1. Add comprehensive hot-reload tests
 2. Test rollback mechanism
 3. Test edge cases
@@ -347,6 +371,7 @@ pub mod common {
 **Issue**: Missing advanced features
 
 **Recommendations**:
+
 1. Add better error handling
 2. Add enhanced diagnostics
 3. Improve performance monitoring
@@ -362,6 +387,7 @@ pub mod common {
 **Issue**: Limited UI customization
 
 **Recommendations**:
+
 1. Add theme system
 2. Add layout customization
 3. Add user preference storage
@@ -372,11 +398,13 @@ pub mod common {
 #### 5. Air Metrics and Tracing
 
 **Component**: Air  
-**Location**: [`Element/Air/Source/Metrics/`](../../Element/Air/Source/Metrics/) and [`Element/Air/Source/Tracing/`](../../Element/Air/Source/Tracing/)
+**Location**: [`Element/Air/Source/Metrics/`](https://github.com/CodeEditorLand/Air/tree/main/Source/Metrics)
+and [`Element/Air/Source/Tracing/`](https://github.com/CodeEditorLand/Air/tree/main/Source/Tracing)
 
 **Issue**: Basic implementation, needs enhancement
 
 **Recommendations**:
+
 1. Add Prometheus metrics export
 2. Add OpenTelemetry tracing
 3. Create Grafana dashboards
@@ -390,6 +418,7 @@ pub mod common {
 **Issue**: Documentation scattered and incomplete
 
 **Recommendations**:
+
 1. Consolidate component documentation
 2. Add architecture diagrams
 3. Add workflow examples
@@ -404,6 +433,7 @@ pub mod common {
 ### Cocoon
 
 **Current State**:
+
 - ✅ Core functionality complete
 - ✅ Basic language features implemented
 - ⚠️ API parity gaps
@@ -413,18 +443,19 @@ pub mod common {
 
 **Prioritized Actions**:
 
-| Priority | Action | Impact | Effort |
-|----------|--------|--------|--------|
-| **Critical** | Complete Debug API | Enables debugging extensions | 4 weeks |
-| **Critical** | Complete Test API | Enables testing in-editor | 2 weeks |
-| **High** | Audit and secure module interceptor | Security | 2 weeks |
-| **Medium** | Optimize module interceptor performance | Performance | 1-2 weeks |
-| **Medium** | Add extension crash recovery | Reliability | 2-3 weeks |
-| **Low** | Complete advanced language features | Features | 3-4 weeks |
+| Priority     | Action                                  | Impact                       | Effort    |
+| ------------ | --------------------------------------- | ---------------------------- | --------- |
+| **Critical** | Complete Debug API                      | Enables debugging extensions | 4 weeks   |
+| **Critical** | Complete Test API                       | Enables testing in-editor    | 2 weeks   |
+| **High**     | Audit and secure module interceptor     | Security                     | 2 weeks   |
+| **Medium**   | Optimize module interceptor performance | Performance                  | 1-2 weeks |
+| **Medium**   | Add extension crash recovery            | Reliability                  | 2-3 weeks |
+| **Low**      | Complete advanced language features     | Features                     | 3-4 weeks |
 
 ### Mountain
 
 **Current State**:
+
 - ✅ Core functionality complete
 - ✅ gRPC server operational
 - ⚠️ Code duplication in IPC layer
@@ -433,17 +464,18 @@ pub mod common {
 
 **Prioritized Actions**:
 
-| Priority | Action | Impact | Effort |
-|----------|--------|--------|--------|
-| **Critical** | Refactor IPC layer to eliminate duplication | Maintainability | 2 weeks |
-| **High** | Standardize error handling | Reliability | 1-2 weeks |
-| **High** | Complete connection pool implementation | Performance | 2 weeks |
-| **Medium** | Consolidate command system | Maintainability | 1-2 weeks |
-| **Low** | Enable message compression | Performance | 1 week |
+| Priority     | Action                                      | Impact          | Effort    |
+| ------------ | ------------------------------------------- | --------------- | --------- |
+| **Critical** | Refactor IPC layer to eliminate duplication | Maintainability | 2 weeks   |
+| **High**     | Standardize error handling                  | Reliability     | 1-2 weeks |
+| **High**     | Complete connection pool implementation     | Performance     | 2 weeks   |
+| **Medium**   | Consolidate command system                  | Maintainability | 1-2 weeks |
+| **Low**      | Enable message compression                  | Performance     | 1 week    |
 
 ### Vine
 
 **Current State**:
+
 - ✅ Protocol definition complete
 - ✅ Code generation working
 - ✅ Cross-language compatibility
@@ -452,15 +484,16 @@ pub mod common {
 
 **Prioritized Actions**:
 
-| Priority | Action | Impact | Effort |
-|----------|--------|--------|--------|
-| **Medium** | Add security features (TLS, authentication) | Security | 2-3 weeks |
-| **Medium** | Add streaming support for large transfers | Performance | 1 week |
-| **Low** | Improve error messages in generated code | Developer Experience | 1 week |
+| Priority   | Action                                      | Impact               | Effort    |
+| ---------- | ------------------------------------------- | -------------------- | --------- |
+| **Medium** | Add security features (TLS, authentication) | Security             | 2-3 weeks |
+| **Medium** | Add streaming support for large transfers   | Performance          | 1 week    |
+| **Low**    | Improve error messages in generated code    | Developer Experience | 1 week    |
 
 ### Air
 
 **Current State**:
+
 - ✅ Core services complete
 - ✅ Health monitoring working
 - ⚠️ Indexing performance issues
@@ -469,17 +502,18 @@ pub mod common {
 
 **Prioritized Actions**:
 
-| Priority | Action | Impact | Effort |
-|----------|--------|--------|--------|
-| **High** | Optimize indexing performance | Performance | 3-4 weeks |
-| **Medium** | Expand language support | Features | 3-4 weeks |
-| **Medium** | Test hot-reload functionality | Reliability | 1 week |
-| **Low** | Add Prometheus metrics | Observability | 1 week |
-| **Low** | Create Grafana dashboards | Observability | 1 week |
+| Priority   | Action                        | Impact        | Effort    |
+| ---------- | ----------------------------- | ------------- | --------- |
+| **High**   | Optimize indexing performance | Performance   | 3-4 weeks |
+| **Medium** | Expand language support       | Features      | 3-4 weeks |
+| **Medium** | Test hot-reload functionality | Reliability   | 1 week    |
+| **Low**    | Add Prometheus metrics        | Observability | 1 week    |
+| **Low**    | Create Grafana dashboards     | Observability | 1 week    |
 
 ### Wind
 
 **Current State**:
+
 - ✅ Core services complete
 - ⚠️ Service coverage incomplete
 - ⚠️ Performance overhead
@@ -487,17 +521,18 @@ pub mod common {
 
 **Prioritized Actions**:
 
-| Priority | Action | Impact | Effort |
-|----------|--------|--------|--------|
-| **High** | Implement missing services | Features | 2-3 weeks |
-| **Medium** | Optimize Effect execution | Performance | 2-3 weeks |
-| **Medium** | Add comprehensive tests | Reliability | 2-3 weeks |
-| **Low** | Add better error handling | Developer Experience | 1 week |
-| **Low** | Add performance monitoring | Observability | 1 week |
+| Priority   | Action                     | Impact               | Effort    |
+| ---------- | -------------------------- | -------------------- | --------- |
+| **High**   | Implement missing services | Features             | 2-3 weeks |
+| **Medium** | Optimize Effect execution  | Performance          | 2-3 weeks |
+| **Medium** | Add comprehensive tests    | Reliability          | 2-3 weeks |
+| **Low**    | Add better error handling  | Developer Experience | 1 week    |
+| **Low**    | Add performance monitoring | Observability        | 1 week    |
 
 ### Sky
 
 **Current State**:
+
 - ✅ Core framework working
 - ⚠️ Component coverage incomplete
 - ⚠️ No dark mode
@@ -505,13 +540,13 @@ pub mod common {
 
 **Prioritized Actions**:
 
-| Priority | Action | Impact | Effort |
-|----------|--------|--------|--------|
-| **High** | Implement missing components | Features | 2-3 weeks |
-| **Medium** | Add dark mode support | User Experience | 1-2 weeks |
-| **Medium** | Add component tests | Reliability | 2-3 weeks |
-| **Low** | Add UI customization | User Experience | 4-6 weeks |
-| **Low** | Improve documentation | Developer Experience | 1 week |
+| Priority   | Action                       | Impact               | Effort    |
+| ---------- | ---------------------------- | -------------------- | --------- |
+| **High**   | Implement missing components | Features             | 2-3 weeks |
+| **Medium** | Add dark mode support        | User Experience      | 1-2 weeks |
+| **Medium** | Add component tests          | Reliability          | 2-3 weeks |
+| **Low**    | Add UI customization         | User Experience      | 4-6 weeks |
+| **Low**    | Improve documentation        | Developer Experience | 1 week    |
 
 ---
 
@@ -522,6 +557,7 @@ pub mod common {
 **Status**: Scattered and incomplete
 
 **Recommendations**:
+
 - ✅ **Completed**: Architecture documentation scaffolded
 - [ ] Add inline code comments
 - [ ] Create API documentation for all public interfaces
@@ -534,6 +570,7 @@ pub mod common {
 **Status**: Limited test coverage
 
 **Recommendations**:
+
 - [ ] Add unit tests for all components
 - [ ] Add integration tests for cross-component communication
 - [ ] Add end-to-end tests for critical workflows
@@ -545,6 +582,7 @@ pub mod common {
 **Status**: Some performance issues identified
 
 **Recommendations**:
+
 - [ ] Benchmark all critical paths
 - [ ] Optimize gRPC serialization
 - [ ] Optimize Tauri IPC calls
@@ -556,6 +594,7 @@ pub mod common {
 **Status**: Basic security, needs enhancement
 
 **Recommendations**:
+
 - [ ] Audit all user inputs
 - [ ] Add comprehensive security testing
 - [ ] Implement TLS for IPC
@@ -567,6 +606,7 @@ pub mod common {
 **Status**: Good, but can be improved
 
 **Recommendations**:
+
 - [ ] Better error messages
 - [ ] Enhanced debug tools
 - [ ] Performance profiling tools
@@ -623,12 +663,12 @@ pub mod common {
 
 ### High-Risk Areas
 
-| Area | Risk | Mitigation |
-|------|------|------------|
-| IPC Refactoring | Breaking changes | Incremental refactoring, thorough testing |
-| API Implementations | Incomplete features | Feature flags, gradual rollout |
-| Performance Optimization | Regression | Benchmarking, performance monitoring |
-| Security Enhancements | Compatibility issues | Versioning, backward compatibility |
+| Area                     | Risk                 | Mitigation                                |
+| ------------------------ | -------------------- | ----------------------------------------- |
+| IPC Refactoring          | Breaking changes     | Incremental refactoring, thorough testing |
+| API Implementations      | Incomplete features  | Feature flags, gradual rollout            |
+| Performance Optimization | Regression           | Benchmarking, performance monitoring      |
+| Security Enhancements    | Compatibility issues | Versioning, backward compatibility        |
 
 ### Rollback Strategy
 
@@ -643,29 +683,30 @@ pub mod common {
 
 ### Measurable Goals
 
-| Metric | Current | Target | Timeframe |
-|--------|---------|--------|-----------|
-| Test Coverage | ~30% | 70% | 3 months |
-| API Parity | ~60% | 90% | 3 months |
-| Performance (startup) | ~5s | <3s | 2 months |
-| Indexing Time (1000 files) | ~30s | <10s | 2 months |
-| Bug Density | Unknown | <1 bug/1000 LOC | 6 months |
+| Metric                     | Current | Target          | Timeframe |
+| -------------------------- | ------- | --------------- | --------- |
+| Test Coverage              | ~30%    | 70%             | 3 months  |
+| API Parity                 | ~60%    | 90%             | 3 months  |
+| Performance (startup)      | ~5s     | <3s             | 2 months  |
+| Indexing Time (1000 files) | ~30s    | <10s            | 2 months  |
+| Bug Density                | Unknown | <1 bug/1000 LOC | 6 months  |
 
 ---
 
 ## Key Files Reference
 
-| File | Purpose |
-|------|---------|
-| [`Element/Mountain/Source/IPC/REFACTORING_SUMMARY.md`](../../Element/Mountain/Source/IPC/REFACTORING_SUMMARY.md) | IPC refactoring plan |
-| [`Element/Cocoon/Documentation/GitHub/Cocoon-Implementation-Plan.md`](../../Element/Cocoon/Documentation/GitHub/Cocoon-Implementation-Plan.md) | Cocoon implementation plan |
-| [`Element/Cocoon/Source/Bootstrap/Documentation/EXTENSION-HOST-ANALYSIS.md`](../../Element/Cocoon/Source/Bootstrap/Documentation/EXTENSION-HOST-ANALYSIS.md) | Extension host analysis |
+| File                                                                                                                                                         | Purpose                    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- |
+| [`Element/Mountain/Source/IPC/RefactoringSummary.md`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/RefactoringSummary.md)                                             | IPC refactoring plan       |
+| [`Element/Cocoon/Documentation/GitHub/CocoonImplementationPlan.md`](https://github.com/CodeEditorLand/Cocoon/tree/main/Documentation/GitHub/CocoonImplementationPlan.md)               | Cocoon implementation plan |
+| [`Element/Cocoon/Source/Bootstrap/Documentation/ExtensionHostAnalysis.md`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Bootstrap/Documentation/ExtensionHostAnalysis.md) | Extension host analysis    |
 
 ---
 
 ## See Also
 
-- [Architecture Documentation](../README.md) - Overall architecture
-- [Component Documentation](../components/) - Individual component documentation
-- [Integration Documentation](../integration/) - Integration patterns
-- [Communication Flows](../integration/communication-flows.md) - Communication patterns
+- [Architecture Documentation](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/README.md) - Overall architecture
+- [Component Documentation](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components) - Individual component documentation
+- [Integration Documentation](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration) - Integration patterns
+- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) - Communication
+  patterns

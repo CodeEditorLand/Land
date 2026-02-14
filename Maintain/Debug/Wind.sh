@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
+# Build script for Wind-based workbench
+# This builds Sky with Wind=true to use the native Wind workbench
+
 pnpm cross-env \
+	Wind=true \
 	Browser=false \
 	Bundle=true \
 	Clean=true \
 	Compile=false \
 	Debug=true \
-	Wind=true \
 	Level=silent \
 	Dependency=Microsoft/VSCode \
 	NODE_ENV=development \

@@ -9,13 +9,11 @@ see a diff view.
 #### **Phase 1: Extension Registration and Repository Discovery**
 
 1.  **Built-in Git Extension Activation (`Cocoon`)**
-
     - **Action:** On startup, `Cocoon` activates its built-in Git extension.
       This extension is responsible for providing all core Git functionality.
     - The extension's `activate()` function is called.
 
 2.  **`vscode.scm.createSourceControl()` (`Cocoon`)**
-
     - **Action:** The Git extension calls
       `vscode.scm.createSourceControl('git', 'Git')` to register itself as the
       provider for the Git SCM.
@@ -39,7 +37,6 @@ see a diff view.
 #### **Phase 2: Populating the SCM View with Changes**
 
 4.  **Running `git status` (`Cocoon` -> `Mountain`)**
-
     - **Action:** Now that the Git extension knows it's in a Git repository, it
       needs to get the status of the files.
     - It cannot spawn a `git` process directly. Instead, it relies on a custom
@@ -49,7 +46,6 @@ see a diff view.
       `Mountain`**, sending the repository path and command arguments.
 
 5.  **Native Git Execution (`Mountain`)**
-
     - **Action:** `Mountain`'s gRPC server receives the `$gitExec` request. It
       dispatches it to a new **`GitProvider`** implementation on the
       `MountainEnvironment`.
@@ -75,7 +71,6 @@ see a diff view.
 #### **Phase 3: Rendering the SCM View (`Cocoon` -> `Mountain` -> `Wind/Sky`)**
 
 7.  **`SourceControl.resourceStates` Setter (`Cocoon`)**
-
     - **Action:** When the extension updates the `resourceStates` property, the
       `ScmProvider` service in `Cocoon` detects this change.
     - It serializes the entire list of `SourceControlResourceState` objects into
@@ -85,7 +80,6 @@ see a diff view.
       resource state DTOs.
 
 8.  **SCM State Update (`Mountain`)**
-
     - **Action:** `Mountain` receives the `$updateScmGroup` notification.
     - The `ScmProvider` handler updates its view of the SCM state in
       **`AppState.ActiveScmProviders`**.
@@ -102,7 +96,6 @@ see a diff view.
 #### **Phase 4: Viewing a Diff**
 
 10. **User Clicks a Changed File (`Wind/Sky`)**
-
     - **Action:** The user clicks on `src/main.ts` in the SCM view.
     - The `onClick` handler for this UI element knows it's an SCM resource. It
       executes a command like `vscode.open`, but with a special URI that
@@ -110,7 +103,6 @@ see a diff view.
       (e.g., `git:/src/main.ts?{"ref":"HEAD"}`).
 
 11. **Diff Editor Opening (`Wind` -> `Cocoon` -> `Mountain`)**
-
     - **Action:** The `vscode.open` command is handled by the `EditorService`.
     - The `EditorService` recognizes the `git:` scheme as a request for a diff
       view. It creates a `DiffEditorInput`.

@@ -9,14 +9,12 @@ written to disk. The file is formatted, then saved.
 #### **Phase 1: User Action and Initial Save Trigger (`Wind/Sky`)**
 
 1.  **User Input**
-
     - **Action:** The user presses `Ctrl+S` in an editor that has unsaved
       changes (is "dirty").
     - The keybinding system dispatches the `workbench.action.files.save`
       command.
 
 2.  **`IEditorService.save()` (`Wind/Source/Application/Editor/Definition.ts`)**
-
     - **Action:** The `save` method on our `EditorService` is called.
     - It identifies the active editor and its corresponding `EditorInput`.
     - It calls the `save` method on the `EditorInput` instance.
@@ -36,7 +34,6 @@ written to disk. The file is formatted, then saved.
 
 4.  **`WorkingCopyFileService.runSaveParticipants()`
     (`vs/workbench/services/workingcopy/common/workingCopyFileService.ts`)**
-
     - **Action:** This service is the central orchestrator for the save process.
     - It gathers all registered `ISaveParticipant`s. One of these participants
       is the **`ExtHostSaveParticipant`**, which is responsible for
@@ -54,14 +51,12 @@ written to disk. The file is formatted, then saved.
 #### **Phase 3: Extension Execution (`Cocoon`)**
 
 6.  **`IpcProvider` (`Cocoon/src/Service/Ipc/Server.ts`)**
-
     - **Action:** `Cocoon`'s gRPC server receives the `$participateInSave`
       request.
     - It dispatches this request to the `ExtHostDocumentSaveParticipant` service
       (a new service we would synthesize).
 
 7.  **`ExtHostDocumentSaveParticipant` (`Cocoon`)**
-
     - **Action:** This service manages the `onWillSaveTextDocument` event
       emitter.
     - It receives the `$participateInSave` call.
@@ -71,7 +66,6 @@ written to disk. The file is formatted, then saved.
       subscribed extensions.
 
 8.  **"Prettier" Extension (`Cocoon`)**
-
     - **Action:** The Prettier extension's listener for `onWillSaveTextDocument`
       is executed.
     - The extension calculates the necessary formatting edits for the entire
@@ -90,13 +84,11 @@ written to disk. The file is formatted, then saved.
 #### **Phase 4: Applying Edits and Final Save (`Wind` -> `Mountain` -> Disk)**
 
 10. **`ExtHostSaveParticipant.participate()` (`Wind`, continued)**
-
     - **Action:** The `gRPC` call resolves, returning the text edits from the
       extensions.
     - The `WorkingCopyFileService` receives these edits.
 
 11. **`BulkEditService` (`Wind/Source/Application/BulkEdit/Live.ts`)**
-
     - **Action:** The `WorkingCopyFileService` does not apply the edits itself.
       It passes them to the `IBulkEditService`.
     - The `BulkEditService` takes the array of `TextEdit`s and applies them to
@@ -104,14 +96,12 @@ written to disk. The file is formatted, then saved.
       formatted code.
 
 12. **`TextFileEditorModelManager.save()` (`Wind`, continued)**
-
     - **Action:** Now that all participants have run and their edits have been
       applied, the `save` operation proceeds.
     - It calls the `IFileService.writeFile()`.
 
 13. **`IFileService` -> `TauriDiskFileSystemProvider` -> `Integration` ->
     `Mountain`**
-
     - **Action:** The save operation now follows the exact same path as
       **Workflow #2 (Opening a File)**, but in reverse.
         - `IFileService` calls the `TauriDiskFileSystemProvider`.
@@ -121,7 +111,6 @@ written to disk. The file is formatted, then saved.
         - The `FsWriter` implementation in `Mountain` receives the call.
 
 14. **`handlers/fs/FsLogic.rs` (`Mountain`)**
-
     - **Action:** The `WriteFileLogic` handler is executed.
     - It performs the final native OS call:
       **`tokio::fs::write(path, content)`**.

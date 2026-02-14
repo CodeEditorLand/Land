@@ -23,7 +23,6 @@ in the frontend.
 #### **Phase 2: Native PTY Spawning (`Mountain`)**
 
 2.  **`handlers/terminal/TerminalLogic.rs` (`Mountain`)**
-
     - **Action:** The `CreateTerminalLogic` handler is executed.
     - It gets a new unique `TerminalId` from `AppState`.
     - It determines the shell to launch (e.g., from the request options or
@@ -39,7 +38,6 @@ in the frontend.
       PTY master's reader and writer handles.
 
 3.  **I/O Task Spawning (`Mountain`)**
-
     - **Action:** The handler spawns several `tokio` tasks to manage the
       terminal's lifecycle:
         - **Writer Task:** Creates a `tokio::mpsc` channel. The "sender" end of
@@ -69,7 +67,6 @@ in the frontend.
 #### **Phase 3: UI Rendering and State Sync (`Cocoon` -> `Wind/Sky`)**
 
 5.  **`Service/Terminal.ts` (`Cocoon`)**
-
     - **Action:** The `ExtHostTerminalService` in `Cocoon` receives the
       `Opened`, `ProcessId`, and `Data` notifications from `Mountain`.
     - It creates a local `Terminal` proxy object that represents the terminal to
@@ -79,7 +76,6 @@ in the frontend.
       terminal's output.
 
 6.  **`Mountain` -> `Wind/Sky` Bridge**
-
     - **Action:** In addition to notifying `Cocoon`, `Mountain`'s `Reader Task`
       (Step 3) also needs to notify the frontend UI.
     - It emits a Tauri event directly to `Sky`:
@@ -97,7 +93,6 @@ in the frontend.
 #### **Phase 4: User Input (`Wind/Sky` -> `Mountain` -> Shell)**
 
 8.  **Terminal UI Component (`Wind/Sky`)**
-
     - **Action:** The user types `ls -la` into the terminal UI.
     - The `Xterm.js` instance captures these keystrokes.
     - It uses its `onData` event handler to send the input string back to the
@@ -105,7 +100,6 @@ in the frontend.
       **`TauriInvoke("mountain://terminal/send-text", { Id: TerminalId, Text: "ls -la\r" })`**.
 
 9.  **`track.rs` & `handlers/terminal/TerminalLogic.rs` (`Mountain`)**
-
     - **Action:** The `mountain://terminal/send-text` command is dispatched to
       `track`, which creates and runs the `Common::terminal::SendTextToTerminal`
       effect.
@@ -116,7 +110,6 @@ in the frontend.
       that was stored in the `TerminalStateDto`.
 
 10. **Writer Task (`Mountain`)**
-
     - **Action:** The `Writer Task` (from Step 3) was waiting on its receiver.
       It immediately receives the string.
     - **It writes the bytes of the string to the PTY master's writer handle.**

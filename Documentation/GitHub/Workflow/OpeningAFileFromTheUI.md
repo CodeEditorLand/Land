@@ -11,7 +11,6 @@ the filesystem provider, and the backend.
 #### **Phase 1: User Interaction (`Wind/Sky`)**
 
 1.  **File Explorer UI (React/Vue/etc.)**
-
     - **Action:** The user clicks on a `<div>` representing `my-file.ts` in the
       File Explorer component.
     - The `onClick` handler for this `div` is triggered.
@@ -33,7 +32,6 @@ the filesystem provider, and the backend.
 
 3.  **`EditorGroupsService`
     (`Wind/Source/Application/EditorGroups/Definition.ts`)**
-
     - **Action:** The `openEditor` method is called on the target
       `EditorGroupModel`.
     - The group model checks if an editor for this `fileUri` is already open. If
@@ -42,14 +40,12 @@ the filesystem provider, and the backend.
       `EditorInput`'s `resolve()` method to get the editor model.
 
 4.  **`EditorInput.resolve()` -> `TextFileEditorModel.load()`**
-
     - **Action:** To display the content, the editor input needs to load its
       underlying model. The `TextFileEditorModel` is responsible for this.
     - Its `load()` method needs to get the file's content. It achieves this by
       calling the `IFileService`.
 
 5.  **`IFileService.readFile()` (`Wind/Source/Application/File/Live.ts`)**
-
     - **Action:** The file service's `readFile(fileUri)` method is called.
     - It looks up the registered provider for the URI's scheme (in this case,
       `file:`).
@@ -58,7 +54,6 @@ the filesystem provider, and the backend.
 
 6.  **`TauriDiskFileSystemProvider.readFile()`
     (`Wind/Source/Application/FileSystem/Definition.ts`)**
-
     - **Action:** The provider's `readFile` method is called.
     - This method immediately executes the `ReadFile` effect from our Tauri
       `Integration` layer: `Effect.runPromise(ReadFile(fileUri))`.
@@ -82,18 +77,15 @@ the filesystem provider, and the backend.
 #### **Phase 4: Data Unwinds and UI Renders (`Wind`)**
 
 9.  **`Integration/Tauri/Wrap/ReadFile.ts` (continued)**
-
     - **Action:** The `TauriInvoke` promise resolves with the file content.
     - The `ReadFile` Effect succeeds, yielding the `Uint8Array`.
 
 10. **`TextFileEditorModel` (continued)**
-
     - **Action:** The `load()` method succeeds. The model is now hydrated with
       the file content.
     - The `EditorInput` is now fully resolved.
 
 11. **`EditorGroupsService` (continued)**
-
     - **Action:** The `openEditor` method now has a resolved input and model.
     - It creates a new `TextEditorPane` (or similar UI component) within the
       editor group.

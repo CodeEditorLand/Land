@@ -16,7 +16,9 @@
 
 ## Overview
 
-**Cocoon** is the Extension Host for Code Editor Land. It runs as a separate Node.js sidecar process managed by Mountain, providing a sandboxed environment for running VS Code extensions with full API compatibility.
+**Cocoon** is the Extension Host for Code Editor Land. It runs as a separate
+Node.js sidecar process managed by Mountain, providing a sandboxed environment
+for running VS Code extensions with full API compatibility.
 
 ### Key Responsibilities
 
@@ -67,7 +69,7 @@ Element/Cocoon/
 │   │   ├── Implementation/
 │   │   │   └── CocoonMain.ts          # Main entry point
 │   │   └── Documentation/
-│   │       └── EXTENSION-HOST-ANALYSIS.md
+│   │       └── ExtensionHostAnalysis.md
 │   ├── Services/
 │   │   ├── ExtensionHostService.ts     # Extension lifecycle
 │   │   ├── GRPCServerService.ts        # gRPC server
@@ -107,18 +109,21 @@ Element/Cocoon/
 
 ### ExtensionHostService
 
-**Location**: [`Element/Cocoon/Source/Services/ExtensionHostService.ts`](../../Element/Cocoon/Source/Services/ExtensionHostService.ts)
+**Location**:
+[`Element/Cocoon/Source/Services/ExtensionHostService.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/ExtensionHostService.ts)
 
 Manages the complete lifecycle of extensions:
 
-- **Extension Activation**: Loads and activates extensions based on activation events
+- **Extension Activation**: Loads and activates extensions based on activation
+  events
 - **Extension Deactivation**: Cleanly shuts down extensions
 - **Extension State**: Tracks active extensions and their state
 - **Extension Context**: Provides context to extensions
 
 ### GRPCServerService
 
-**Location**: [`Element/Cocoon/Source/Services/GRPCServerService.ts`](../../Element/Cocoon/Source/Services/GRPCServerService.ts)
+**Location**:
+[`Element/Cocoon/Source/Services/GRPCServerService.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/GRPCServerService.ts)
 
 Handles gRPC communication with Mountain:
 
@@ -129,7 +134,8 @@ Handles gRPC communication with Mountain:
 
 ### IPCService
 
-**Location**: [`Element/Cocoon/Source/Services/IPCService.ts`](../../Element/Cocoon/Source/Services/IPCService.ts)
+**Location**:
+[`Element/Cocoon/Source/Services/IPCService.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/IPCService.ts)
 
 Provides IPC abstraction and routing:
 
@@ -139,7 +145,8 @@ Provides IPC abstraction and routing:
 
 ### Command Service
 
-**Location**: [`Element/Cocoon/Source/Services/Command.ts`](../../Element/Cocoon/Source/Services/Command.ts)
+**Location**:
+[`Element/Cocoon/Source/Services/Command.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Command.ts)
 
 Implements command execution:
 
@@ -149,7 +156,8 @@ Implements command execution:
 
 ### Configuration Service
 
-**Location**: [`Element/Cocoon/Source/Services/Configuration.ts`](../../Element/Cocoon/Source/Services/Configuration.ts)
+**Location**:
+[`Element/Cocoon/Source/Services/Configuration.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Configuration.ts)
 
 Manages configuration and settings:
 
@@ -159,7 +167,8 @@ Manages configuration and settings:
 
 ### FileSystem Service
 
-**Location**: [`Element/Cocoon/Source/Services/FileSystemService.ts`](../../Element/Cocoon/Source/Services/FileSystemService.ts)
+**Location**:
+[`Element/Cocoon/Source/Services/FileSystemService.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/FileSystemService.ts)
 
 Implements file system API:
 
@@ -170,7 +179,8 @@ Implements file system API:
 
 ### Workspace Service
 
-**Location**: [`Element/Cocoon/Source/Services/Workspace.ts`](../../Element/Cocoon/Source/Services/Workspace.ts)
+**Location**:
+[`Element/Cocoon/Source/Services/Workspace.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Workspace.ts)
 
 Provides workspace management:
 
@@ -200,14 +210,14 @@ stateDiagram-v2
 
 Extensions are activated based on the following events:
 
-| Event | Description | Example |
-|-------|-------------|---------|
-| `*` | Startup activation | All extensions with this event activate on startup |
-| `onCommand:commandId` | Command activation | `onCommand:extension.sayHello` |
-| `onLanguage:languageId` | Language activation | `onLanguage:javascript` |
-| `onView:viewId` | View activation | `onView:extension.myView` |
-| `onFileSystem:scheme` | File scheme activation | `onFileSystem:ftp` |
-| `onUri:uriPattern` | URI pattern activation | `onUri:vscode.github.*` |
+| Event                   | Description            | Example                                            |
+| ----------------------- | ---------------------- | -------------------------------------------------- |
+| `*`                     | Startup activation     | All extensions with this event activate on startup |
+| `onCommand:commandId`   | Command activation     | `onCommand:extension.sayHello`                     |
+| `onLanguage:languageId` | Language activation    | `onLanguage:javascript`                            |
+| `onView:viewId`         | View activation        | `onView:extension.myView`                          |
+| `onFileSystem:scheme`   | File scheme activation | `onFileSystem:ftp`                                 |
+| `onUri:uriPattern`      | URI pattern activation | `onUri:vscode.github.*`                            |
 
 ---
 
@@ -217,48 +227,66 @@ Extensions are activated based on the following events:
 
 #### Core APIs
 
-- [`vscode.workspace`](../../Element/Cocoon/Source/Services/Workspace.ts) - Workspace management
-- [`vscode.window`](../../Element/Cocoon/Source/Services/Window.ts) - Window and UI management
-- [`vscode.commands`](../../Element/Cocoon/Source/Services/Command.ts) - Command registration and execution
-- [`vscode.extensions`](../../Element/Cocoon/Source/Services/Extension.ts) - Extension API
+- [`vscode.workspace`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Workspace.ts) -
+  Workspace management
+- [`vscode.window`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Window.ts) - Window and
+  UI management
+- [`vscode.commands`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Command.ts) - Command
+  registration and execution
+- [`vscode.extensions`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Extension.ts) -
+  Extension API
 
 #### Language Features
 
-- [`vscode.languages.registerCompletionItemProvider()`](../../Element/Cocoon/Source/Services/LanguageFeatures.ts) - Code completion
-- [`vscode.languages.registerHoverProvider()`](../../Element/Cocoon/Source/Services/LanguageFeatures.ts) - Hover tooltips
-- [`vscode.languages.registerDefinitionProvider()`](../../Element/Cocoon/Source/Services/LanguageFeatures.ts) - Go to definition
-- [`vscode.languages.registerReferenceProvider()`](../../Element/Cocoon/Source/Services/LanguageFeatures.ts) - Find references
-- [`vscode.languages.registerDocumentSymbolProvider()`](../../Element/Cocoon/Source/Services/LanguageFeatures.ts) - Document symbols
-- [`vscode.languages.registerCodeActionsProvider()`](../../Element/Cocoon/Source/Services/LanguageFeatures.ts) - Code actions
-- [`vscode.languages.registerDocumentFormattingEditProvider()`](../../Element/Cocoon/Source/Services/LanguageFeatures.ts) - Document formatting
+- [`vscode.languages.registerCompletionItemProvider()`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/LanguageFeatures.ts) -
+  Code completion
+- [`vscode.languages.registerHoverProvider()`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/LanguageFeatures.ts) -
+  Hover tooltips
+- [`vscode.languages.registerDefinitionProvider()`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/LanguageFeatures.ts) -
+  Go to definition
+- [`vscode.languages.registerReferenceProvider()`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/LanguageFeatures.ts) -
+  Find references
+- [`vscode.languages.registerDocumentSymbolProvider()`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/LanguageFeatures.ts) -
+  Document symbols
+- [`vscode.languages.registerCodeActionsProvider()`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/LanguageFeatures.ts) -
+  Code actions
+- [`vscode.languages.registerDocumentFormattingEditProvider()`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/LanguageFeatures.ts) -
+  Document formatting
 
 #### Data APIs
 
-- [`vscode.Configuration`](../../Element/Cocoon/Source/Services/Configuration.ts) - Configuration access
-- [`vscode.SecretStorage`](../../Element/Cocoon/Source/Services/SecretStorage.ts) - Secure storage
-- [`vscode.env`](../../Element/Cocoon/Source/Platform/Environment.ts) - Environment variables
+- [`vscode.Configuration`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Configuration.ts) -
+  Configuration access
+- [`vscode.SecretStorage`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/SecretStorage.ts) -
+  Secure storage
+- [`vscode.env`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Platform/Environment.ts) -
+  Environment variables
 
 #### UI APIs
 
-- [`vscode.window.createStatusBarItem()`](../../Element/Cocoon/Source/Services/StatusBar.ts) - Status bar items
-- [`vscode.window.createQuickPick()`](../../Element/Cocoon/Source/Services/QuickInput.ts) - Quick pick UI
-- [`vscode.window.createInputBox()`](../../Element/Cocoon/Source/Services/QuickInput.ts) - Input box UI
-- [`vscode.window.createWebviewPanel()`](../../Element/Cocoon/Source/WebviewPanel/Factory.ts) - Webview panels
+- [`vscode.window.createStatusBarItem()`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/StatusBar.ts) -
+  Status bar items
+- [`vscode.window.createQuickPick()`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/QuickInput.ts) -
+  Quick pick UI
+- [`vscode.window.createInputBox()`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/QuickInput.ts) -
+  Input box UI
+- [`vscode.window.createWebviewPanel()`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/WebviewPanel/Factory.ts) -
+  Webview panels
 
 ### API Parity Status
 
-| API Category | Status | Notes |
-|--------------|--------|-------|
-| Workspace | ✅ Implemented | Core functionality complete |
-| Window | ✅ Implemented | Basic window operations complete |
-| Commands | ✅ Implemented | Registration and execution complete |
-| Language Features | ⚠️ Partial | Basic providers implemented |
-| Configuration | ✅ Implemented | Complete |
-| FileSystem | ✅ Implemented | Core operations complete |
-| Terminal | ⚠️ Partial | Basic terminal support |
-| Debug | ❌ Not Implemented | Future work |
-| Tasks | ⚠️ Partial | Basic task support |
-| Test | ❌ Not Implemented | Future work |
+| API Category      | Status             | Notes                               |
+| ----------------- | ------------------ | ----------------------------------- |
+| Workspace         | ✅ Implemented     | Core functionality complete         |
+| Window            | ✅ Implemented     | Basic window operations complete    |
+| Commands          | ✅ Implemented     | Registration and execution complete |
+| Language Features | ⚠️ Partial         | Basic providers implemented         |
+| Configuration     | ✅ Implemented     | Complete                            |
+| FileSystem        | ✅ Implemented     | Core operations complete            |
+| Terminal          | ⚠️ Partial         | Basic terminal support              |
+| Debug             | ❌ Not Implemented | Future work                         |
+| Tasks             | ⚠️ Partial         | Basic task support                  |
+| Test              | ❌ Not Implemented | Future work                         |
 
 ---
 
@@ -339,12 +367,12 @@ Cocoon uses a Require Interceptor to:
 
 ### Security Mechanisms
 
-| Mechanism | Purpose |
-|-----------|---------|
-| Require Interceptor | Module access control |
-| Process Patching | Console output redirection |
-| gRPC Only | No direct file system access |
-| Isolated Process | Extension crashes don't affect main app |
+| Mechanism           | Purpose                                 |
+| ------------------- | --------------------------------------- |
+| Require Interceptor | Module access control                   |
+| Process Patching    | Console output redirection              |
+| gRPC Only           | No direct file system access            |
+| Isolated Process    | Extension crashes don't affect main app |
 
 ### Sandbox Limitations
 
@@ -361,14 +389,14 @@ Extensions in Cocoon are subject to these limitations:
 
 ### Mountain Integration
 
-| Integration Point | Method | Direction |
-|-------------------|--------|-----------|
-| Process Spawn | `node ./scripts/cocoon/bootstrap-fork.js` | Mountain → Cocoon |
-| Initial Handshake | `$initialHandshake` gRPC | Cocoon → Mountain |
-| Initialization Data | `initExtensionHost` gRPC | Mountain → Cocoon |
-| Command Execution | `$executeContributedCommand` gRPC | Mountain → Cocoon |
-| Language Feature Requests | `$provide*` gRPC | Mountain → Cocoon |
-| Provider Registration | `$register*` gRPC | Cocoon → Mountain |
+| Integration Point         | Method                                    | Direction         |
+| ------------------------- | ----------------------------------------- | ----------------- |
+| Process Spawn             | `node ./scripts/cocoon/bootstrap-fork.js` | Mountain → Cocoon |
+| Initial Handshake         | `$initialHandshake` gRPC                  | Cocoon → Mountain |
+| Initialization Data       | `initExtensionHost` gRPC                  | Mountain → Cocoon |
+| Command Execution         | `$executeContributedCommand` gRPC         | Mountain → Cocoon |
+| Language Feature Requests | `$provide*` gRPC                          | Mountain → Cocoon |
+| Provider Registration     | `$register*` gRPC                         | Cocoon → Mountain |
 
 ### Extension Integration
 
@@ -383,7 +411,8 @@ Extensions interact with Cocoon through:
 
 Cocoon indirectly integrates with Wind/Sky through:
 
-1. **Provider Registration**: Language feature providers registered with Mountain
+1. **Provider Registration**: Language feature providers registered with
+   Mountain
 2. **State Updates**: Configuration and workspace state changes
 3. **UI Events**: Webview panel creation and updates
 
@@ -395,11 +424,11 @@ Cocoon indirectly integrates with Wind/Sky through:
 
 See the following documentation for detailed analysis:
 
-- [Cocoon Implementation Plan](../../Element/Cocoon/Documentation/GitHub/Cocoon-Implementation-Plan.md)
-- [Cocoon Implementation Summary](../../Element/Cocoon/Documentation/GitHub/Cocoon-Implementation-Summary.md)
-- [Extension Host Analysis](../../Element/Cocoon/Source/Bootstrap/Documentation/EXTENSION-HOST-ANALYSIS.md)
-- [Refactoring Priorities](../../../Architecture/recommendations/refactoring-priorities.md)
-- [Deep Dive](../../Element/Cocoon/Documentation/GitHub/Deep Dive.md)
+- [Cocoon Implementation Plan](https://github.com/CodeEditorLand/Cocoon/tree/Current/Documentation/GitHub/CocoonImplementationPlan.md)
+- [Cocoon Implementation Summary](https://github.com/CodeEditorLand/Cocoon/tree/Current/Documentation/GitHub/CocoonImplementationSummary.md)
+- [Extension Host Analysis](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Bootstrap/Documentation/ExtensionHostAnalysis.md)
+- [Refactoring Priorities](https://github.com/CodeEditorLand/Land/tree/Current/Architecture/recommendations/RefactoringPriorities.md)
+- [Deep Dive](https://github.com/CodeEditorLand/Cocoon/tree/Current/Documentation/GitHub/DeepDive.md)
 
 ---
 
@@ -407,11 +436,15 @@ See the following documentation for detailed analysis:
 
 #### Debug API Implementation
 
-**Impact**: Users cannot debug extensions within Code Editor Land, significantly limiting developer experience and productivity.
+**Impact**: Users cannot debug extensions within Code Editor Land, significantly
+limiting developer experience and productivity.
 
-**User Experience**: Extensions that rely on debugging capabilities (e.g., debugger for Python, C++, JavaScript) will not function, forcing users to switch to VS Code for debugging workflows.
+**User Experience**: Extensions that rely on debugging capabilities (e.g.,
+debugger for Python, C++, JavaScript) will not function, forcing users to switch
+to VS Code for debugging workflows.
 
 **Tasks**:
+
 - [ ] Implement Debug Adapter Protocol (DAP) client in Cocoon
 - [ ] Add `$registerDebugAdapterProvider` gRPC method to Vine protocol
 - [ ] Create `DebugService.ts` in Element/Cocoon/Source/Services/
@@ -428,6 +461,7 @@ See the following documentation for detailed analysis:
 **Estimated Effort**: 4 weeks
 
 **Dependencies**:
+
 - Vine protocol updates for DAP methods
 - Mountain integration for debug UI
 
@@ -435,11 +469,15 @@ See the following documentation for detailed analysis:
 
 #### Test API Implementation
 
-**Impact**: Users cannot run extension tests within the editor, requiring external test runners and disrupting the development workflow.
+**Impact**: Users cannot run extension tests within the editor, requiring
+external test runners and disrupting the development workflow.
 
-**User Experience**: Extensions that provide testing frameworks (e.g., Jest, Mocha, Python unittest) cannot execute tests in-editor, forcing users to use command-line tools and switch contexts.
+**User Experience**: Extensions that provide testing frameworks (e.g., Jest,
+Mocha, Python unittest) cannot execute tests in-editor, forcing users to use
+command-line tools and switch contexts.
 
 **Tasks**:
+
 - [ ] Implement test runner integration in Cocoon
 - [ ] Add `$registerTestProvider` gRPC method to Vine protocol
 - [ ] Create `TestService.ts` in Element/Cocoon/Source/Services/
@@ -455,6 +493,7 @@ See the following documentation for detailed analysis:
 **Estimated Effort**: 2 weeks
 
 **Dependencies**:
+
 - Vine protocol updates for Test API methods
 - Mountain integration for test UI
 
@@ -464,14 +503,19 @@ See the following documentation for detailed analysis:
 
 #### Module Interceptor Optimization
 
-**Impact**: Module interception creates significant performance overhead, slowing down extension activation and runtime operations.
+**Impact**: Module interception creates significant performance overhead,
+slowing down extension activation and runtime operations.
 
-**User Experience**: Extensions may load slowly, and operations requiring module resolution (e.g., language features) may have noticeable latency, affecting overall editor responsiveness.
+**User Experience**: Extensions may load slowly, and operations requiring module
+resolution (e.g., language features) may have noticeable latency, affecting
+overall editor responsiveness.
 
 **Tasks**:
+
 - [ ] Profile interceptor performance with representative extensions
 - [ ] Implement caching for resolved module paths
-- [ ] Optimize module lookup algorithms (consider Map/Set instead of linear search)
+- [ ] Optimize module lookup algorithms (consider Map/Set instead of linear
+      search)
 - [ ] Evaluate lazy loading for infrequently accessed modules
 - [ ] Consider alternative approaches for frequently accessed modules
 - [ ] Add performance metrics and monitoring
@@ -483,6 +527,7 @@ See the following documentation for detailed analysis:
 **Estimated Effort**: 1-2 weeks
 
 **Dependencies**:
+
 - Performance profiling tools
 - Test extensions for benchmarking
 
@@ -490,11 +535,15 @@ See the following documentation for detailed analysis:
 
 #### Security Enhancement
 
-**Impact**: Current security validation is incomplete, potentially allowing extensions to access unauthorized Node.js modules or APIs.
+**Impact**: Current security validation is incomplete, potentially allowing
+extensions to access unauthorized Node.js modules or APIs.
 
-**User Experience**: While extensions currently function, there's a risk of security vulnerabilities if malicious extensions attempt to access sensitive system resources or bypass sandbox restrictions.
+**User Experience**: While extensions currently function, there's a risk of
+security vulnerabilities if malicious extensions attempt to access sensitive
+system resources or bypass sandbox restrictions.
 
 **Tasks**:
+
 - [ ] Conduct comprehensive audit of all Node.js module usage in extensions
 - [ ] Create comprehensive module whitelist based on VS Code's allowed modules
 - [ ] Implement sandbox enforcement verification for all module access
@@ -507,6 +556,7 @@ See the following documentation for detailed analysis:
 **Estimated Effort**: 2 weeks
 
 **Dependencies**:
+
 - Security audit tools
 - Threat modeling documentation
 
@@ -516,11 +566,15 @@ See the following documentation for detailed analysis:
 
 #### Extension Crash Recovery
 
-**Impact**: When an extension crashes, it cannot automatically recover, requiring manual intervention or full editor restart.
+**Impact**: When an extension crashes, it cannot automatically recover,
+requiring manual intervention or full editor restart.
 
-**User Experience**: Extension crashes force users to restart the editor or manually disable problematic extensions, disrupting workflow and potentially losing unsaved state.
+**User Experience**: Extension crashes force users to restart the editor or
+manually disable problematic extensions, disrupting workflow and potentially
+losing unsaved state.
 
 **Tasks**:
+
 - [ ] Implement extension isolation using worker processes
 - [ ] Add crash detection and monitoring mechanisms
 - [ ] Implement automatic restart for crashed extensions
@@ -534,6 +588,7 @@ See the following documentation for detailed analysis:
 **Estimated Effort**: 2-3 weeks
 
 **Dependencies**:
+
 - Error handling infrastructure
 - Metrics collection system
 
@@ -541,12 +596,17 @@ See the following documentation for detailed analysis:
 
 #### Advanced Language Features
 
-**Impact**: Advanced language features enhance code editing experience but are not fully implemented, limiting the capabilities of language extensions.
+**Impact**: Advanced language features enhance code editing experience but are
+not fully implemented, limiting the capabilities of language extensions.
 
-**User Experience**: Extensions that provide advanced features like multi-file refactoring, semantic highlighting, or code insights cannot fully function, reducing the editing experience compared to VS Code.
+**User Experience**: Extensions that provide advanced features like multi-file
+refactoring, semantic highlighting, or code insights cannot fully function,
+reducing the editing experience compared to VS Code.
 
 **Tasks**:
-- [ ] Implement multi-file language features (find references across files, rename across files)
+
+- [ ] Implement multi-file language features (find references across files,
+      rename across files)
 - [ ] Add semantic token providers for semantic highlighting
 - [ ] Implement inlay hints (type hints, parameter hints)
 - [ ] Add code lens support (references count, test run buttons)
@@ -560,6 +620,7 @@ See the following documentation for detailed analysis:
 **Estimated Effort**: 3-4 weeks
 
 **Dependencies**:
+
 - Vine protocol updates for new provider types
 - Mountain integration for new feature UI
 
@@ -569,27 +630,29 @@ See the following documentation for detailed analysis:
 
 For additional context on Cocoon's implementation status and priorities, see:
 
-- [Refactoring Priorities - Cocoon Section](../../../Architecture/recommendations/refactoring-priorities.md)
-- [Implementation Roadmap](../../IMPLEMENTATION_ROADMAP.md)
-- [Extension Host Analysis](../../Element/Cocoon/Source/Bootstrap/Documentation/EXTENSION-HOST-ANALYSIS.md)
+- [Refactoring Priorities - Cocoon Section](https://github.com/CodeEditorLand/Land/tree/Current/Architecture/recommendations/RefactoringPriorities.md)
+- [Implementation Roadmap](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/IMPLEMENTATION_ROADMAP.md)
+- [Extension Host Analysis](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Bootstrap/Documentation/ExtensionHostAnalysis.md)
 
 ---
 
 ## Key Files Reference
 
-| File | Purpose |
-|------|---------|
-| [`Element/Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts`](../../Element/Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts) | Main entry point |
-| [`Element/Cocoon/Source/Services/ExtensionHostService.ts`](../../Element/Cocoon/Source/Services/ExtensionHostService.ts) | Extension lifecycle |
-| [`Element/Cocoon/Source/Services/GRPCServerService.ts`](../../Element/Cocoon/Source/Services/GRPCServerService.ts) | gRPC server |
-| [`Element/Cocoon/Source/Services/Command.ts`](../../Element/Cocoon/Source/Services/Command.ts) | Command service |
-| [`Element/Cocoon/Source/IPC/Handler.ts`](../../Element/Cocoon/Source/IPC/Handler.ts) | IPC handlers |
+| File                                                                                                                                 | Purpose             |
+| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------- |
+| [`Element/Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Bootstrap/Implementation/CocoonMain.ts) | Main entry point    |
+| [`Element/Cocoon/Source/Services/ExtensionHostService.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/ExtensionHostService.ts)             | Extension lifecycle |
+| [`Element/Cocoon/Source/Services/GRPCServerService.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/GRPCServerService.ts)                   | gRPC server         |
+| [`Element/Cocoon/Source/Services/Command.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Command.ts)                                       | Command service     |
+| [`Element/Cocoon/Source/IPC/Handler.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/IPC/Handler.ts)                                                 | IPC handlers        |
 
 ---
 
 ## See Also
 
-- [Mountain Component](./mountain.md) - Native backend
-- [Vine Component](./vine.md) - gRPC protocol
-- [Communication Flows](../integration/communication-flows.md) - Detailed communication patterns
-- [Application Startup Workflow](../../GitHub/Workflow/Application%20Startup%20%26%20Handshake.md) - Startup sequence
+- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Mountain.md) - Native backend
+- [Vine Component](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Vine.md) - gRPC protocol
+- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/integration/CommunicationFlows.md) - Detailed
+  communication patterns
+- [Application Startup Workflow](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/ApplicationStartupAndHandshake.md) -
+  Startup sequence

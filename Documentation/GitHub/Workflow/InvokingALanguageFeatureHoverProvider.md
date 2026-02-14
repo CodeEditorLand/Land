@@ -9,7 +9,6 @@ executed, and the resulting tooltip is displayed in the UI.
 #### **Phase 1: Extension Registration (`Cocoon`)**
 
 1.  **Extension Activation (`Cocoon/src/Core/ExtensionHost.ts`)**
-
     - **Action:** An extension (e.g., `my-lang-extension`) is activated by
       `Cocoon`.
     - Its `activate()` function is called.
@@ -29,19 +28,16 @@ executed, and the resulting tooltip is displayed in the UI.
 #### **Phase 2: Host-Side Provider Registration (`Mountain`)**
 
 3.  **gRPC Server (`Mountain/src/vine/server/MountainVineGrpcService.rs`)**
-
     - **Action:** The gRPC server receives the `$registerHoverProvider` request.
     - It passes the request to the `track` dispatcher.
 
 4.  **Dispatcher (`Mountain/src/track/TrackLogic.rs`)**
-
     - **Action:** `DispatchSidecarRequest` is called.
     - It maps the method name (`$registerHoverProvider`) to an `ActionEffect`
       via `EffectCreation`. The effect is `LanguageFeature::RegisterProvider`.
 
 5.  **`LanguageFeaturesProvider`
     (`Mountain/src/environment/LanguageFeaturesProvider.rs`)**
-
     - **Action:** The `AppRuntime` executes the `RegisterProvider` effect.
     - The `MountainEnvironment`'s implementation of the
       `LanguageFeatureProviderRegistry` trait is called.
@@ -60,7 +56,6 @@ executed, and the resulting tooltip is displayed in the UI.
 #### **Phase 3: User Interaction and UI Request (`Wind/Sky`)**
 
 7.  **Monaco Editor UI**
-
     - **Action:** The user moves their mouse over a word in an editor showing a
       "mylang" file.
     - Monaco's internal hover controller is triggered. It needs to fetch hover
@@ -80,7 +75,6 @@ executed, and the resulting tooltip is displayed in the UI.
 #### **Phase 4: Host-Side Orchestration (`Mountain` -> `Cocoon` -> `Mountain`)**
 
 9.  **`Mountain/src/handlers/protocol/ProtocolLogic.rs`**
-
     - **Action:** The `HandleCustomUriSchemeRequest` function receives the
       `mountain://language-feature/provide-hover` request.
     - It dispatches this to the `track` module.
@@ -101,7 +95,6 @@ executed, and the resulting tooltip is displayed in the UI.
 #### **Phase 5: Extension Execution and Response (`Cocoon`)**
 
 11. **gRPC Server (`Cocoon/src/Service/Ipc/Server.ts`)**
-
     - **Action:** `Cocoon`'s gRPC server receives the `$provideHover` request.
     - It passes the request to its `RpcDispatcher`.
 
@@ -122,7 +115,6 @@ executed, and the resulting tooltip is displayed in the UI.
 #### **Phase 6: Final UI Update (`Mountain` -> `Wind/Sky`)**
 
 13. **`LanguageFeaturesProvider` (`Mountain` continued)**
-
     - **Action:** The `gRPC` call to `Cocoon` resolves with the
       `HoverResultDto`.
     - The `ProvideHover` `ActionEffect` in `Mountain` succeeds, yielding this
@@ -131,7 +123,6 @@ executed, and the resulting tooltip is displayed in the UI.
       Tauri `invoke` from step #8.
 
 14. **`LanguageFeaturesService` (`Wind` continued)**
-
     - **Action:** The `TauriInvoke` promise resolves with the hover data.
     - The `getHover` effect succeeds.
     - The service passes the `Hover` data to Monaco's hover controller.

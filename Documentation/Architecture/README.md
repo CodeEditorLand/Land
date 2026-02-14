@@ -64,7 +64,7 @@ graph TB
 
 Detailed documentation for each component:
 
-### [Cocoon](./components/cocoon.md)
+### [Cocoon](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Cocoon.md)
 
 Extension Host that manages the extension lifecycle, provides sandboxed
 execution, and implements VS Code API compatibility.
@@ -78,12 +78,12 @@ execution, and implements VS Code API compatibility.
 
 **Key Files:**
 
-- [`Element/Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts`](../../Element/Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts) -
+- [`Element/Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Bootstrap/Implementation/CocoonMain.ts) -
   Main entry point
-- [`Element/Cocoon/Source/Services/GRPCServerService.ts`](../../Element/Cocoon/Source/Services/GRPCServerService.ts) -
+- [`Element/Cocoon/Source/Services/GRPCServerService.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Services/GRPCServerService.ts) -
   gRPC server implementation
 
-### [Mountain](./components/mountain.md)
+### [Mountain](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md)
 
 Native backend implementing core platform functionality and serving as the
 central orchestrator.
@@ -98,12 +98,12 @@ central orchestrator.
 
 **Key Files:**
 
-- [`Element/Mountain/src/main.rs`](../../Element/Mountain/src/main.rs) -
+- [`Element/Mountain/src/main.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/src/main.rs) -
   Application entry point
-- [`Element/Mountain/src/vine/server/`](../../Element/Mountain/src/vine/server/) -
+- [`Element/Mountain/src/vine/server/`](https://github.com/CodeEditorLand/Mountain/tree/main/src/vine/server) -
   gRPC server
 
-### [Vine](./components/vine.md)
+### [Vine](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Vine.md)
 
 gRPC protocol definitions that define the communication contract between
 components.
@@ -116,9 +116,9 @@ components.
 
 **Key Files:**
 
-- [`Element/Vine/`](../../Element/Vine/) - Protocol definitions directory
+- [`Element/Vine/`](https://github.com/CodeEditorLand/Vine/tree/main/) - Protocol definitions directory
 
-### [Air](./components/air.md)
+### [Air](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Air.md)
 
 Background daemon for handling long-running operations and task management.
 
@@ -133,7 +133,7 @@ Background daemon for handling long-running operations and task management.
 - Communicates with Mountain via gRPC
 - Manages worker processes
 
-### [Wind](./components/wind.md)
+### [Wind](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Wind.md)
 
 UI service layer implementing VS Code workbench services using Effect-TS.
 
@@ -147,9 +147,9 @@ UI service layer implementing VS Code workbench services using Effect-TS.
 
 **Key Files:**
 
-- [`Element/Wind/Source/`](../../Element/Wind/Source/) - Service implementations
+- [`Element/Wind/Source/`](https://github.com/CodeEditorLand/Wind/tree/main/) - Service implementations
 
-### [Sky](./components/sky.md)
+### [Sky](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Sky.md)
 
 Declarative UI component layer built with Astro framework.
 
@@ -162,9 +162,9 @@ Declarative UI component layer built with Astro framework.
 
 **Key Files:**
 
-- [`Element/Sky/Source/pages/`](../../Element/Sky/Source/pages/) - Page
+- [`Element/Sky/Source/pages/`](https://github.com/CodeEditorLand/Sky/tree/main/Source/pages) - Page
   definitions
-- [`Element/Sky/Source/Workbench/`](../../Element/Sky/Source/Workbench/) -
+- [`Element/Sky/Source/Workbench/`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench) -
   Workbench variants
 
 ---
@@ -173,7 +173,7 @@ Declarative UI component layer built with Astro framework.
 
 Detailed documentation of how components communicate:
 
-### [Communication Flows](./integration/communication-flows.md)
+### [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md)
 
 Complete request/response flows, event patterns, and data flow diagrams.
 
@@ -183,7 +183,7 @@ Complete request/response flows, event patterns, and data flow diagrams.
 - Event-driven via Tauri Events (Mountain → Wind/Sky)
 - Command-Invoke via Tauri IPC (Wind → Mountain)
 
-### [Spine Contract](./integration/spine-contract.md)
+### [Spine Contract](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/SpineContract.md)
 
 The central gRPC contract specification (Vine) that defines service interfaces
 between components.
@@ -223,27 +223,27 @@ graph LR
 ## Workflows
 
 Key application workflows documented in
-[../GitHub/Workflow/](../GitHub/Workflow/):
+[../GitHub/Workflow/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow):
 
-1. [Application Startup & Handshake](../GitHub/Workflow/Application%20Startup%20%26%20Handshake.md) -
+1. [Application Startup & Handshake](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/ApplicationStartupAndHandshake.md) -
    Complete startup sequence
-2. [Opening a File from the UI](../GitHub/Workflow/Opening%20a%20File%20from%20the%20UI.md) -
+2. [Opening a File from the UI](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/OpeningAFileFromTheUI.md) -
    File system operations
-3. [Invoking a Language Feature (Hover Provider)](<../GitHub/Workflow/Invoking%20a%20Language%20Feature%20(Hover%20Provider).md>) -
+3. [Invoking a Language Feature (Hover Provider)](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/<../GitHub/Workflow/Invoking%20a%20Language%20Feature%20(Hover%20Provider).md>) -
    Language features
-4. [Saving a File with Save Participants](../GitHub/Workflow/Saving%20a%20File%20with%20Save%20Participants.md) -
+4. [Saving a File with Save Participants](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/SavingAFileWithSaveParticipants.md) -
    Extension hooks
-5. [Executing a Command from the Command Palette](../GitHub/Workflow/Executing%20a%20Command%20from%20the%20Command%20Palette.md) -
+5. [Executing a Command from the Command Palette](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/ExecutingACommandFromTheCommandPalette.md) -
    Command system
-6. [Creating and Interacting with a Webview Panel](../GitHub/Workflow/Creating%20and%20Interacting%20with%20a%20Webview%20Panel.md) -
+6. [Creating and Interacting with a Webview Panel](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/CreatingAndInteractingWithAWebviewPanel.md) -
    Webview management
-7. [Creating and Interacting with an Integrated Terminal](../GitHub/Workflow/Creating%20and%20Interacting%20with%20an%20Integrated%20Terminal.md) -
+7. [Creating and Interacting with an Integrated Terminal](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/CreatingAndInteractingWithAnIntegratedTerminal.md) -
    Terminal I/O
-8. [Source Control Management (SCM)](<../GitHub/Workflow/Source%20Control%20Management%20(SCM).md>) -
+8. [Source Control Management (SCM)](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/<../GitHub/Workflow/Source%20Control%20Management%20(SCM).md>) -
    Git integration
-9. [Running Extension Tests](../GitHub/Workflow/Running%20Extension%20Tests.md) -
+9. [Running Extension Tests](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/RunningExtensionTests.md) -
    Test isolation
-10. [User Data Synchronization](../GitHub/Workflow/User%20Data%20Synchronization.md) -
+10. [User Data Synchronization](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/UserDataSynchronization.md) -
     Settings sync
 
 ---
@@ -284,17 +284,17 @@ Key application workflows documented in
 
 ## Recommendations
 
-See [Refactoring Priorities](./recommendations/refactoring-priorities.md) for
+See [Refactoring Priorities](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/recommendations/RefactoringPriorities.md) for
 identified issues and improvement opportunities.
 
 ---
 
 ## Quick Navigation
 
-- **Component Documentation**: [components/](./components/)
-- **Integration Documentation**: [integration/](./integration/)
-- **Recommendations**: [recommendations/](./recommendations/)
-- **Workflow Examples**: [../GitHub/Workflow/](../GitHub/Workflow/)
+- **Component Documentation**: [components/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components)
+- **Integration Documentation**: [integration/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration)
+- **Recommendations**: [recommendations/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/recommendations)
+- **Workflow Examples**: [../GitHub/Workflow/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow)
 
 ---
 
@@ -312,4 +312,4 @@ When contributing to the architecture, please:
 ## License
 
 This documentation is part of the Code Editor Land project. See the main
-[`LICENSE`](../../LICENSE) file for details.
+[`LICENSE`](https://github.com/CodeEditorLand/Land/tree/main/LICENSE) file for details.

@@ -13,7 +13,6 @@ This is the foundational workflow that enables all others.
 #### **Phase 1: Native Application Startup (`Mountain`)**
 
 1.  **Application Launch (`Mountain/src/main.rs`)**
-
     - **Action:** The user launches the Land application. The `main` function in
       `Mountain`'s `main.rs` is executed.
     - Tauri's `Builder` is created, and the `.setup()` hook is configured.
@@ -27,7 +26,6 @@ This is the foundational workflow that enables all others.
           initializations.
 
 2.  **Post-Setup Initialization (`Mountain` background task)**
-
     - **Action:** The background task begins its work.
     - It calls `handlers::config::InitializeConfiguration` to load all
       `settings.json` files from disk into `AppState`.
@@ -47,7 +45,6 @@ This is the foundational workflow that enables all others.
 #### **Phase 2: Sidecar Handshake and UI Launch (`Cocoon` & `Wind`)**
 
 4.  **`Cocoon` Initialization (`Cocoon/src/Index.ts`)**
-
     - **Action:** The `Cocoon` process starts.
     - The `RunProcessPatches` effect executes, setting up `console.log` piping
       and other critical process patches.
@@ -60,7 +57,6 @@ This is the foundational workflow that enables all others.
 
 5.  **`Mountain` Responds to Handshake
     (`handlers/process_management/CocoonManagement.rs`)**
-
     - **Action:** `Mountain`'s gRPC server receives the `$initialHandshake`.
     - This signals `Mountain` to proceed. It calls
       `InitData::ConstructExtensionHostInitData`, gathering all necessary data
@@ -69,7 +65,6 @@ This is the foundational workflow that enables all others.
       containing this massive initialization payload.
 
 6.  **`Cocoon` Final Initialization (`Cocoon/src/Index.ts`)**
-
     - **Action:** The `initExtensionHost` handler in `Cocoon` fires.
     - It uses the received payload to create and provide the `InitDataLayer`.
     - **It runs the `FullAppInitialization` effect.**
@@ -89,7 +84,6 @@ This is the foundational workflow that enables all others.
 #### **Phase 3: Launching the Workbench (`Wind`)**
 
 8.  **UI Application Entry Point (`Wind/Source/Application/DesktopMain.ts`)**
-
     - **Action:** The main UI script runs.
     - It waits for the DOM to be ready.
     - It creates the master **`AppLayer`**, which composes all `Wind` services

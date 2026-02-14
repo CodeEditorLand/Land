@@ -10,13 +10,11 @@ command.
 #### **Phase 1: Opening the Command Palette (`Wind/Sky`)**
 
 1.  **User Input**
-
     - **Action:** The user presses `Ctrl+Shift+P`.
     - The keybinding system dispatches the `workbench.action.showCommands`
       command.
 
 2.  **`QuickInputService` (`Wind/Source/Application/QuickInput/Definition.ts`)**
-
     - **Action:** The handler for `showCommands` invokes the
       `quickInputService.quickAccess.show()`.
     - This opens the Quick Pick UI, configured for showing commands.
@@ -34,7 +32,6 @@ command.
 #### **Phase 2: Fetching the Command List (`Mountain`)**
 
 4.  **`track.rs` & `environment/CommandsProvider.rs` (`Mountain`)**
-
     - **Action:** The Tauri command is dispatched to `track`, which creates the
       `Common::command::GetAllCommands` effect.
     - The `AppRuntime` executes the effect.
@@ -51,7 +48,6 @@ command.
 #### **Phase 3: Displaying and Selecting a Command (`Wind/Sky`)**
 
 6.  **`CommandsQuickAccessProvider` (continued)**
-
     - **Action:** The `TauriInvoke` promise resolves with the list of command
       IDs.
     - The provider populates the Quick Pick UI with the command list, making it
@@ -67,7 +63,6 @@ command.
 #### **Phase 4A: Executing a NATIVE Command (`Wind` -> `Mountain`)**
 
 8.  **`CommandService` (`Wind`)**
-
     - **Action:** The `executeCommand` call is made. Since the `CommandService`
       in `Wind` is a thin client, it immediately forwards the request to the
       backend.
@@ -75,14 +70,12 @@ command.
       `TauriInvoke('mountain://command/execute', { commandId: 'editor.action.formatDocument', args: [...] })`.
 
 9.  **`track.rs` & `environment/CommandsProvider.rs` (`Mountain`)**
-
     - **Action:** The request is dispatched to `track`, creating the
       `Common::command::ExecuteCommand` effect.
     - The `AppRuntime` executes it.
     - The `MountainEnvironment`'s `CommandExecutor::ExecuteCommand` is called.
 
 10. **`handlers/commands/CommandsLogic.rs` (`Mountain`)**
-
     - **Action:** `ExecuteCommandLogic` is executed.
     - It acquires a lock on `AppState.CommandRegistry` and looks up
       `'editor.action.formatDocument'`.
@@ -106,20 +99,17 @@ command.
 _(Steps 8 and 9 are the same)_
 
 10. **`handlers/commands/CommandsLogic.rs` (`Mountain`)**
-
     - **Action:** `ExecuteCommandLogic` looks up `'my-extension.doSomething'`.
     - It finds that the handler is of the type
       `CommandHandler::Proxied { SidecarIdentifier: "cocoon-main", CommandIdentifier: "my-extension.doSomething" }`.
 
 11. **`IpcProvider` (`Mountain`)**
-
     - **Action:** The handler knows it must proxy the request. It uses the
       `IpcProvider` capability from the `MountainEnvironment`.
     - It makes a **`$executeContributedCommand` gRPC request to `Cocoon`**,
       sending the command ID and its arguments.
 
 12. **`IpcProvider` & Command Handler (`Cocoon`)**
-
     - **Action:** `Cocoon`'s gRPC server receives the request and dispatches it
       to the `CommandsProvider`.
     - The `CommandsProvider` looks up `'my-extension.doSomething'` in its _own_

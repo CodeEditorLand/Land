@@ -10,12 +10,10 @@ extension.
 #### **Phase 1: Extension Creates the Webview (`Cocoon`)**
 
 1.  **Extension Activation (`Cocoon`)**
-
     - **Action:** An extension is activated. Its `activate()` function runs.
 
 2.  **`vscode.window.createWebviewPanel()`
     (`Cocoon/src/Service/WebviewPanel.ts`)**
-
     - **Action:** The extension calls `window.createWebviewPanel(...)`,
       providing a `viewType`, `title`, `viewColumn`, and `options` (which
       include enabling scripts).
@@ -34,7 +32,6 @@ extension.
 #### **Phase 2: Host Creates the Native Webview (`Mountain`)**
 
 4.  **gRPC Server & Dispatcher (`Mountain/src/vine/` & `src/track/`)**
-
     - **Action:** The `$createWebviewPanel` request is received and dispatched
       to the `WebviewProvider` trait implementation on the
       `MountainEnvironment`.
@@ -63,14 +60,12 @@ extension.
 #### **Phase 4: Extension Sets Content and Interacts (`Cocoon` <-> `Mountain` <-> `Wind`)**
 
 7.  **`WebviewPanelProvider` (`Cocoon`, continued)**
-
     - **Action:** The `$createWebviewPanel` gRPC call resolves, returning the
       unique `handle`.
     - The service creates a `WebviewPanelShim` and a `WebviewShim` instance,
       storing the `handle`. It returns the `WebviewPanelShim` to the extension.
 
 8.  **Extension Code (`Cocoon`)**
-
     - **Action:** The extension now has a `panel` object. It sets the content by
       assigning a string of HTML:
       `panel.webview.html = "<h1>Hello World</h1>";`.
@@ -80,7 +75,6 @@ extension.
       `handle` and the HTML string.
 
 9.  **`handlers/webview/WebviewLogic.rs` (`Mountain`)**
-
     - **Action:** The `$setWebviewHtml` request is received and dispatched.
     - The `SetWebviewHtmlLogic` handler looks up the webview in `AppState` using
       the `handle`.
@@ -88,7 +82,6 @@ extension.
       **`AppHandle.emit("sky://webview/set-html", { Handle, Html })`**.
 
 10. **Webview Manager (`Wind`)**
-
     - **Action:** The listener in `Wind` receives the `sky://webview/set-html`
       event.
     - It finds the webview component corresponding to the `handle`.
@@ -96,7 +89,6 @@ extension.
       World" now appears in the UI.
 
 11. **User Interaction (`Wind` -> `Mountain` -> `Cocoon`)**
-
     - **Action:** The user clicks a button inside the webview's HTML, which has
       an `onclick` handler that calls
       `vscode.postMessage({ command: 'doSomething' })`. (The webview's content

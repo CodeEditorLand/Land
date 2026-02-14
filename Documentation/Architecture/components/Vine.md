@@ -15,7 +15,9 @@
 
 ## Overview
 
-**Vine** is the gRPC protocol definition for inter-process communication between Mountain and Cocoon. It uses Protocol Buffers (ProtoBuf) to define service contracts and message formats, ensuring type-safe, efficient communication.
+**Vine** is the gRPC protocol definition for inter-process communication between
+Mountain and Cocoon. It uses Protocol Buffers (ProtoBuf) to define service
+contracts and message formats, ensuring type-safe, efficient communication.
 
 ### Key Responsibilities
 
@@ -37,7 +39,8 @@
 
 ### Vine.proto
 
-**Location**: [`Element/Mountain/Proto/Vine.proto`](../../Element/Mountain/Proto/Vine.proto)
+**Location**:
+[`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/main/Proto/Vine.proto)
 
 The core protocol definition file:
 
@@ -51,32 +54,32 @@ service CocoonService {
   // Initialization
   rpc $initialHandshake(Empty) returns (Empty);
   rpc initExtensionHost(InitExtensionHostRequest) returns (Empty);
-  
+
   // Commands
   rpc $registerCommand(RegisterCommandRequest) returns (Empty);
   rpc $executeContributedCommand(ExecuteCommandRequest) returns (ExecuteCommandResponse);
-  
+
   // Language Features
   rpc $registerHoverProvider(RegisterProviderRequest) returns (Empty);
   rpc $provideHover(ProvideHoverRequest) returns (ProvideHoverResponse);
   rpc $registerCompletionItemProvider(RegisterProviderRequest) returns (Empty);
   rpc $provideCompletionItems(ProvideCompletionItemsRequest) returns (ProvideCompletionItemsResponse);
-  
+
   // File System
   rpc $readFile(ReadFileRequest) returns (ReadFileResponse);
   rpc $writeFile(WriteFileRequest) returns (Empty);
   rpc $stat(StatRequest) returns (StatResponse);
   rpc $readdir(ReaddirRequest) returns (ReaddirResponse);
-  
+
   // Workspace
   rpc $updateConfiguration(UpdateConfigurationRequest) returns (Empty);
   rpc $updateWorkspaceFolders(UpdateWorkspaceFoldersRequest) returns (Empty);
-  
+
   // Webview
   rpc $createWebviewPanel(CreateWebviewPanelRequest) returns (CreateWebviewPanelResponse);
   rpc $setWebviewHtml(SetWebviewHtmlRequest) returns (Empty);
   rpc $onDidReceiveMessage(OnDidReceiveMessageRequest) returns (Empty);
-  
+
   // Terminal
   rpc $openTerminal(OpenTerminalRequest) returns (Empty);
   rpc $terminalInput(TerminalInputRequest) returns (Empty);
@@ -91,14 +94,14 @@ The protocol defines various message types for different operations:
 #### Primitive Types
 
 | Proto Type | Rust Type | TypeScript Type |
-|------------|-----------|-----------------|
-| `string` | `String` | `string` |
-| `int32` | `i32` | `number` |
-| `int64` | `i64` | `bigint` |
-| `uint32` | `u32` | `number` |
-| `uint64` | `u64` | `bigint` |
-| `bool` | `bool` | `boolean` |
-| `bytes` | `Vec<u8>` | `Uint8Array` |
+| ---------- | --------- | --------------- |
+| `string`   | `String`  | `string`        |
+| `int32`    | `i32`     | `number`        |
+| `int64`    | `i64`     | `bigint`        |
+| `uint32`   | `u32`     | `number`        |
+| `uint64`   | `u64`     | `bigint`        |
+| `bool`     | `bool`    | `boolean`       |
+| `bytes`    | `Vec<u8>` | `Uint8Array`    |
 
 #### Common Messages
 
@@ -145,6 +148,7 @@ Establishes initial connection from Cocoon to Mountain.
 Sends initialization data to Cocoon.
 
 **Request**:
+
 ```protobuf
 message InitExtensionHostRequest {
   repeated WorkspaceFolder workspaceFolders = 1;
@@ -166,6 +170,7 @@ message InitExtensionHostRequest {
 Registers a new command from an extension.
 
 **Request**:
+
 ```protobuf
 message RegisterCommandRequest {
   string commandId = 1;
@@ -184,6 +189,7 @@ message RegisterCommandRequest {
 Executes a command in an extension.
 
 **Request**:
+
 ```protobuf
 message ExecuteCommandRequest {
   string commandId = 1;
@@ -200,6 +206,7 @@ message Argument {
 ```
 
 **Response**:
+
 ```protobuf
 message ExecuteCommandResponse {
   oneof result {
@@ -221,6 +228,7 @@ message ExecuteCommandResponse {
 Registers a hover provider.
 
 **Request**:
+
 ```protobuf
 message RegisterProviderRequest {
   string languageSelector = 1;
@@ -239,6 +247,7 @@ message RegisterProviderRequest {
 Requests hover information.
 
 **Request**:
+
 ```protobuf
 message ProvideHoverRequest {
   Uri uri = 1;
@@ -248,6 +257,7 @@ message ProvideHoverRequest {
 ```
 
 **Response**:
+
 ```protobuf
 message ProvideHoverResponse {
   repeated MarkedString contents = 1;
@@ -279,6 +289,7 @@ Registers a completion provider.
 Requests completion items.
 
 **Request**:
+
 ```protobuf
 message ProvideCompletionItemsRequest {
   Uri uri = 1;
@@ -288,6 +299,7 @@ message ProvideCompletionItemsRequest {
 ```
 
 **Response**:
+
 ```protobuf
 message ProvideCompletionItemsResponse {
   repeated CompletionItem items = 1;
@@ -326,6 +338,7 @@ enum CompletionItemKind {
 Reads file contents.
 
 **Request**:
+
 ```protobuf
 message ReadFileRequest {
   Uri uri = 1;
@@ -333,6 +346,7 @@ message ReadFileRequest {
 ```
 
 **Response**:
+
 ```protobuf
 message ReadFileResponse {
   bytes content = 1;
@@ -349,6 +363,7 @@ message ReadFileResponse {
 Writes file contents.
 
 **Request**:
+
 ```protobuf
 message WriteFileRequest {
   Uri uri = 1;
@@ -367,6 +382,7 @@ message WriteFileRequest {
 Gets file metadata.
 
 **Request**:
+
 ```protobuf
 message StatRequest {
   Uri uri = 1;
@@ -374,6 +390,7 @@ message StatRequest {
 ```
 
 **Response**:
+
 ```protobuf
 message StatResponse {
   FileType type = 1;
@@ -399,6 +416,7 @@ enum FileType {
 Lists directory contents.
 
 **Request**:
+
 ```protobuf
 message ReaddirRequest {
   Uri uri = 1;
@@ -406,6 +424,7 @@ message ReaddirRequest {
 ```
 
 **Response**:
+
 ```protobuf
 message ReaddirResponse {
   repeated DirectoryEntry entries = 1;
@@ -428,6 +447,7 @@ message DirectoryEntry {
 Notifies of configuration changes.
 
 **Request**:
+
 ```protobuf
 message UpdateConfigurationRequest {
   repeated string changed_keys = 1;
@@ -444,6 +464,7 @@ message UpdateConfigurationRequest {
 Updates workspace folders.
 
 **Request**:
+
 ```protobuf
 message UpdateWorkspaceFoldersRequest {
   repeated WorkspaceFolder additions = 1;
@@ -468,6 +489,7 @@ message WorkspaceFolder {
 Creates a new webview panel.
 
 **Request**:
+
 ```protobuf
 message CreateWebviewPanelRequest {
   string view_type = 1;
@@ -482,6 +504,7 @@ message CreateWebviewPanelRequest {
 ```
 
 **Response**:
+
 ```protobuf
 message CreateWebviewPanelResponse {
   uint32 handle = 1;
@@ -497,6 +520,7 @@ message CreateWebviewPanelResponse {
 Updates webview HTML content.
 
 **Request**:
+
 ```protobuf
 message SetWebviewHtmlRequest {
   uint32 handle = 1;
@@ -514,6 +538,7 @@ message SetWebviewHtmlRequest {
 Receives message from webview.
 
 **Request**:
+
 ```protobuf
 message OnDidReceiveMessageRequest {
   uint32 handle = 1;
@@ -536,6 +561,7 @@ message OnDidReceiveMessageRequest {
 Opens a new terminal.
 
 **Request**:
+
 ```protobuf
 message OpenTerminalRequest {
   string name = 1;
@@ -555,6 +581,7 @@ message OpenTerminalRequest {
 Sends input to terminal.
 
 **Request**:
+
 ```protobuf
 message TerminalInputRequest {
   uint32 terminal_id = 1;
@@ -572,6 +599,7 @@ message TerminalInputRequest {
 Closes a terminal.
 
 **Request**:
+
 ```protobuf
 message CloseTerminalRequest {
   uint32 terminal_id = 1;
@@ -615,12 +643,12 @@ Protocol Buffers use a compact binary format:
 
 ### Performance Characteristics
 
-| Operation | Approximate Cost |
-|-----------|------------------|
-| Serialize (small message) | < 1μs |
-| Deserialize (small message) | < 1μs |
-| Serialize (large message) | 10-100μs |
-| Deserialize (large message) | 10-100μs |
+| Operation                   | Approximate Cost |
+| --------------------------- | ---------------- |
+| Serialize (small message)   | < 1μs            |
+| Deserialize (small message) | < 1μs            |
+| Serialize (large message)   | 10-100μs         |
+| Deserialize (large message) | 10-100μs         |
 
 ---
 
@@ -628,14 +656,17 @@ Protocol Buffers use a compact binary format:
 
 ### Rust Code Generation
 
-**Location**: [`Element/Mountain/Source/Vine/Generated/`](../../Element/Mountain/Source/Vine/Generated/)
+**Location**:
+[`Element/Mountain/Source/Vine/Generated/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Generated)
 
 Generated using `tonic-build`:
 
 **Key files**:
 
-- [`vine.rs`](../../Element/Mountain/Source/Vine/Generated/vine.rs) - Main generated code
-- [`mod.rs`](../../Element/Mountain/Source/Vine/Generated/mod.rs) - Module exports
+- [`vine.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Generated/vine.rs) - Main
+  generated code
+- [`mod.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Generated/mod.rs) - Module
+  exports
 
 **Generated components**:
 
@@ -651,7 +682,7 @@ pub trait CocoonService: Send + Sync + 'static {
         &self,
         request: tonic::Request<InitExtensionHostRequest>,
     ) -> Result<tonic::Response<Empty>, tonic::Status>;
-    
+
     // ... other methods
 }
 
@@ -670,15 +701,19 @@ pub struct Position {
 
 ### TypeScript Code Generation
 
-**Location**: [`Element/Cocoon/Source/Generated/`](../../Element/Cocoon/Source/Generated/)
+**Location**:
+[`Element/Cocoon/Source/Generated/`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Generated)
 
 Generated using `protoc-gen-ts`:
 
 **Key files**:
 
-- [`Vine.ts`](../../Element/Cocoon/Source/Generated/Vine.ts) - Main generated code
-- [`Vine_pb.d.ts`](../../Element/Cocoon/Source/Generated/Vine_pb.d.ts) - TypeScript definitions
-- [`grpc.d.ts`](../../Element/Cocoon/Source/Generated/grpc.d.ts) - gRPC definitions
+- [`Vine.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Generated/Vine.ts) - Main generated
+  code
+- [`Vine_pb.d.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Generated/Vine_pb.d.ts) -
+  TypeScript definitions
+- [`grpc.d.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Generated/grpc.d.ts) - gRPC
+  definitions
 
 **Generated components**:
 
@@ -712,11 +747,10 @@ export interface Position {
 Rust code is generated during Cargo build:
 
 ```toml
-# Element/Mountain/build.rs
 fn main() {
-    tonic_build::compile_protos("Proto/Vine.proto")
+tonic_build::compile_protos("Proto/Vine.proto")
         .expect("Failed to compile proto");
-}
+}# Element/Mountain/build.rs
 ```
 
 TypeScript code is generated via npm script:
@@ -724,9 +758,9 @@ TypeScript code is generated via npm script:
 ```json
 // Element/Mountain/package.json
 {
-  "scripts": {
-    "generate:ts": "protoc --ts_out=Element/Cocoon/Source/Generated --plugin=protoc-gen-ts=./node_modules/.bin/protoc-gen-ts Proto/Vine.proto"
-  }
+	"scripts": {
+		"generate:ts": "protoc --ts_out=Element/Cocoon/Source/Generated --plugin=protoc-gen-ts=./node_modules/.bin/protoc-gen-ts Proto/Vine.proto"
+	}
 }
 ```
 
@@ -738,26 +772,26 @@ TypeScript code is generated via npm script:
 
 The protocol uses standard gRPC status codes:
 
-| Code | Name | Usage |
-|------|------|-------|
-| 0 | OK | Success |
-| 1 | CANCELLED | Operation cancelled by client |
-| 2 | UNKNOWN | Unknown error |
-| 3 | INVALID_ARGUMENT | Invalid argument |
-| 4 | DEADLINE_EXCEEDED | Operation timed out |
-| 5 | NOT_FOUND | Resource not found |
-| 6 | ALREADY_EXISTS | Resource already exists |
-| 7 | PERMISSION_DENIED | Permission denied |
-| 8 | RESOURCE_EXHAUSTED | Out of resources |
-| 9 | UNAUTHENTICATED | Not authenticated |
-| 10 | FAILED_PRECONDITION | Failed precondition |
-| 11 | ABORTED | Operation aborted |
-| 12 | OUT_OF_RANGE | Out of range |
-| 13 | UNIMPLEMENTED | Not implemented |
-| 14 | INTERNAL | Internal error |
-| 15 | UNAVAILABLE | Service unavailable |
-| 16 | DATA_LOSS | Data loss |
-| 17 | UNAUTHENTICATED | Not authenticated |
+| Code | Name                | Usage                         |
+| ---- | ------------------- | ----------------------------- |
+| 0    | OK                  | Success                       |
+| 1    | CANCELLED           | Operation cancelled by client |
+| 2    | UNKNOWN             | Unknown error                 |
+| 3    | INVALID_ARGUMENT    | Invalid argument              |
+| 4    | DEADLINE_EXCEEDED   | Operation timed out           |
+| 5    | NOT_FOUND           | Resource not found            |
+| 6    | ALREADY_EXISTS      | Resource already exists       |
+| 7    | PERMISSION_DENIED   | Permission denied             |
+| 8    | RESOURCE_EXHAUSTED  | Out of resources              |
+| 9    | UNAUTHENTICATED     | Not authenticated             |
+| 10   | FAILED_PRECONDITION | Failed precondition           |
+| 11   | ABORTED             | Operation aborted             |
+| 12   | OUT_OF_RANGE        | Out of range                  |
+| 13   | UNIMPLEMENTED       | Not implemented               |
+| 14   | INTERNAL            | Internal error                |
+| 15   | UNAVAILABLE         | Service unavailable           |
+| 16   | DATA_LOSS           | Data loss                     |
+| 17   | UNAUTHENTICATED     | Not authenticated             |
 
 ### Error Message Format
 
@@ -770,6 +804,7 @@ Errors include:
 ### Client-Side Error Handling
 
 Rust example:
+
 ```rust
 match client.provide_hover(request).await {
     Ok(response) => {
@@ -787,6 +822,7 @@ match client.provide_hover(request).await {
 ```
 
 TypeScript example:
+
 ```typescript
 client.provideHover(request, (error, response) => {
     if (error) {
@@ -811,12 +847,12 @@ Vine follows semantic versioning:
 
 ### Version Compatibility Rules
 
-| Client Version | Protocol Version | Server Version | Compatible? |
-|----------------|------------------|----------------|-------------|
-| v1.0 | v1.0 | v1.0 | ✅ Yes |
-| v1.0 | v1.0 | v1.1 | ✅ Yes (server new features) |
-| v1.1 | v1.1 | v1.0 | ❌ No (client expects new features) |
-| v1.0 | v1.1 | v1.1 | ❌ No (mismatch) |
+| Client Version | Protocol Version | Server Version | Compatible?                         |
+| -------------- | ---------------- | -------------- | ----------------------------------- |
+| v1.0           | v1.0             | v1.0           | ✅ Yes                              |
+| v1.0           | v1.0             | v1.1           | ✅ Yes (server new features)        |
+| v1.1           | v1.1             | v1.0           | ❌ No (client expects new features) |
+| v1.0           | v1.1             | v1.1           | ❌ No (mismatch)                    |
 
 ### Breaking Changes
 
@@ -841,17 +877,20 @@ Changes that only require a minor version update:
 
 ### Mountain Integration
 
-**Server Implementation**: [`Element/Mountain/Source/Vine/Server/`](../../Element/Mountain/Source/Vine/Server/)
+**Server Implementation**:
+[`Element/Mountain/Source/Vine/Server/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Server)
 
 - **CocoonServiceServer**: gRPC server implementation
 - **CocoonServiceImpl**: Service handler implementation
 
 ### Cocoon Integration
 
-**Client Implementation**: [`Element/Cocoon/Source/Integration/`](../../Element/Cocoon/Source/Integration/)
+**Client Implementation**:
+[`Element/Cocoon/Source/Integration/`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Integration)
 
 - **MountainClient**: gRPC client for communication with Mountain
-- **Generated Code**: [Element/Cocoon/Source/Generated/](../../Element/Cocoon/Source/Generated/)
+- **Generated Code**:
+  [Element/Cocoon/Source/Generated/](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Generated)
 
 ### Cross-Language Communication
 
@@ -867,20 +906,22 @@ graph LR
 
 ## Key Files Reference
 
-| File | Purpose |
-|------|---------|
-| [`Element/Mountain/Proto/Vine.proto`](../../Element/Mountain/Proto/Vine.proto) | Protocol definition |
-| [`Element/Mountain/Source/Vine/Generated/vine.rs`](../../Element/Mountain/Source/Vine/Generated/vine.rs) | Generated Rust code |
-| [`Element/Cocoon/Source/Generated/Vine.ts`](../../Element/Cocoon/Source/Generated/Vine.ts) | Generated TypeScript code |
-| [`Element/Mountain/Source/Vine/Server/CocoonServiceServer.rs`](../../Element/Mountain/Source/Vine/Server/CocoonServiceServer.rs) | Server implementation |
-| [`Element/Cocoon/Source/Integration/MountainClient.ts`](../../Element/Cocoon/Source/Integration/MountainClient.ts) | Client implementation |
-| [`Element/Mountain/build.rs`](../../Element/Mountain/build.rs) | Rust code generation |
+| File                                                                                                                             | Purpose                   |
+| -------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| [`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/main/Proto/Vine.proto)                                                   | Protocol definition       |
+| [`Element/Mountain/Source/Vine/Generated/vine.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Generated/vine.rs)                         | Generated Rust code       |
+| [`Element/Cocoon/Source/Generated/Vine.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Generated/Vine.ts)                                       | Generated TypeScript code |
+| [`Element/Mountain/Source/Vine/Server/CocoonServiceServer.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Server/CocoonServiceServer.rs) | Server implementation     |
+| [`Element/Cocoon/Source/Integration/MountainClient.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Integration/MountainClient.ts)               | Client implementation     |
+| [`Element/Mountain/build.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/build.rs)                                                                   | Rust code generation      |
 
 ---
 
 ## See Also
 
-- [Mountain Component](./mountain.md) - Native backend (server)
-- [Cocoon Component](./cocoon.md) - Extension host (client)
-- [Spine Contract](../integration/spine-contract.md) - Detailed contract specification
-- [Communication Flows](../integration/communication-flows.md) - Communication patterns
+- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md) - Native backend (server)
+- [Cocoon Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Cocoon.md) - Extension host (client)
+- [Spine Contract](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/SpineContract.md) - Detailed contract
+  specification
+- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) - Communication
+  patterns

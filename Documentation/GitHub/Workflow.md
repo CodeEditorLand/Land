@@ -30,62 +30,53 @@ and Commands**.
 
 ### Core Workflows
 
-1.  [**Application Startup & Handshake**](./Workflow/Application%20Startup%20&%20Handshake.md)
-
+1.  [**Application Startup & Handshake**](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/Application%20Startup%20&%20Handshake.md)
     - _Describes the complete end-to-end process of launching `Mountain`,
       spawning `Cocoon`, and establishing a stable, initialized state for both
       the UI and the extension host._
 
-2.  [**Opening a File from the UI**](./Workflow/Opening%20a%20File%20from%20the%20UI.md)
-
+2.  [**Opening a File from the UI**](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/OpeningAFileFromTheUI.md)
     - _Details the flow from a user clicking a file in the explorer to the
       content being read from disk by `Mountain` and rendered in an editor by
       `Wind`._
 
-3.  [**Invoking a Language Feature (Hover Provider)**](<./Workflow/Invoking%20a%20Language%20Feature%20(Hover%20Provider).md>)
-
+3.  [**Invoking a Language Feature (Hover Provider)**](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/<./Workflow/Invoking%20a%20Language%20Feature%20(Hover%20Provider).md>)
     - _A key example of bi-directional communication, showing how an extension
       in `Cocoon` registers a feature, `Mountain` orchestrates the request, and
       the result is displayed in the `Wind` UI._
 
-4.  [**Saving a File with Save Participants**](./Workflow/Saving%20a%20File%20with%20Save%20Participants.md)
-
+4.  [**Saving a File with Save Participants**](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/SavingAFileWithSaveParticipants.md)
     - _Explains the advanced process of intercepting a save event, allowing an
       extension in `Cocoon` to modify a file (e.g., for formatting) before
       `Mountain` writes it to disk._
 
-5.  [**Executing a Command from the Command Palette**](./Workflow/Executing%20a%20Command%20from%20the%20Command%20Palette.md)
-
+5.  [**Executing a Command from the Command Palette**](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/ExecutingACommandFromTheCommandPalette.md)
     - _Illustrates the unified command system, showing how `Mountain`'s command
       registry can seamlessly dispatch execution to either a native Rust handler
       or a proxied command in `Cocoon`._
 
-6.  [**Creating and Interacting with a Webview Panel**](./Workflow/Creating%20and%20Interacting%20with%20a%20Webview%20Panel.md)
-
+6.  [**Creating and Interacting with a Webview Panel**](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/CreatingAndInteractingWithAWebviewPanel.md)
     - _Details the full lifecycle of extension-contributed UI, from `Cocoon`
       requesting a panel to `Mountain` managing the native webview window and
       proxying messages back and forth._
 
-7.  [**Creating and Interacting with an Integrated Terminal**](./Workflow/Creating%20and%20Interacting%20with%20an%20Integrated%20Terminal.md)
-
+7.  [**Creating and Interacting with an Integrated Terminal**](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/CreatingAndInteractingWithAnIntegratedTerminal.md)
     - _A deep dive into native process management, showing how `Mountain` spawns
       a PTY process and streams its I/O to both the `Wind` frontend and the
       `Cocoon` extension host._
 
-8.  [**Source Control Management (SCM)**](<./Workflow/Source%20Control%20Management%20(SCM).md>)
-
+8.  [**Source Control Management (SCM)**](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/<./Workflow/Source%20Control%20Management%20(SCM).md>)
     - _Outlines how the built-in Git extension in `Cocoon` uses `Mountain` as a
       service to run native `git` commands and then populates the SCM view in
       the UI with the results._
 
-9.  [**User Data Synchronization**](./Workflow/User%20Data%20Synchronization.md)
-
+9.  [**User Data Synchronization**](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/UserDataSynchronization.md)
     - _Describes the end-to-end process of syncing user settings. It covers user
       authentication, fetching data from a remote store, performing a three-way
       merge, applying changes locally, and notifying all parts of the
       application._
 
-10. [**Running Extension Tests**](./Workflow/Running%20Extension%20Tests.md)
+10. [**Running Extension Tests**](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/RunningExtensionTests.md)
     - _Explains the "Extension Development Host" model, where a second, isolated
       instance of the application is launched to run tests, with the test
       `Cocoon` instance remote-controlling the main UI._

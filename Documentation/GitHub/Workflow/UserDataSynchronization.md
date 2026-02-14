@@ -10,7 +10,6 @@ installation.
 #### **Phase 1: User Authentication**
 
 1.  **User Action (`Wind/Sky`)**
-
     - **Action:** The user clicks the "Sign In" button in the Account menu.
     - This triggers the `workbench.action.authentication.signIn` command.
 
@@ -31,7 +30,6 @@ installation.
 #### **Phase 2: Triggering the Synchronization**
 
 3.  **`UserDataAutoSyncService` (`Mountain`)**
-
     - **Action:** After a successful sign-in, the `UserDataAutoSyncService` is
       triggered. Alternatively, it can be triggered manually by the user or on a
       regular interval.
@@ -48,7 +46,6 @@ installation.
 #### **Phase 3: Synchronizing a Specific Resource (e.g., Settings)**
 
 5.  **`SettingsSynchronizer.sync()` (`Mountain`)**
-
     - **Action:** The settings synchronizer needs to fetch the latest version of
       `settings.json` from the remote server.
     - It uses a `UserDataSyncStoreService` (which is an HTTP client under the
@@ -57,7 +54,6 @@ installation.
       includes the user's OAuth token in the request headers.
 
 6.  **Remote Sync Service (External Server)**
-
     - **Action:** The cloud service receives the request, validates the token,
       and fetches the user's stored `settings.json` content from its database.
     - It returns the content as the HTTP response.
@@ -80,14 +76,12 @@ installation.
 #### **Phase 4: Applying the Merged State**
 
 8.  **Applying Settings (`Mountain`)**
-
     - **Action:** The `SettingsSynchronizer` now has the final, merged
       `settings.json` content.
     - It uses the `FsWriter` effect to write this new content back to the local
       `settings.json` file, overwriting it.
 
 9.  **Configuration Reload (`Mountain`)**
-
     - **Action:** After the file is written, the `SettingsSynchronizer` needs to
       tell the rest of the application to recognize the changes.
     - It calls a method on the `ConfigurationService` (e.g.,
@@ -107,7 +101,6 @@ installation.
 #### **Phase 5: UI and Extension Host React to Changes**
 
 11. **`ConfigurationProvider` (`Cocoon`)**
-
     - **Action:** The `ConfigurationProvider` in `Cocoon` receives the
       `$acceptConfigurationChanged` notification.
     - It updates its internal cache of the configuration.
@@ -115,7 +108,6 @@ installation.
       extensions as `vscode.workspace.onDidChangeConfiguration`.
 
 12. **UI Update (`Wind/Sky`)**
-
     - **Action:** Components in the UI listen for the
       `sky://configuration/changed` event.
     - The Settings UI, for example, re-renders to show the new values.

@@ -14,16 +14,18 @@
 
 ## Overview
 
-This document describes the communication flows between all components in Code Editor Land. Understanding these flows is critical for debugging, extending, and maintaining the system.
+This document describes the communication flows between all components in Code
+Editor Land. Understanding these flows is critical for debugging, extending, and
+maintaining the system.
 
 ### Communication Channels
 
-| Channel | Participants | Protocol | Direction |
-|---------|--------------|----------|-----------|
-| **gRPC** | Cocoon ↔ Mountain | ProtoBuf | Bidirectional |
-| **Tauri IPC** | Wind → Mountain | Tauri Commands | Unidirectional |
-| **Tauri Events** | Mountain → Wind/Sky | Tauri Events | Unidirectional |
-| **gRPC** | Air ↔ Mountain | ProtoBuf | Bidirectional |
+| Channel          | Participants        | Protocol       | Direction      |
+| ---------------- | ------------------- | -------------- | -------------- |
+| **gRPC**         | Cocoon ↔ Mountain   | ProtoBuf       | Bidirectional  |
+| **Tauri IPC**    | Wind → Mountain     | Tauri Commands | Unidirectional |
+| **Tauri Events** | Mountain → Wind/Sky | Tauri Events   | Unidirectional |
+| **gRPC**         | Air ↔ Mountain      | ProtoBuf       | Bidirectional  |
 
 ---
 
@@ -31,15 +33,18 @@ This document describes the communication flows between all components in Code E
 
 ### gRPC (Cocoon ↔ Mountain)
 
-**Protocol Definition**: [`Element/Mountain/Proto/Vine.proto`](../../Element/Mountain/Proto/Vine.proto)
+**Protocol Definition**:
+[`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/main/Proto/Vine.proto)
 
 **Characteristics**:
+
 - Binary serialization with Protocol Buffers
 - Low latency
 - Type-safe
 - Supports streaming
 
 **Use Cases**:
+
 - Extension host communication
 - Language feature requests
 - File system operations
@@ -50,12 +55,14 @@ This document describes the communication flows between all components in Code E
 **Command Scheme**: `mountain://service/method`
 
 **Characteristics**:
+
 - Text-based JSON
 - Client-initiated only
 - Synchronous request-response
 - Bridge to native code
 
 **Use Cases**:
+
 - Editor operations
 - File operations
 - Command execution
@@ -66,12 +73,14 @@ This document describes the communication flows between all components in Code E
 **Event Scheme**: `sky://service/event`
 
 **Characteristics**:
+
 - Event-driven
 - Server-initiated
 - Asynchronous
 - Broadcast or targeted
 
 **Use Cases**:
+
 - Terminal output
 - Webview updates
 - SCM notifications
@@ -83,15 +92,15 @@ This document describes the communication flows between all components in Code E
 
 ### Communication Patterns
 
-| From | To | Protocol | Pattern | Latency |
-|------|-----|----------|---------|---------|
-| **Cocoon** | Mountain | gRPC | Request/Response | ~1ms |
-| **Mountain** | Cocoon | gRPC | Request/Response | ~1ms |
-| **Wind** | Mountain | Tauri IPC | Request/Response | ~2-5ms |
-| **Mountain** | Wind | Tauri Events | Event | ~1ms |
-| **Mountain** | Sky | Tauri Events | Event | ~1ms |
-| **Air** | Mountain | gRPC | Request/Response | ~1ms |
-| **Mountain** | Air | gRPC | Request/Response | ~1ms |
+| From         | To       | Protocol     | Pattern          | Latency |
+| ------------ | -------- | ------------ | ---------------- | ------- |
+| **Cocoon**   | Mountain | gRPC         | Request/Response | ~1ms    |
+| **Mountain** | Cocoon   | gRPC         | Request/Response | ~1ms    |
+| **Wind**     | Mountain | Tauri IPC    | Request/Response | ~2-5ms  |
+| **Mountain** | Wind     | Tauri Events | Event            | ~1ms    |
+| **Mountain** | Sky      | Tauri Events | Event            | ~1ms    |
+| **Air**      | Mountain | gRPC         | Request/Response | ~1ms    |
+| **Mountain** | Air      | gRPC         | Request/Response | ~1ms    |
 
 ### Communication Flow Summary
 
@@ -102,7 +111,7 @@ graph LR
     Mountain[Mountain] -->|Tauri Events| Wind[Wind]
     Mountain[Mountain] -->|Tauri Events| Sky[Sky]
     Air[Air] <-->|gRPC| Mountain[Mountain]
-    
+
     Sky[Sky] -->|Service Calls| Wind[Wind]
 ```
 
@@ -128,7 +137,7 @@ sequenceDiagram
     Wind->>Wind: Create Effect
     Wind->>Mountain: TauriInvoke('mountain://command/execute')
     Mountain->>Registry: Lookup Command
-    
+
     alt Native Command
         Registry->>Mountain: Return Handler
         Mountain->>Mountain: Execute Handler
@@ -139,12 +148,13 @@ sequenceDiagram
         Cocoon->>Mountain: Return Result
         Mountain->>Wind: Return Result
     end
-    
+
     Wind->>Sky: Return Result
     Sky->>User: Display Result
 ```
 
 **Key Characteristics**:
+
 - Synchronous request-response
 - Single-hop or double-hop depending on command type
 - Error propagation through call stack
@@ -174,6 +184,7 @@ sequenceDiagram
 ```
 
 **Key Characteristics**:
+
 - Triple-hop (Wind → Mountain → Cocoon → Mountain → Wind)
 - Provider lookup in AppState
 - Extension execution isolated in Cocoon
@@ -198,6 +209,7 @@ sequenceDiagram
 ```
 
 **Key Characteristics**:
+
 - Uses Tauri FS plugin
 - Direct file system access
 - No extension involvement
@@ -221,6 +233,7 @@ sequenceDiagram
 ```
 
 **Key Characteristics**:
+
 - Initiated by Cocoon
 - Registration stored in Mountain's AppState
 - Future requests use stored registration
@@ -249,6 +262,7 @@ sequenceDiagram
 ```
 
 **Key Characteristics**:
+
 - Single event, multiple recipients
 - Broadcast pattern
 - No response expected
@@ -273,6 +287,7 @@ sequenceDiagram
 ```
 
 **Key Characteristics**:
+
 - Single event, multiple recipients
 - State synchronization
 - Cascading updates
@@ -298,6 +313,7 @@ sequenceDiagram
 ```
 
 **Key Characteristics**:
+
 - User-initiated
 - Tauri IPC first, then gRPC
 - Extension handles the message
@@ -319,12 +335,12 @@ flowchart TD
     G --> H[Init Extension Host]
     H --> I[Activate Extensions]
     I --> J[Cocoon Ready]
-    
+
     B --> K[Load UI]
     K --> L[Wind Initializes]
     L --> M[Sky Loads]
     M --> N[UI Ready]
-    
+
     J --> O[Startup Complete]
     N --> O
 ```
@@ -334,14 +350,14 @@ flowchart TD
 ```mermaid
 flowchart TD
     A[User Triggers Command] --> B{Command Type?}
-    
+
     B -->|Native| C[Wind → Mountain]
     B -->|Extension| D[Wind → Mountain → Cocoon]
-    
+
     C --> E[Execute Handler]
     E --> F[Return Result]
     F --> G[Update UI]
-    
+
     D --> H[gRPC Request]
     H --> I[Extension Executes]
     I --> J[gRPC Response]
@@ -359,13 +375,13 @@ flowchart TD
     D --> E[Mountain]
     E --> F[Lookup Provider]
     F --> G[Provider Type?]
-    
+
     G -->|Native| H[Execute Locally]
     G -->|Extension| I[gRPC to Cocoon]
-    
+
     I --> J[Extension Computes]
     H --> J
-    
+
     J --> K[Return Hover Data]
     K --> L[Display Tooltip]
 ```
@@ -376,7 +392,8 @@ flowchart TD
 
 ### Workflow 1: Opening a File
 
-**Source**: [`Documentation/GitHub/Workflow/Opening a File from the UI.md`](../Workflow/Opening%20a%20File%20from%20the%20UI.md)
+**Source**:
+[`Documentation/GitHub/Workflow/OpeningAFileFromTheUI.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow/OpeningAFileFromTheUI.md)
 
 **Components**: Sky → Wind → Mountain → Disk
 
@@ -390,7 +407,8 @@ flowchart TD
 
 ### Workflow 2: Saving with Save Participants
 
-**Source**: [`Documentation/GitHub/Workflow/Saving a File with Save Participants.md`](../Workflow/Saving%20a%20File%20with%20Save%20Participants.md)
+**Source**:
+[`Documentation/GitHub/Workflow/SavingAFileWithSaveParticipants.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow/SavingAFileWithSaveParticipants.md)
 
 **Components**: Sky → Wind → Mountain → Cocoon → Wind → Mountain → Disk
 
@@ -406,7 +424,8 @@ flowchart TD
 
 ### Workflow 3: Language Feature (Hover)
 
-**Source**: [`Documentation/GitHub/Workflow/Invoking a Language Feature (Hover Provider).md`](../Workflow/Invoking%20a%20Language%20Feature%20(Hover%20Provider).md)
+**Source**:
+[`Documentation/GitHub/Workflow/InvokingALanguageFeatureHoverProvider.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/<../Workflow/Invoking%20a%20Language%20Feature%20(Hover%20Provider).md>)
 
 **Components**: Sky → Wind → Mountain → Cocoon → Mountain → Wind → Sky
 
@@ -423,11 +442,13 @@ flowchart TD
 
 ### Workflow 4: Terminal I/O
 
-**Source**: [`Documentation/GitHub/Workflow/Creating and Interacting with an Integrated Terminal.md`](../Workflow/Creating%20and%20Interacting%20with%20an%20Integrated%20Terminal.md)
+**Source**:
+[`Documentation/GitHub/Workflow/CreatingAndInteractingWithAnIntegratedTerminal.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow/CreatingAndInteractingWithAnIntegratedTerminal.md)
 
 **Components**: Sky → Wind → Mountain → PTY → Mountain → Cocoon + Wind + Sky
 
 **Output Flow**:
+
 1. PTY producesstdout data
 2. Mountain's Reader Task reads data
 3. Mountain sends `$acceptTerminalProcessData` gRPC to Cocoon
@@ -436,6 +457,7 @@ flowchart TD
 6. Sky updates terminal UI
 
 **Input Flow**:
+
 1. User types in terminal (Sky)
 2. Sky sends input to Wind
 3. Wind makes `TauriInvoke` to Mountain
@@ -443,11 +465,13 @@ flowchart TD
 
 ### Workflow 5: Webview Communication
 
-**Source**: [`Documentation/GitHub/Workflow/Creating and Interacting with a Webview Panel.md`](../Workflow/Creating%20and%20Interacting%20with%20a%20Webview%20Panel.md)
+**Source**:
+[`Documentation/GitHub/Workflow/CreatingAndInteractingWithAWebviewPanel.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow/CreatingAndInteractingWithAWebviewPanel.md)
 
 **Components**: Cocoon → Mountain → Sky + Mountain → Wind → Cocoon
 
 **Creation Flow**:
+
 1. Extension calls `createWebviewPanel()` (Cocoon)
 2. Cocoon makes `$createWebviewPanel` gRPC to Mountain
 3. Mountain stores webview state
@@ -456,6 +480,7 @@ flowchart TD
 6. Mountain returns handle to Cocoon
 
 **Message Flow**:
+
 1. User interacts with webview (Sky)
 2. Sky makes `TauriInvoke('mountain://webview/on-message')`
 3. Mountain makes `$onDidReceiveMessage` gRPC to Cocoon
@@ -463,11 +488,13 @@ flowchart TD
 
 ### Workflow 6: Source Control Management
 
-**Source**: [`Documentation/GitHub/Workflow/Source Control Management (SCM).md`](../Workflow/Source%20Control%20Management%20(SCM).md)
+**Source**:
+[`Documentation/GitHub/Workflow/SourceControlManagementSCM.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/<../Workflow/Source%20Control%20Management%20(SCM).md>)
 
 **Components**: Cocoon → Mountain → Cocoon → Mountain → Wind → Sky
 
 **Status Update Flow**:
+
 1. Git extension runs `git status` (Cocoon)
 2. Cocoon makes `$gitExec` gRPC to Mountain
 3. Mountain spawns git process, captures output
@@ -481,11 +508,13 @@ flowchart TD
 
 ### Workflow 7: Command Palette
 
-**Source**: [`Documentation/GitHub/Workflow/Executing a Command from the Command Palette.md`](../Workflow/Executing%20a%20Command%20from%20the%20Command%20Palette.md)
+**Source**:
+[`Documentation/GitHub/Workflow/ExecutingACommandFromTheCommandPalette.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow/ExecutingACommandFromTheCommandPalette.md)
 
 **Components**: Sky → Wind → Mountain → Mountain → Wind
 
 **Fetch Commands Flow**:
+
 1. User opens Command Palette (Sky)
 2. Wind's `CommandsQuickAccessProvider` queries commands
 3. Wind makes `TauriInvoke('mountain://command/get-all')`
@@ -493,6 +522,7 @@ flowchart TD
 5. Wind populates QuickPick UI
 
 **Execute Command Flow**:
+
 1. User selects command (Sky)
 2. Wind makes `TauriInvoke('mountain://command/execute')`
 3. Mountain dispatches to appropriate handler
@@ -500,11 +530,13 @@ flowchart TD
 
 ### Workflow 8: Extension Tests
 
-**Source**: [`Documentation/GitHub/Workflow/Running Extension Tests.md`](../Workflow/Running%20Extension%20Tests.md)
+**Source**:
+[`Documentation/GitHub/Workflow/RunningExtensionTests.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow/RunningExtensionTests.md)
 
 **Components**: Wind → Mountain → Mountain → Cocoon Test → Mountain Main
 
 **Test Execution Flow**:
+
 1. Developer runs test command (Wind)
 2. Mountain Test Runner Service triggers
 3. Mountain spawns new test instance
@@ -521,11 +553,11 @@ flowchart TD
 
 ### Latency by Protocol
 
-| Protocol | Base Latency | With Payload (1KB) | With Payload (100KB) |
-|----------|--------------|-------------------|---------------------|
-| gRPC | ~1ms | ~1.5ms | ~5ms |
-| Tauri IPC | ~2ms | ~3ms | ~20ms |
-| Tauri Events | ~1ms | ~1.5ms | ~5ms |
+| Protocol     | Base Latency | With Payload (1KB) | With Payload (100KB) |
+| ------------ | ------------ | ------------------ | -------------------- |
+| gRPC         | ~1ms         | ~1.5ms             | ~5ms                 |
+| Tauri IPC    | ~2ms         | ~3ms               | ~20ms                |
+| Tauri Events | ~1ms         | ~1.5ms             | ~5ms                 |
 
 ### Throughput Considerations
 
@@ -550,14 +582,14 @@ flowchart TD
 ```mermaid
 graph TD
     A[Error Occurs] --> B{Error Type?}
-    
+
     B -->|Known Error| C[Handle Locally]
     B -->|Unknown Error| D[Log and Propagate]
-    
+
     C --> E{Can Recover?}
     E -->|Yes| F[Recover]
     E -->|No| D
-    
+
     D --> G[Propagate to Caller]
     F --> H[Continue]
     G --> I{Caller Can Handle?}
@@ -567,20 +599,20 @@ graph TD
 
 ### Error Codes
 
-| Error Code | Protocol | Meaning | Handling |
-|------------|----------|---------|----------|
-| `OK` | Both | Success | Normal flow |
-| `NOT_FOUND` | gRPC | Resource not found | Show error to user |
-| `INVALID_ARGUMENT` | gRPC/Tauri | Invalid parameters | Validate and retry |
-| `PERMISSION_DENIED` | gRPC | Permission issue | Check permissions |
-| `INTERNAL` | gRPC/Tauri | Server error | Show error to user |
-| `UNAVAILABLE` | gRPC/Tauri | Service unavailable | Retry with backoff |
+| Error Code          | Protocol   | Meaning             | Handling           |
+| ------------------- | ---------- | ------------------- | ------------------ |
+| `OK`                | Both       | Success             | Normal flow        |
+| `NOT_FOUND`         | gRPC       | Resource not found  | Show error to user |
+| `INVALID_ARGUMENT`  | gRPC/Tauri | Invalid parameters  | Validate and retry |
+| `PERMISSION_DENIED` | gRPC       | Permission issue    | Check permissions  |
+| `INTERNAL`          | gRPC/Tauri | Server error        | Show error to user |
+| `UNAVAILABLE`       | gRPC/Tauri | Service unavailable | Retry with backoff |
 
 ---
 
 ## See Also
 
-- [Spine Contract](./spine-contract.md) - Detailed gRPC contract specification
-- [Component Documentation](../components/) - Individual component documentation
-- [Workflow Examples](../Workflow/) - Detailed workflow examples
-- [Vine Component](../components/vine.md) - gRPC protocol definition
+- [Spine Contract](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/SpineContract.md) - Detailed gRPC contract specification
+- [Component Documentation](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components) - Individual component documentation
+- [Workflow Examples](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow) - Detailed workflow examples
+- [Vine Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Vine.md) - gRPC protocol definition
