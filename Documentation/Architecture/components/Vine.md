@@ -720,25 +720,25 @@ Generated using `protoc-gen-ts`:
 ```typescript
 // Generated service client
 export class CocoonServiceClient {
-    $initialHandshake(
-        request: Empty,
-        callback: (error: Error, response: Empty) => void
-    ): void;
+	$initialHandshake(
+		request: Empty,
+		callback: (error: Error, response: Empty) => void,
+	): void;
 
-    initExtensionHost(
-        request: InitExtensionHostRequest,
-        callback: (error: Error, response: Empty) => void
-    ): void;
+	initExtensionHost(
+		request: InitExtensionHostRequest,
+		callback: (error: Error, response: Empty) => void,
+	): void;
 
-    // ... other methods
+	// ... other methods
 }
 
 // Generated types
 export interface Empty {}
 
 export interface Position {
-    line: number;
-    character: number;
+	line: number;
+	character: number;
 }
 ```
 
@@ -825,11 +825,11 @@ TypeScript example:
 
 ```typescript
 client.provideHover(request, (error, response) => {
-    if (error) {
-        console.error("Error:", error.code, error.message);
-        return;
-    }
-    // Handle response
+	if (error) {
+		console.error("Error:", error.code, error.message);
+		return;
+	}
+	// Handle response
 });
 ```
 

@@ -1,6 +1,10 @@
 ### **Workflow Example #10: Running Extension Tests**
 
-> **⚠️ Verification Status:** This workflow describes a conceptual test runner architecture. The actual implementation details should be verified against [`Element/Mountain/Source/Testing/`](Element/Mountain/Source/Testing/) and [`Element/Cocoon/Source/Services/Extension.ts`](Element/Cocoon/Source/Services/Extension.ts) for extension activation.
+> **⚠️ Verification Status:** This workflow describes a conceptual test runner
+> architecture. The actual implementation details should be verified against
+> [`Element/Mountain/Source/Testing/`](Element/Mountain/Source/Testing/) and
+> [`Element/Cocoon/Source/Services/Extension.ts`](Element/Cocoon/Source/Services/Extension.ts)
+> for extension activation.
 
 **Goal:** An extension developer wants to run automated tests for their
 extension. They trigger a command that launches a new, clean instance of the
@@ -76,6 +80,7 @@ within it, and reports the results.
 
         ```typescript
         import * as assert from "assert";
+
         import * as vscode from "vscode";
 
         test("My Extension Feature", async () => {
