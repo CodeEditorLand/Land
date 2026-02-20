@@ -1,5 +1,7 @@
 ### **Workflow Example #10: Running Extension Tests**
 
+> **⚠️ Verification Status:** This workflow describes a conceptual test runner architecture. The actual implementation details should be verified against [`Element/Mountain/Source/Testing/`](Element/Mountain/Source/Testing/) and [`Element/Cocoon/Source/Services/Extension.ts`](Element/Cocoon/Source/Services/Extension.ts) for extension activation.
+
 **Goal:** An extension developer wants to run automated tests for their
 extension. They trigger a command that launches a new, clean instance of the
 application (the "Extension Development Host"), runs the extension's tests

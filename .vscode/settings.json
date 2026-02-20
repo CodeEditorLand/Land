@@ -68,14 +68,16 @@
 		"**/*.code-search": true,
 		"**/*.d.ts": true,
 		"**/.turbo": true,
-		"**/Documentation": true,
+		"**/Documentation": false,
 		"**/Target": true,
 		"**/dist": true,
 		"**/node_modules": true,
 		"**/target": true
 	},
-	"typescript.tsc.autoDetect": "on",
-	"typescript.tsserver.experimental.enableProjectDiagnostics": true,
+	"typescript.tsc.autoDetect": "off",
+	"typescript.tsdk": "node_modules/typescript/lib",
+	"typescript.enablePromptUseWorkspaceTsdk": true,
+	"typescript.tsserver.pluginPaths": ["./Element/Sky/node_modules"],
 	"formatFiles.excludedFolders": [
 		"node_modules",
 		".vscode",
@@ -85,5 +87,5 @@
 		"Target",
 		"target"
 	],
-	"formatFiles.excludePattern": "**/Generated/*.rs,**/Documentation/Rust/*.rs"
+	"formatFiles.excludePattern": "**/node_modules/**/*,**/Dependency/*/Dependency/**/*,**/Generated/**/*,**/Documentation/Rust/**/*,**/Documentation/Module/**/*,**/Element/SideCar/*/NODE/**/*"
 }

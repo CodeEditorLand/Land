@@ -290,7 +290,7 @@ export const AppLiveLayer = Layer.mergeAll(
 ### Preload Script
 
 **Location**:
-[`../Element/Wind/Source/Preload.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Preload.ts)
+[`../Element/Wind/Source/Preload.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Preload.ts)
 
 The preload script provides minimal IPC functionality and VSCode API shims:
 
@@ -356,15 +356,15 @@ The preload script provides VSCode and Electron API compatibility:
 
 ### Polyfills provided:
 
-| Polyfill                   | Purpose                            | File                                                                                               |
-| -------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------- |
-| **Child Process Polyfill** | Child process API compatibility    | [`Polyfills/ChildProcessPolyfill.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Polyfills/ChildProcessPolyfill.ts) |
-| **File Protocol Shim**     | File URL resolution                | [`Polyfills/FileProtocolShim.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Polyfills/FileProtocolShim.ts)         |
-| **File System Polyfill**   | fs module compatibility            | [`Polyfills/FileSystemPolyfill.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Polyfills/FileSystemPolyfill.ts)     |
-| **IPC Renderer Shim**      | Electron ipcRenderer compatibility | [`Polyfills/IPCRendererShim.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Polyfills/IPCRendererShim.ts)           |
-| **Native Module Polyfill** | Native module loading              | [`Polyfills/NativeModulePolyfill.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Polyfills/NativeModulePolyfill.ts) |
-| **Process Polyfill**       | Node.js process object             | [`Polyfills/ProcessPolyfill.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Polyfills/ProcessPolyfill.ts)           |
-| **Shared Process Proxy**   | VSCode shared process              | [`Polyfills/SharedProcessProxy.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Polyfills/SharedProcessProxy.ts)     |
+| Polyfill                   | Purpose                            | File                                                                                                                                |
+| -------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Child Process Polyfill** | Child process API compatibility    | [`Polyfills/ChildProcessPolyfill.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Polyfills/ChildProcessPolyfill.ts) |
+| **File Protocol Shim**     | File URL resolution                | [`Polyfills/FileProtocolShim.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Polyfills/FileProtocolShim.ts)         |
+| **File System Polyfill**   | fs module compatibility            | [`Polyfills/FileSystemPolyfill.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Polyfills/FileSystemPolyfill.ts)     |
+| **IPC Renderer Shim**      | Electron ipcRenderer compatibility | [`Polyfills/IPCRendererShim.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Polyfills/IPCRendererShim.ts)           |
+| **Native Module Polyfill** | Native module loading              | [`Polyfills/NativeModulePolyfill.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Polyfills/NativeModulePolyfill.ts) |
+| **Process Polyfill**       | Node.js process object             | [`Polyfills/ProcessPolyfill.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Polyfills/ProcessPolyfill.ts)           |
+| **Shared Process Proxy**   | VSCode shared process              | [`Polyfills/SharedProcessProxy.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Polyfills/SharedProcessProxy.ts)     |
 
 ### VSCode Protocols Supported
 
@@ -377,7 +377,7 @@ The polyfills support these VSCode protocols:
 | `file://`           | Local file access (with security restrictions) |
 
 See
-[`electron-workbench-polyfills.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/electron-workbench-polyfills.md)
+[`electron-workbench-polyfills.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/integration/ElectronWorkbenchPolyfills.md)
 for detailed polyfill documentation.
 
 ---
@@ -485,7 +485,8 @@ Element/Wind/Target/
 
 For production builds, Wind's output is copied to Sky's static directory:
 
-**See**: [`WindDistributionFix.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/WindDistributionFix.md)
+**See**:
+[`WindDistributionFix.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/WindDistributionFix.md)
 for details on the distribution fix implementation.
 
 ```
@@ -553,31 +554,34 @@ Wind provides VSCode API compatibility through polyfills and services:
 
 ## Key Files Reference
 
-| File                                                                                                                                          | Purpose                                |
-| --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| [`../Element/Wind/Source/Preload.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Preload.ts)                                                                   | Tauri preload script with VSCode shims |
-| [`../Element/Wind/Source/ESBuild.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/ESBuild.ts)                                                                   | ESBuild configuration                  |
-| [`../Element/Wind/Source/Effect/index.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Effect/index.ts)                                                         | Main service exports                   |
-| [`../Element/Wind/Source/Effect/Bootstrap/index.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Effect/Bootstrap/index.ts)                                     | Bootstrap service                      |
-| [`../Element/Wind/Source/Effect/IPC/Live.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Effect/IPC/Live.ts)                                                   | IPC implementation                     |
-| [`../Element/Wind/Source/Effect/StatusBar/Layer/StatusBarLive.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Effect/StatusBar/Layer/StatusBarLive.ts)         | Status bar implementation              |
-| [`../Element/Wind/Source/Effect/ActivityBar/Layer/ActivityBarMock.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Effect/ActivityBar/Layer/ActivityBarMock.ts) | Activity bar mock                      |
-| [`../Element/Wind/Source/Effect/Sidebar/Layer/SidebarLive.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Effect/Sidebar/Layer/SidebarLive.ts)                 | Sidebar implementation                 |
-| [`../Element/Wind/Source/Effect/Panel/Layer/PanelLive.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Effect/Panel/Layer/PanelLive.ts)                         | Panel implementation                   |
-| [`../Element/Wind/Source/Function/Install/Function/Install.ts`](https://github.com/CodeEditorLand/Wind/tree/main/Source/Function/Install/Function/Install.ts)               | Installation function                  |
+| File                                                                                                                                                                           | Purpose                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
+| [`../Element/Wind/Source/Preload.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Preload.ts)                                                                   | Tauri preload script with VSCode shims |
+| [`../Element/Wind/Source/ESBuild.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/ESBuild.ts)                                                                   | ESBuild configuration                  |
+| [`../Element/Wind/Source/Effect/index.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/index.ts)                                                         | Main service exports                   |
+| [`../Element/Wind/Source/Effect/Bootstrap/index.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Bootstrap/index.ts)                                     | Bootstrap service                      |
+| [`../Element/Wind/Source/Effect/IPC/Live.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/IPC/Live.ts)                                                   | IPC implementation                     |
+| [`../Element/Wind/Source/Effect/StatusBar/Layer/StatusBarLive.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/StatusBar/Layer/StatusBarLive.ts)         | Status bar implementation              |
+| [`../Element/Wind/Source/Effect/ActivityBar/Layer/ActivityBarMock.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/ActivityBar/Layer/ActivityBarMock.ts) | Activity bar mock                      |
+| [`../Element/Wind/Source/Effect/Sidebar/Layer/SidebarLive.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Sidebar/Layer/SidebarLive.ts)                 | Sidebar implementation                 |
+| [`../Element/Wind/Source/Effect/Panel/Layer/PanelLive.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Panel/Layer/PanelLive.ts)                         | Panel implementation                   |
+| [`../Element/Wind/Source/Function/Install/Function/Install.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Function/Install/Function/Install.ts)               | Installation function                  |
 
 ---
 
 ## See Also
 
-- [Sky Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Sky.md) - UI component layer
-- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md) - Native backend
-- [Cocoon Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Cocoon.md) - Extension host
-- [Wind Distribution Fix](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/WindDistributionFix.md) - Module
-  distribution implementation
-- [Electron Workbench Polyfills](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/electron-workbench-polyfills.md) -
+- [Sky Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Sky.md) -
+  UI component layer
+- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md) -
+  Native backend
+- [Cocoon Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Cocoon.md) -
+  Extension host
+- [Wind Distribution Fix](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/WindDistributionFix.md) -
+  Module distribution implementation
+- [Electron Workbench Polyfills](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/integration/ElectronWorkbenchPolyfills.md) -
   Polyfill documentation
-- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) - Detailed
-  communication patterns
-- [Workbench Selection Guide](https://github.com/CodeEditorLand/Land/tree/main/Documentation/UserGuides/workbench-selection.md) -
+- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) -
+  Detailed communication patterns
+- [Workbench Selection Guide](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/workbench-selection.md) -
   Choosing the right workbench variant

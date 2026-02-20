@@ -78,9 +78,9 @@ execution, and implements VS Code API compatibility.
 
 **Key Files:**
 
-- [`Element/Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Bootstrap/Implementation/CocoonMain.ts) -
+- [`Element/Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Bootstrap/Implementation/CocoonMain.ts) -
   Main entry point
-- [`Element/Cocoon/Source/Services/GRPCServerService.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Services/GRPCServerService.ts) -
+- [`Element/Cocoon/Source/Services/GRPCServerService.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/GRPCServerService.ts) -
   gRPC server implementation
 
 ### [Mountain](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md)
@@ -98,9 +98,9 @@ central orchestrator.
 
 **Key Files:**
 
-- [`Element/Mountain/src/main.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/src/main.rs) -
+- [`Element/Mountain/src/main.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/main.rs) -
   Application entry point
-- [`Element/Mountain/src/vine/server/`](https://github.com/CodeEditorLand/Mountain/tree/main/src/vine/server) -
+- [`Element/Mountain/src/vine/server/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Vine/Server) -
   gRPC server
 
 ### [Vine](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Vine.md)
@@ -116,7 +116,8 @@ components.
 
 **Key Files:**
 
-- [`Element/Vine/`](https://github.com/CodeEditorLand/Vine/tree/main/) - Protocol definitions directory
+- [`Element/Vine/`](https://github.com/CodeEditorLand/Vine/tree/Current/) -
+  Protocol definitions directory
 
 ### [Air](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Air.md)
 
@@ -147,7 +148,8 @@ UI service layer implementing VS Code workbench services using Effect-TS.
 
 **Key Files:**
 
-- [`Element/Wind/Source/`](https://github.com/CodeEditorLand/Wind/tree/main/) - Service implementations
+- [`Element/Wind/Source/`](https://github.com/CodeEditorLand/Wind/tree/Current/) -
+  Service implementations
 
 ### [Sky](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Sky.md)
 
@@ -162,9 +164,9 @@ Declarative UI component layer built with Astro framework.
 
 **Key Files:**
 
-- [`Element/Sky/Source/pages/`](https://github.com/CodeEditorLand/Sky/tree/main/Source/pages) - Page
-  definitions
-- [`Element/Sky/Source/Workbench/`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench) -
+- [`Element/Sky/Source/pages/`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/pages) -
+  Page definitions
+- [`Element/Sky/Source/Workbench/`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench) -
   Workbench variants
 
 ---
@@ -229,7 +231,7 @@ Key application workflows documented in
    Complete startup sequence
 2. [Opening a File from the UI](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/OpeningAFileFromTheUI.md) -
    File system operations
-3. [Invoking a Language Feature (Hover Provider)](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/<../GitHub/Workflow/Invoking%20a%20Language%20Feature%20(Hover%20Provider).md>) -
+3. [Invoking a Language Feature (Hover Provider)](<https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/%3C../GitHub/Workflow/Invoking%20a%20Language%20Feature%20(Hover%20Provider).md%3E>) -
    Language features
 4. [Saving a File with Save Participants](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/SavingAFileWithSaveParticipants.md) -
    Extension hooks
@@ -239,7 +241,7 @@ Key application workflows documented in
    Webview management
 7. [Creating and Interacting with an Integrated Terminal](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/CreatingAndInteractingWithAnIntegratedTerminal.md) -
    Terminal I/O
-8. [Source Control Management (SCM)](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/<../GitHub/Workflow/Source%20Control%20Management%20(SCM).md>) -
+8. [Source Control Management (SCM)](<https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/%3C../GitHub/Workflow/Source%20Control%20Management%20(SCM).md%3E>) -
    Git integration
 9. [Running Extension Tests](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/RunningExtensionTests.md) -
    Test isolation
@@ -284,17 +286,22 @@ Key application workflows documented in
 
 ## Recommendations
 
-See [Refactoring Priorities](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/recommendations/RefactoringPriorities.md) for
-identified issues and improvement opportunities.
+See
+[Refactoring Priorities](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/recommendations/RefactoringPriorities.md)
+for identified issues and improvement opportunities.
 
 ---
 
 ## Quick Navigation
 
-- **Component Documentation**: [components/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components)
-- **Integration Documentation**: [integration/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration)
-- **Recommendations**: [recommendations/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/recommendations)
-- **Workflow Examples**: [../GitHub/Workflow/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow)
+- **Component Documentation**:
+  [components/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components)
+- **Integration Documentation**:
+  [integration/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration)
+- **Recommendations**:
+  [recommendations/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/recommendations)
+- **Workflow Examples**:
+  [../GitHub/Workflow/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow)
 
 ---
 
@@ -312,4 +319,5 @@ When contributing to the architecture, please:
 ## License
 
 This documentation is part of the Code Editor Land project. See the main
-[`LICENSE`](https://github.com/CodeEditorLand/Land/tree/main/LICENSE) file for details.
+[`LICENSE`](https://github.com/CodeEditorLand/Land/tree/main/LICENSE) file for
+details.

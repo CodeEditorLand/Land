@@ -1,5 +1,10 @@
 ### **Workflow Example #9: User Data Synchronization**
 
+> **⚠️ Verification Status:** This workflow describes the user data
+> synchronization architecture. Verify against
+> [`Element/Mountain/Source/Environment/SynchronizationProvider.rs`](Element/Mountain/Source/Environment/SynchronizationProvider.rs)
+> for the actual implementation.
+
 **Goal:** A user logs into their account on a new machine. The application
 automatically downloads their settings (`settings.json`), keybindings, and list
 of installed extensions from a remote server and applies them to the new

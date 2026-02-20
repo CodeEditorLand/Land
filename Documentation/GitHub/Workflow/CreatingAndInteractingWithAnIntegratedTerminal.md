@@ -22,8 +22,11 @@ in the frontend.
 
 #### **Phase 2: Native PTY Spawning (`Mountain`)**
 
-2.  **`handlers/terminal/TerminalLogic.rs` (`Mountain`)**
-    - **Action:** The `CreateTerminalLogic` handler is executed.
+2. **[`TerminalProvider.CreateTerminal()`](Element/Mountain/Source/Environment/TerminalProvider.rs:122)
+   (`Mountain`)**
+
+- **Action:** The `CreateTerminal` method is executed on the
+  `MountainEnvironment`.
     - It gets a new unique `TerminalId` from `AppState`.
     - It determines the shell to launch (e.g., from the request options or
       system default).
@@ -66,9 +69,11 @@ in the frontend.
 
 #### **Phase 3: UI Rendering and State Sync (`Cocoon` -> `Wind/Sky`)**
 
-5.  **`Service/Terminal.ts` (`Cocoon`)**
-    - **Action:** The `ExtHostTerminalService` in `Cocoon` receives the
-      `Opened`, `ProcessId`, and `Data` notifications from `Mountain`.
+5. **Cocoon Terminal Service
+   ([`Element/Cocoon/Source/Services/`](Element/Cocoon/Source/Services/))**
+
+- **Action:** The terminal service in `Cocoon` receives the `Opened`,
+  `ProcessId`, and `Data` notifications from `Mountain`.
     - It creates a local `Terminal` proxy object that represents the terminal to
       extensions.
     - When it receives data, it fires the `onDidWriteData` event for that

@@ -38,7 +38,7 @@ communication.
 ### Protocol File
 
 **Location**:
-[`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/main/Proto/Vine.proto)
+[`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/Current/Proto/Vine.proto)
 
 ---
 
@@ -857,17 +857,21 @@ Authorization is handled at the application layer:
 
 ## Key Files Reference
 
-| File                                                                                                     | Purpose                   |
-| -------------------------------------------------------------------------------------------------------- | ------------------------- |
-| [`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/main/Proto/Vine.proto)                           | Protocol definition       |
-| [`Element/Mountain/Source/Vine/Generated/vine.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Generated/vine.rs) | Generated Rust code       |
-| [`Element/Cocoon/Source/Generated/Vine.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Generated/Vine.ts)               | Generated TypeScript code |
+| File                                                                                                                                      | Purpose                   |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| [`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/Current/Proto/Vine.proto)                           | Protocol definition       |
+| [`Element/Mountain/Source/Vine/Generated/vine.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Vine/Generated/vine.rs) | Generated Rust code       |
+| [`Element/Cocoon/Source/Generated/Vine.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Generated/Vine.ts)               | Generated TypeScript code |
 
 ---
 
 ## See Also
 
-- [Vine Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Vine.md) - gRPC protocol implementation
-- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) - Communication patterns
-- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md) - Server implementation
-- [Cocoon Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Cocoon.md) - Client implementation
+- [Vine Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Vine.md) -
+  gRPC protocol implementation
+- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) -
+  Communication patterns
+- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md) -
+  Server implementation
+- [Cocoon Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Cocoon.md) -
+  Client implementation

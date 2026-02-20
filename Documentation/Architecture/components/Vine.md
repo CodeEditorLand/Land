@@ -40,7 +40,7 @@ contracts and message formats, ensuring type-safe, efficient communication.
 ### Vine.proto
 
 **Location**:
-[`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/main/Proto/Vine.proto)
+[`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/Current/Proto/Vine.proto)
 
 The core protocol definition file:
 
@@ -657,16 +657,16 @@ Protocol Buffers use a compact binary format:
 ### Rust Code Generation
 
 **Location**:
-[`Element/Mountain/Source/Vine/Generated/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Generated)
+[`Element/Mountain/Source/Vine/Generated/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Vine/Generated)
 
 Generated using `tonic-build`:
 
 **Key files**:
 
-- [`vine.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Generated/vine.rs) - Main
-  generated code
-- [`mod.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Generated/mod.rs) - Module
-  exports
+- [`vine.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Vine/Generated/vine.rs) -
+  Main generated code
+- [`mod.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Vine/Generated/mod.rs) -
+  Module exports
 
 **Generated components**:
 
@@ -702,18 +702,18 @@ pub struct Position {
 ### TypeScript Code Generation
 
 **Location**:
-[`Element/Cocoon/Source/Generated/`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Generated)
+[`Element/Cocoon/Source/Generated/`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Generated)
 
 Generated using `protoc-gen-ts`:
 
 **Key files**:
 
-- [`Vine.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Generated/Vine.ts) - Main generated
-  code
-- [`Vine_pb.d.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Generated/Vine_pb.d.ts) -
+- [`Vine.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Generated/Vine.ts) -
+  Main generated code
+- [`Vine_pb.d.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Generated/Vine_pb.d.ts) -
   TypeScript definitions
-- [`grpc.d.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Generated/grpc.d.ts) - gRPC
-  definitions
+- [`grpc.d.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Generated/grpc.d.ts) -
+  gRPC definitions
 
 **Generated components**:
 
@@ -878,7 +878,7 @@ Changes that only require a minor version update:
 ### Mountain Integration
 
 **Server Implementation**:
-[`Element/Mountain/Source/Vine/Server/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Server)
+[`Element/Mountain/Source/Vine/Server/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Vine/Server)
 
 - **CocoonServiceServer**: gRPC server implementation
 - **CocoonServiceImpl**: Service handler implementation
@@ -886,11 +886,11 @@ Changes that only require a minor version update:
 ### Cocoon Integration
 
 **Client Implementation**:
-[`Element/Cocoon/Source/Integration/`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Integration)
+[`Element/Cocoon/Source/Integration/`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Integration)
 
 - **MountainClient**: gRPC client for communication with Mountain
 - **Generated Code**:
-  [Element/Cocoon/Source/Generated/](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Generated)
+  [Element/Cocoon/Source/Generated/](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Generated)
 
 ### Cross-Language Communication
 
@@ -906,22 +906,24 @@ graph LR
 
 ## Key Files Reference
 
-| File                                                                                                                             | Purpose                   |
-| -------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| [`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/main/Proto/Vine.proto)                                                   | Protocol definition       |
-| [`Element/Mountain/Source/Vine/Generated/vine.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Generated/vine.rs)                         | Generated Rust code       |
-| [`Element/Cocoon/Source/Generated/Vine.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Generated/Vine.ts)                                       | Generated TypeScript code |
-| [`Element/Mountain/Source/Vine/Server/CocoonServiceServer.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Server/CocoonServiceServer.rs) | Server implementation     |
-| [`Element/Cocoon/Source/Integration/MountainClient.ts`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Integration/MountainClient.ts)               | Client implementation     |
-| [`Element/Mountain/build.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/build.rs)                                                                   | Rust code generation      |
+| File                                                                                                                                                                  | Purpose                   |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| [`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/Current/Proto/Vine.proto)                                                       | Protocol definition       |
+| [`Element/Mountain/Source/Vine/Generated/vine.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Vine/Generated/vine.rs)                             | Generated Rust code       |
+| [`Element/Cocoon/Source/Generated/Vine.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Generated/Vine.ts)                                           | Generated TypeScript code |
+| [`Element/Mountain/Source/Vine/Server/CocoonServiceServer.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Vine/Server/MountainVinegRPCService.rs) | Server implementation     |
+| [`Element/Cocoon/Source/Integration/MountainClient.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Integration/MountainClient.ts)                   | Client implementation     |
+| [`Element/Mountain/build.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/build.rs)                                                                       | Rust code generation      |
 
 ---
 
 ## See Also
 
-- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md) - Native backend (server)
-- [Cocoon Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Cocoon.md) - Extension host (client)
-- [Spine Contract](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/SpineContract.md) - Detailed contract
-  specification
-- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) - Communication
-  patterns
+- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md) -
+  Native backend (server)
+- [Cocoon Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Cocoon.md) -
+  Extension host (client)
+- [Spine Contract](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/SpineContract.md) -
+  Detailed contract specification
+- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) -
+  Communication patterns

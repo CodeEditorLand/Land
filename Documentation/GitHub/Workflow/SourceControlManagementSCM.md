@@ -1,5 +1,10 @@
 ### **Workflow Example #8: Source Control Management (SCM)**
 
+> **⚠️ Verification Status:** This workflow describes SCM provider registration
+> and Git integration. Verify against
+> [`Element/Cocoon/Source/Services/Extension.ts`](Element/Cocoon/Source/Services/Extension.ts)
+> for extension activation and Mountain's Git provider implementation.
+
 **Goal:** A user opens a project that is a Git repository. The SCM view in the
 side bar populates with a list of changed files. The user can click a file to
 see a diff view.

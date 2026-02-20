@@ -14,7 +14,8 @@ written to disk. The file is formatted, then saved.
     - The keybinding system dispatches the `workbench.action.files.save`
       command.
 
-2.  **`IEditorService.save()` (`Wind/Source/Application/Editor/Definition.ts`)**
+2.  **`IEditorService.save()`
+    ([`Element/Wind/Source/Workbench/`](Element/Wind/Source/Workbench/))**
     - **Action:** The `save` method on our `EditorService` is called.
     - It identifies the active editor and its corresponding `EditorInput`.
     - It calls the `save` method on the `EditorInput` instance.
@@ -110,8 +111,11 @@ written to disk. The file is formatted, then saved.
         - The effect makes a `TauriInvoke` call to the `Mountain` backend.
         - The `FsWriter` implementation in `Mountain` receives the call.
 
-14. **`handlers/fs/FsLogic.rs` (`Mountain`)**
-    - **Action:** The `WriteFileLogic` handler is executed.
+14. **[`FileSystem`](Element/Mountain/Source/FileSystem/) Providers
+    (`Mountain`)**
+
+- **Action:** The file write operation is executed through the FileSystem
+  provider.
     - It performs the final native OS call:
       **`tokio::fs::write(path, content)`**.
     - The formatted document is now saved to disk.

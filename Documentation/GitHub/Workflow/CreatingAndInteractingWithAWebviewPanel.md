@@ -36,8 +36,11 @@ extension.
       to the `WebviewProvider` trait implementation on the
       `MountainEnvironment`.
 
-5.  **`handlers/webview/WebviewLogic.rs` (`Mountain`)**
-    - **Action:** The `CreateWebviewPanelLogic` handler is executed.
+5.  **[`WebviewProvider.CreateWebviewPanel()`](Element/Mountain/Source/Environment/WebviewProvider.rs:206)
+    (`Mountain`)**
+
+- **Action:** The `CreateWebviewPanel` method is executed on the
+  `MountainEnvironment`.
     - It generates a unique handle (e.g., a UUID) for the new panel.
     - It creates a `WebviewStateDto` containing all the options received from
       `Cocoon` and stores it in **`AppState.ActiveWebviews`** using the handle
@@ -74,10 +77,12 @@ extension.
     - It sends a **`$setWebviewHtml` gRPC request to `Mountain`**, including the
       `handle` and the HTML string.
 
-9.  **`handlers/webview/WebviewLogic.rs` (`Mountain`)**
-    - **Action:** The `$setWebviewHtml` request is received and dispatched.
-    - The `SetWebviewHtmlLogic` handler looks up the webview in `AppState` using
-      the `handle`.
+9.  **[`WebviewProvider`](Element/Mountain/Source/Environment/WebviewProvider.rs)
+    (`Mountain`)**
+
+- **Action:** The `$setWebviewHtml` request is received and dispatched to the
+  WebviewProvider.
+- The provider looks up the webview in `AppState` using the `handle`.
     - It emits another Tauri event:
       **`AppHandle.emit("sky://webview/set-html", { Handle, Html })`**.
 

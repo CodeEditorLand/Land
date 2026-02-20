@@ -11,7 +11,7 @@ process.
 ### Existing Infrastructure
 
 **Location**:
-[`Element/Mountain/Source/ProcessManagement/CocoonManagement.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/ProcessManagement/CocoonManagement.rs)
+[`Element/Mountain/Source/ProcessManagement/CocoonManagement.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/ProcessManagement/CocoonManagement.rs)
 
 **Current Status**:
 
@@ -35,7 +35,7 @@ process.
 ### Available Health Monitoring Infrastructure
 
 **Location**:
-[`Element/Mountain/Source/IPC/Common/HealthStatus.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/Common/HealthStatus.rs)
+[`Element/Mountain/Source/IPC/Common/HealthStatus.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/Common/HealthStatus.rs)
 
 **Available Components**:
 
@@ -202,7 +202,7 @@ infrastructure
 
 ## Code Changes Required
 
-### File: [`Element/Mountain/Source/ProcessManagement/CocoonManagement.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/ProcessManagement/CocoonManagement.rs)
+### File: [`Element/Mountain/Source/ProcessManagement/CocoonManagement.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/ProcessManagement/CocoonManagement.rs)
 
 #### 1. Add Imports (after line 75)
 

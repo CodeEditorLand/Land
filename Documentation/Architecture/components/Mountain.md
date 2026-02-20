@@ -293,7 +293,7 @@ graph TB
 #### CocoonServiceImpl
 
 **Location**:
-[`Element/Mountain/Source/Vine/Server/CocoonServiceImpl.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Server/CocoonServiceImpl.rs)
+[`Element/Mountain/Source/Vine/Server/CocoonServiceImpl.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Vine/Server/MountainVinegRPCService.rs)
 
 Implements gRPC service methods for Cocoon communication:
 
@@ -324,7 +324,7 @@ The `Track` module handles request routing:
 ### Cocoon Management
 
 **Location**:
-[`Element/Mountain/Source/ProcessManagement/CocoonManagement.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/ProcessManagement/CocoonManagement.rs)
+[`Element/Mountain/Source/ProcessManagement/CocoonManagement.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/ProcessManagement/CocoonManagement.rs)
 
 Manages the Cocoon sidecar process:
 
@@ -358,7 +358,7 @@ Key aspects of process spawning:
 ### Initialization Data
 
 **Location**:
-[`Element/Mountain/Source/ProcessManagement/InitializationData.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/ProcessManagement/InitializationData.rs)
+[`Element/Mountain/Source/ProcessManagement/InitializationData.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/ProcessManagement/InitializationData.rs)
 
 Constructs initialization data for Cocoon:
 
@@ -418,7 +418,7 @@ sequenceDiagram
 ### Command Registration
 
 **Location**:
-[`Element/Mountain/Source/Binary/Register/CommandRegister.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Binary/Register/CommandRegister.rs)
+[`Element/Mountain/Source/Binary/Register/CommandRegister.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Binary/Register/CommandRegister.rs)
 
 Registers native commands on startup:
 
@@ -450,7 +450,7 @@ Mountain provides native file system operations through Tauri plugins:
 ### File Explorer Provider
 
 **Location**:
-[`Element/Mountain/Source/FileSystem/FileExplorerViewProvider.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/FileSystem/FileExplorerViewProvider.rs)
+[`Element/Mountain/Source/FileSystem/FileExplorerViewProvider.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/FileSystem/FileExplorerViewProvider.rs)
 
 Provides file explorer functionality:
 
@@ -461,21 +461,21 @@ Provides file explorer functionality:
 ### Document Operations
 
 **Location**:
-[`Element/Mountain/Source/Environment/DocumentProvider/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Environment/DocumentProvider)
+[`Element/Mountain/Source/Environment/DocumentProvider/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/DocumentProvider)
 
 Document-related operations:
 
 - **Save Operations**:
-  [`SaveOperations.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Environment/DocumentProvider/SaveOperations.rs) -
+  [`SaveOperations.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/DocumentProvider/SaveOperations.rs) -
   Save and apply edits
 - **Open Document**:
-  [`OpenDocument.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Environment/DocumentProvider/OpenDocument.rs) -
+  [`OpenDocument.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/DocumentProvider/OpenDocument.rs) -
   Open and parse documents
 - **Apply Changes**:
-  [`ApplyChanges.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Environment/DocumentProvider/ApplyChanges.rs) -
+  [`ApplyChanges.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/DocumentProvider/ApplyChanges.rs) -
   Apply text edits
 - **Notifications**:
-  [`Notifications.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Environment/DocumentProvider/Notifications.rs) -
+  [`Notifications.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/DocumentProvider/Notifications.rs) -
   Document-related events
 
 ---
@@ -521,7 +521,7 @@ graph LR
 ### Tauri IPC Server
 
 **Location**:
-[`Element/Mountain/Source/IPC/TauriIPCServer.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/TauriIPCServer.rs)
+[`Element/Mountain/Source/IPC/TauriIPCServer.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/TauriIPCServer.rs)
 
 Handles Tauri IPC communication with Wind:
 
@@ -532,7 +532,7 @@ Handles Tauri IPC communication with Wind:
 ### IPC Connection Pool
 
 **Location**:
-[`Element/Mountain/Source/IPC/Connection/Pool/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/Connection/Pool)
+[`Element/Mountain/Source/IPC/Connection/Pool/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/Connection/Pool)
 
 Connection pool management:
 
@@ -543,7 +543,7 @@ Connection pool management:
 ### IPC Security
 
 **Location**:
-[`Element/Mountain/Source/IPC/Security/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/Security)
+[`Element/Mountain/Source/IPC/Security/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/Security)
 
 Security features:
 
@@ -554,7 +554,7 @@ Security features:
 ### Wind Service Handlers
 
 **Location**:
-[`Element/Mountain/Source/IPC/WindServiceHandlers.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/WindServiceHandlers.rs)
+[`Element/Mountain/Source/IPC/WindServiceHandlers.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/WindServiceHandlers.rs)
 
 Handles Wind service requests:
 
@@ -602,15 +602,15 @@ mountain://file/write                // Write file
 ### Air Integration
 
 **Location**:
-[`Element/Mountain/Source/Air/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Air)
+[`Element/Mountain/Source/Air/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Air)
 
 Air daemon integration:
 
 - **Air Client**:
-  [`AirClient.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Air/AirClient.rs) -
+  [`AirClient.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Air/AirClient.rs) -
   Communicates with Air
 - **Service Provider**:
-  [`AirServiceProvider.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Air/AirServiceProvider.rs) -
+  [`AirServiceProvider.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Air/AirServiceProvider.rs) -
   Provides Air services
 
 ---
@@ -876,7 +876,7 @@ and high-priority issues are resolved.
 
 - [`Documentation/Architecture/recommendations/RefactoringPriorities.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/recommendations/RefactoringPriorities.md) -
   Detailed refactoring analysis
-- [`Element/Mountain/Source/IPC/RefactoringSummary.md`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/RefactoringSummary.md) -
+- [`Element/Mountain/Source/IPC/RefactoringSummary.md`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/RefactoringSummary.md) -
   IPC-specific refactoring plan
 - [`Documentation/IMPLEMENTATION_ROADMAP.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/IMPLEMENTATION_ROADMAP.md) -
   Overall project roadmap
@@ -885,22 +885,25 @@ and high-priority issues are resolved.
 
 ## Key Files Reference
 
-| File                                                                                                                                   | Purpose                 |
-| -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| [`Element/Mountain/Source/main.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/main.rs)                                                             | Application entry point |
-| [`Element/Mountain/Source/Vine/Server/CocoonServiceServer.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Server/CocoonServiceServer.rs)       | gRPC server             |
-| [`Element/Mountain/Source/ProcessManagement/CocoonManagement.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/ProcessManagement/CocoonManagement.rs) | Cocoon management       |
-| [`Element/Mountain/Source/IPC/TauriIPCServer.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/TauriIPCServer.rs)                                 | IPC server              |
-| [`Element/Mountain/Source/Command/mod.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Command/mod.rs)                                               | Command implementations |
+| File                                                                                                                                                                    | Purpose                 |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| [`Element/Mountain/Source/main.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/main.rs)                                                             | Application entry point |
+| [`Element/Mountain/Source/Vine/Server/CocoonServiceServer.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Vine/Server/MountainVinegRPCService.rs)   | gRPC server             |
+| [`Element/Mountain/Source/ProcessManagement/CocoonManagement.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/ProcessManagement/CocoonManagement.rs) | Cocoon management       |
+| [`Element/Mountain/Source/IPC/TauriIPCServer.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/TauriIPCServer.rs)                                 | IPC server              |
+| [`Element/Mountain/Source/Command/mod.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Command/mod.rs)                                               | Command implementations |
 
 ---
 
 ## See Also
 
-- [Cocoon Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Cocoon.md) - Extension host
-- [Vine Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Vine.md) - gRPC protocol
-- [Air Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Air.md) - Background daemon
-- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) - Detailed
-  communication patterns
+- [Cocoon Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Cocoon.md) -
+  Extension host
+- [Vine Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Vine.md) -
+  gRPC protocol
+- [Air Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Air.md) -
+  Background daemon
+- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) -
+  Detailed communication patterns
 - [Application Startup Workflow](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/ApplicationStartupAndHandshake.md) -
   Startup sequence

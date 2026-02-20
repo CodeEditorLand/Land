@@ -31,15 +31,19 @@ command.
 
 #### **Phase 2: Fetching the Command List (`Mountain`)**
 
-4.  **`track.rs` & `environment/CommandsProvider.rs` (`Mountain`)**
-    - **Action:** The Tauri command is dispatched to `track`, which creates the
-      `Common::command::GetAllCommands` effect.
+4. **[`track.rs`](Element/Mountain/Source/Track/TrackLogic.rs) &
+   [`CommandProvider.rs`](Element/Mountain/Source/Environment/CommandProvider.rs)
+   (`Mountain`)**
+
+- **Action:** The Tauri command is dispatched to `track`, which creates the
+  `Common::command::GetAllCommands` effect.
     - The `AppRuntime` executes the effect.
     - The `MountainEnvironment`'s implementation of
       `CommandExecutor::GetAllCommands` is called. It delegates to the handler.
 
-5.  **`handlers/commands/CommandsLogic.rs`**
-    - **Action:** The `GetAllCommandsLogic` function is executed.
+5. **[`CommandProvider.GetAllCommands()`](Element/Mountain/Source/Environment/CommandProvider.rs:322)**
+
+- **Action:** The `GetAllCommands` method is executed.
     - It acquires a lock on `AppState.CommandRegistry`.
     - It retrieves the `keys()` of the `HashMap`, which contains the IDs of all
       registered native commands AND all proxied commands from `Cocoon`.
@@ -75,8 +79,10 @@ command.
     - The `AppRuntime` executes it.
     - The `MountainEnvironment`'s `CommandExecutor::ExecuteCommand` is called.
 
-10. **`handlers/commands/CommandsLogic.rs` (`Mountain`)**
-    - **Action:** `ExecuteCommandLogic` is executed.
+10. **[`CommandProvider.ExecuteCommand()`](Element/Mountain/Source/Environment/CommandProvider.rs:231)
+    (`Mountain`)**
+
+- **Action:** The `ExecuteCommand` method is executed.
     - It acquires a lock on `AppState.CommandRegistry` and looks up
       `'editor.action.formatDocument'`.
     - It finds that the handler is of the type `CommandHandler::Native`.

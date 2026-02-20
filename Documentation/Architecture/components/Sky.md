@@ -124,7 +124,8 @@ Astro provides key benefits for Code Editor Land:
 
 ### Configuration
 
-**Location**: [`astro.config.ts`](https://github.com/CodeEditorLand/Sky/tree/main/Source/astro.config.ts)
+**Location**:
+[`astro.config.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/astro.config.ts)
 
 Astro configuration sets up:
 
@@ -151,7 +152,7 @@ Astro configuration sets up:
 #### Index Page
 
 **Location**:
-[`Source/pages/index.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/pages/index.astro)
+[`Source/pages/index.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/pages/index.astro)
 
 Home page with:
 
@@ -162,7 +163,7 @@ Home page with:
 #### Application Page
 
 **Location**:
-[`Source/pages/Application.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/pages/Application.astro)
+[`Source/pages/Application.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/pages/Application.astro)
 
 Main application page that:
 
@@ -179,7 +180,7 @@ Sky provides four distinct workbench approaches (A1-A4) for different use cases:
 ### Approach A1: BrowserProxy - Browser + Services Proxy
 
 **File**:
-[`Source/Workbench/BrowserProxy.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/BrowserProxy.astro)
+[`Source/Workbench/BrowserProxy.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/BrowserProxy.astro)
 
 **Description**: Uses browser workbench with a Mountain services proxy layer
 that intercepts VSCode API calls and routes them through Mountain.
@@ -218,7 +219,7 @@ that intercepts VSCode API calls and routes them through Mountain.
 ### Approach A2: Mountain - Browser + Mountain Providers (RECOMMENDED)
 
 **File**:
-[`Source/Workbench/Mountain.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Mountain.astro)
+[`Source/Workbench/Mountain.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Mountain.astro)
 
 **Description**: Uses browser workbench with direct Tauri IPC to Mountain
 providers for file operations (no proxy overhead). This is the RECOMMENDED
@@ -277,7 +278,7 @@ production approach.
 ### Approach A3: Electron - Electron Workbench + Complete Polyfills
 
 **File**:
-[`Source/Workbench/Electron.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Electron.astro)
+[`Source/Workbench/Electron.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Electron.astro)
 
 **Description**: Uses Electron workbench with comprehensive Electron API
 polyfills to make the browser act like Electron.
@@ -333,7 +334,7 @@ polyfills to make the browser act like Electron.
 ### Approach A4: Native - Native Wind Implementation
 
 **File**:
-[`Source/Workbench/Native/WindWorkbench.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Native/WindWorkbench.astro)
+[`Source/Workbench/Native/WindWorkbench.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Native/WindWorkbench.astro)
 
 **Description**: Custom implementation using Wind's Effect-TS services without
 Electron workbench dependency.
@@ -349,15 +350,15 @@ Electron workbench dependency.
 **Components**:
 
 - **ActivityBar**: Left-side navigation icons
-  ([`ActivityBar.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Native/ActivityBar.astro))
+  ([`ActivityBar.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Native/ActivityBar.astro))
 - **Sidebar**: File explorer, search, etc.
-  ([`Sidebar.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Native/Sidebar.astro))
+  ([`Sidebar.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Native/Sidebar.astro))
 - **Editor**: Monaco-based text editor
-  ([`Editor.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Native/Editor.astro))
+  ([`Editor.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Native/Editor.astro))
 - **Panel**: Bottom panel for output/terminal
-  ([`Panel.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Native/Panel.astro))
+  ([`Panel.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Native/Panel.astro))
 - **StatusBar**: Status information bar
-  ([`StatusBar.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Native/StatusBar.astro))
+  ([`StatusBar.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Native/StatusBar.astro))
 
 **Trade-offs**:
 
@@ -430,7 +431,7 @@ graph TB
 | **Full custom control**   | A4: Native                        |
 
 For detailed guidance on selecting a workbench approach, see
-[`Workbench Selection Guide`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/UserGuides/workbench-selection.md).
+[`Workbench Selection Guide`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/workbench-selection.md).
 
 ---
 
@@ -441,7 +442,7 @@ For detailed guidance on selecting a workbench approach, see
 #### NLS Component
 
 **Location**:
-[`Source/Workbench/NLS.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/NLS.astro)
+[`Source/Workbench/NLS.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/NLS.astro)
 
 Provides Natural Language Support:
 
@@ -452,7 +453,7 @@ Provides Natural Language Support:
 #### Meta Component
 
 **Location**:
-[`Source/Function/Meta.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Function/Meta.astro)
+[`Source/Function/Meta.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Function/Meta.astro)
 
 Provides metadata handling:
 
@@ -463,7 +464,7 @@ Provides metadata handling:
 #### Base Markup
 
 **Location**:
-[`Source/Function/Markup/Base.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Function/Markup/Base.astro)
+[`Source/Function/Markup/Base.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Function/Markup/Base.astro)
 
 Base HTML structure:
 
@@ -476,7 +477,7 @@ Base HTML structure:
 #### Activity Bar Component
 
 **Location**:
-[`Source/Workbench/Native/ActivityBar.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Native/ActivityBar.astro)
+[`Source/Workbench/Native/ActivityBar.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Native/ActivityBar.astro)
 
 Left-side navigation with icons and badges:
 
@@ -488,7 +489,7 @@ Left-side navigation with icons and badges:
 #### Sidebar Component
 
 **Location**:
-[`Source/Workbench/Native/Sidebar.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Native/Sidebar.astro)
+[`Source/Workbench/Native/Sidebar.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Native/Sidebar.astro)
 
 Panel for file explorer, search, etc.:
 
@@ -500,7 +501,7 @@ Panel for file explorer, search, etc.:
 #### Editor Component
 
 **Location**:
-[`Source/Workbench/Native/Editor.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Native/Editor.astro)
+[`Source/Workbench/Native/Editor.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Native/Editor.astro)
 
 Monaco-based text editor:
 
@@ -512,7 +513,7 @@ Monaco-based text editor:
 #### Panel Component
 
 **Location**:
-[`Source/Workbench/Native/Panel.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Native/Panel.astro)
+[`Source/Workbench/Native/Panel.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Native/Panel.astro)
 
 Bottom panel for output/terminal:
 
@@ -524,7 +525,7 @@ Bottom panel for output/terminal:
 #### Status Bar Component
 
 **Location**:
-[`Source/Workbench/Native/StatusBar.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Native/StatusBar.astro)
+[`Source/Workbench/Native/StatusBar.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Native/StatusBar.astro)
 
 Status information bar:
 
@@ -540,7 +541,7 @@ Status information bar:
 ### Static File Copy
 
 **Location**:
-[`Source/Function/Debug.ts`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Function/Debug.ts)
+[`Source/Function/Debug.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Function/Debug.ts)
 
 For production builds, Wind modules are copied to Sky's static directory:
 
@@ -642,30 +643,33 @@ State is managed through:
 
 ## Key Files Reference
 
-| File                                                                                                           | Purpose                               |
-| -------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| [`Source/astro.config.ts`](https://github.com/CodeEditorLand/Sky/tree/main/Source/astro.config.ts)                                           | Astro configuration                   |
-| [`Source/Function/Debug.ts`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Function/Debug.ts)                                       | Static file configuration             |
-| [`Source/pages/Application.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/pages/Application.astro)                           | Main application page                 |
-| [`Source/pages/index.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/pages/index.astro)                                       | Home page                             |
-| [`Source/Workbench/Default.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Default.astro)                           | Deprecated entry point                |
-| [`Source/Workbench/BrowserProxy.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/BrowserProxy.astro)                 | A1: Browser + proxy                   |
-| [`Source/Workbench/Mountain.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Mountain.astro)                         | A2: Browser + providers (RECOMMENDED) |
-| [`Source/Workbench/Electron.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Electron.astro)                         | A3: Electron + polyfills              |
-| [`Source/Workbench/Native/WindWorkbench.astro`](https://github.com/CodeEditorLand/Sky/tree/main/Source/Workbench/Native/WindWorkbench.astro) | A4: Native Wind implementation        |
+| File                                                                                                                                            | Purpose                               |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| [`Source/astro.config.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/astro.config.ts)                                                  | Astro configuration                   |
+| [`Source/Function/Debug.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Function/Debug.ts)                                       | Static file configuration             |
+| [`Source/pages/Application.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/pages/Application.astro)                           | Main application page                 |
+| [`Source/pages/index.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/pages/index.astro)                                       | Home page                             |
+| [`Source/Workbench/Default.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Default.astro)                           | Deprecated entry point                |
+| [`Source/Workbench/BrowserProxy.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/BrowserProxy.astro)                 | A1: Browser + proxy                   |
+| [`Source/Workbench/Mountain.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Mountain.astro)                         | A2: Browser + providers (RECOMMENDED) |
+| [`Source/Workbench/Electron.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Electron.astro)                         | A3: Electron + polyfills              |
+| [`Source/Workbench/Native/WindWorkbench.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Native/WindWorkbench.astro) | A4: Native Wind implementation        |
 
 ---
 
 ## See Also
 
-- [Wind Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Wind.md) - Service layer
-- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md) - Native backend
-- [Cocoon Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Cocoon.md) - Extension host
-- [Wind Distribution Fix](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/WindDistributionFix.md) - Module
-  distribution
-- [Electron Workbench Polyfills](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/electron-workbench-polyfills.md) -
+- [Wind Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Wind.md) -
+  Service layer
+- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md) -
+  Native backend
+- [Cocoon Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Cocoon.md) -
+  Extension host
+- [Wind Distribution Fix](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/WindDistributionFix.md) -
+  Module distribution
+- [Electron Workbench Polyfills](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/integration/ElectronWorkbenchPolyfills.md) -
   Polyfill documentation
-- [Workbench Selection Guide](https://github.com/CodeEditorLand/Land/tree/main/Documentation/UserGuides/workbench-selection.md) -
+- [Workbench Selection Guide](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/workbench-selection.md) -
   Choosing the right approach
-- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) - Detailed
-  communication patterns
+- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) -
+  Detailed communication patterns

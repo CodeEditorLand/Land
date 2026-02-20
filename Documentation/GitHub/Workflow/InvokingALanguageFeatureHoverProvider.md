@@ -31,21 +31,28 @@ executed, and the resulting tooltip is displayed in the UI.
     - **Action:** The gRPC server receives the `$registerHoverProvider` request.
     - It passes the request to the `track` dispatcher.
 
-4.  **Dispatcher (`Mountain/src/track/TrackLogic.rs`)**
-    - **Action:** `DispatchSidecarRequest` is called.
+4.  **Dispatcher
+    ([`Mountain/src/track/TrackLogic.rs`](Element/Mountain/Source/Track/TrackLogic.rs))**
+
+- **Action:** `DispatchSidecarRequest` is called.
     - It maps the method name (`$registerHoverProvider`) to an `ActionEffect`
       via `EffectCreation`. The effect is `LanguageFeature::RegisterProvider`.
 
-5.  **`LanguageFeaturesProvider`
-    (`Mountain/src/environment/LanguageFeaturesProvider.rs`)**
-    - **Action:** The `AppRuntime` executes the `RegisterProvider` effect.
-    - The `MountainEnvironment`'s implementation of the
-      `LanguageFeatureProviderRegistry` trait is called.
-    - It delegates to `handlers/language_features/LanguageFeaturesLogic.rs`.
+5. **[`LanguageFeatureProvider.RegisterProvider()`](Element/Mountain/Source/Environment/LanguageFeatureProvider/mod.rs:49)
+   (`Mountain`)**
 
-6.  **Handler Logic
-    (`Mountain/src/handlers/language_features/LanguageFeaturesLogic.rs`)**
-    - **Action:** The `RegisterProviderInAppState` function is executed.
+- **Action:** The `AppRuntime` executes the `RegisterProvider` effect.
+- The `MountainEnvironment`'s implementation of the
+  `LanguageFeatureProviderRegistry` trait is called.
+- It delegates to the
+  [`Registration`](Element/Mountain/Source/Environment/LanguageFeatureProvider/Registration.rs)
+  helper module.
+
+6. **[`Registration.register_provider()`](Element/Mountain/Source/Environment/LanguageFeatureProvider/Registration.rs)
+   (`Mountain`)**
+
+- **Action:** The `register_provider` helper function creates a
+  `ProviderRegistrationDTO` and stores it in `AppState.LanguageProviders`.
     - It creates a `ProviderRegistrationDto` containing the handle (`123`), the
       provider type (`Hover`), the language selector, and the ID of the sidecar
       that owns it (`cocoon-main`).
@@ -80,10 +87,12 @@ executed, and the resulting tooltip is displayed in the UI.
     - It dispatches this to the `track` module.
     - The `track` module creates the `LanguageFeature::ProvideHover` effect.
 
-10. **`LanguageFeaturesProvider`
-    (`Mountain/src/environment/LanguageFeaturesProvider.rs`)**
-    - **Action:** The `AppRuntime` executes the `ProvideHover` effect.
-    - The environment's implementation of the `ProvideHover` method is called.
+10. **[`LanguageFeatureProvider.ProvideHover()`](Element/Mountain/Source/Environment/LanguageFeatureProvider/FeatureMethods.rs)
+    (`Mountain`)**
+
+- **Action:** The `AppRuntime` executes the `ProvideHover` effect.
+- The environment's implementation delegates to the FeatureMethods helper
+  module.
     - Inside this method:
         - It queries `AppState.LanguageProviders` to find all registered hover
           providers for the "mylang" language. It finds our registration with

@@ -15,7 +15,7 @@ February 8, 2026
 ### 1. Updated Vine.proto with Complete Service Definitions
 
 **File**:
-[`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/main/Proto/Vine.proto)
+[`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/Current/Proto/Vine.proto)
 
 Added comprehensive service methods to the `CocoonService` definition:
 
@@ -90,7 +90,7 @@ Added comprehensive service methods to the `CocoonService` definition:
 ### 2. Created RPC Module Structure
 
 **Directory**:
-[`Element/Mountain/Source/RPC/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/RPC)
+[`Element/Mountain/Source/RPC/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/RPC)
 
 Created a dedicated RPC module with the following structure:
 
@@ -106,7 +106,7 @@ Element/Mountain/Source/RPC/
 
 ### 3. Implemented Service Handlers
 
-#### CocoonServiceImpl ([`RPC/CocoonService.rs`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Mountain/Source/RPC/CocoonService.rs))
+#### CocoonServiceImpl ([`RPC/CocoonService.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/RPC/CocoonService.rs))
 
 Main gRPC service implementation with:
 
@@ -124,7 +124,7 @@ Key features:
 - Implements generic `process_mountain_request`, `send_mountain_notification`,
   and `cancel_operation` methods
 
-#### WindowService ([`RPC/WindowService.rs`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Mountain/Source/RPC/WindowService.rs))
+#### WindowService ([`RPC/WindowService.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/RPC/WindowService.rs))
 
 Window and UI operations:
 
@@ -138,7 +138,7 @@ Implementation details:
 - Provides implementation methods (`*_impl`) for all operations
 - Documented to delegate to Wind via IPC when needed
 
-#### WorkspaceService ([`RPC/WorkspaceService.rs`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Mountain/Source/RPC/WorkspaceService.rs))
+#### WorkspaceService ([`RPC/WorkspaceService.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/RPC/WorkspaceService.rs))
 
 Workspace operations:
 
@@ -147,7 +147,7 @@ Workspace operations:
 - Configuration management
 - Workspace folder management
 
-#### CommandService ([`RPC/CommandService.rs`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Mountain/Source/RPC/CommandService.rs))
+#### CommandService ([`RPC/CommandService.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/RPC/CommandService.rs))
 
 Command management:
 
@@ -162,7 +162,7 @@ Features:
 - Timestamp tracking for registration
 - Extension-specific command retrieval
 
-#### SecretStorageService ([`RPC/SecretStorageService.rs`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Mountain/Source/RPC/SecretStorageService.rs))
+#### SecretStorageService ([`RPC/SecretStorageService.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/RPC/SecretStorageService.rs))
 
 Secure secret storage:
 
@@ -183,7 +183,7 @@ Security considerations documented:
 #### Updated Library Module
 
 **File**:
-[`Element/Mountain/Source/Library.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Library.rs:82)
+[`Element/Mountain/Source/Library.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Library.rs)
 
 Added RPC module declaration:
 
@@ -194,7 +194,7 @@ pub mod RPC;
 #### Updated Vine Server Initialization
 
 **File**:
-[`Element/Mountain/Source/Vine/Server/Initialize.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Vine/Server/Initialize.rs)
+[`Element/Mountain/Source/Vine/Server/Initialize.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Vine/Server/Initialize.rs)
 
 Updated to use new CocoonServiceImpl:
 
@@ -258,9 +258,10 @@ other parts of the codebase that were already present.
 
 ## Protobuf Generation
 
-The [`build.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/build.rs:56) script is configured to
-automatically generate Rust code from the updated
-[`Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/main/Proto/Vine.proto):
+The
+[`build.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/build.rs)
+script is configured to automatically generate Rust code from the updated
+[`Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/Current/Proto/Vine.proto):
 
 ```rust
 tonic_prost_build::configure()
@@ -273,7 +274,8 @@ tonic_prost_build::configure()
 
 **Note**: TypeScript definitions will need to be generated separately for the
 Cocoon sidecar. This is typically done in the Cocoon project using the same
-[`Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/main/Proto/Vine.proto) file.
+[`Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/Current/Proto/Vine.proto)
+file.
 
 ## Next Steps
 
@@ -282,7 +284,7 @@ Cocoon sidecar. This is typically done in the Cocoon project using the same
 1. **Generate TypeScript Definitions**:
     - Run protobuf code generation in Cocoon project
     - Generate TypeScript types from updated
-      [`Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/main/Proto/Vine.proto)
+      [`Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/Current/Proto/Vine.proto)
     - This will allow Cocoon to use the new service methods
 
 2. **Implement Service Methods**:
@@ -334,15 +336,15 @@ Cocoon sidecar. This is typically done in the Cocoon project using the same
 ## Documentation References
 
 - **Spine Contract**:
-  [`Documentation/Architecture/integration/SpineContract.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Documentation/Architecture/integration/SpineContract.md)
+  [`Documentation/Architecture/integration/SpineContract.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/integration/SpineContract.md)
 - **Vine Component**:
-  [`Documentation/Architecture/components/Vine.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Documentation/Architecture/components/Vine.md)
+  [`Documentation/Architecture/components/Vine.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Vine.md)
 - **Communication Flows**:
-  [`Documentation/Architecture/integration/CommunicationFlows.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Documentation/Architecture/integration/CommunicationFlows.md)
+  [`Documentation/Architecture/integration/CommunicationFlows.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/integration/CommunicationFlows.md)
 - **Mountain Component**:
-  [`Documentation/Architecture/components/Mountain.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Documentation/Architecture/components/Mountain.md)
+  [`Documentation/Architecture/components/Mountain.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Mountain.md)
 - **Cocoon Component**:
-  [`Documentation/Architecture/components/Cocoon.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Documentation/Architecture/components/Cocoon.md)
+  [`Documentation/Architecture/components/Cocoon.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Cocoon.md)
 
 ## Success Criteria
 

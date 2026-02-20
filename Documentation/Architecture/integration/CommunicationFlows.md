@@ -34,7 +34,7 @@ maintaining the system.
 ### gRPC (Cocoon ↔ Mountain)
 
 **Protocol Definition**:
-[`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/main/Proto/Vine.proto)
+[`Element/Mountain/Proto/Vine.proto`](https://github.com/CodeEditorLand/Mountain/tree/Current/Proto/Vine.proto)
 
 **Characteristics**:
 
@@ -393,7 +393,7 @@ flowchart TD
 ### Workflow 1: Opening a File
 
 **Source**:
-[`Documentation/GitHub/Workflow/OpeningAFileFromTheUI.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow/OpeningAFileFromTheUI.md)
+[`Documentation/GitHub/Workflow/OpeningAFileFromTheUI.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/OpeningAFileFromTheUI.md)
 
 **Components**: Sky → Wind → Mountain → Disk
 
@@ -408,7 +408,7 @@ flowchart TD
 ### Workflow 2: Saving with Save Participants
 
 **Source**:
-[`Documentation/GitHub/Workflow/SavingAFileWithSaveParticipants.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow/SavingAFileWithSaveParticipants.md)
+[`Documentation/GitHub/Workflow/SavingAFileWithSaveParticipants.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/SavingAFileWithSaveParticipants.md)
 
 **Components**: Sky → Wind → Mountain → Cocoon → Wind → Mountain → Disk
 
@@ -425,7 +425,7 @@ flowchart TD
 ### Workflow 3: Language Feature (Hover)
 
 **Source**:
-[`Documentation/GitHub/Workflow/InvokingALanguageFeatureHoverProvider.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/<../Workflow/Invoking%20a%20Language%20Feature%20(Hover%20Provider).md>)
+[`Documentation/GitHub/Workflow/InvokingALanguageFeatureHoverProvider.md`](<https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/%3C../Workflow/Invoking%20a%20Language%20Feature%20(Hover%20Provider).md%3E>)
 
 **Components**: Sky → Wind → Mountain → Cocoon → Mountain → Wind → Sky
 
@@ -443,7 +443,7 @@ flowchart TD
 ### Workflow 4: Terminal I/O
 
 **Source**:
-[`Documentation/GitHub/Workflow/CreatingAndInteractingWithAnIntegratedTerminal.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow/CreatingAndInteractingWithAnIntegratedTerminal.md)
+[`Documentation/GitHub/Workflow/CreatingAndInteractingWithAnIntegratedTerminal.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/CreatingAndInteractingWithAnIntegratedTerminal.md)
 
 **Components**: Sky → Wind → Mountain → PTY → Mountain → Cocoon + Wind + Sky
 
@@ -466,7 +466,7 @@ flowchart TD
 ### Workflow 5: Webview Communication
 
 **Source**:
-[`Documentation/GitHub/Workflow/CreatingAndInteractingWithAWebviewPanel.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow/CreatingAndInteractingWithAWebviewPanel.md)
+[`Documentation/GitHub/Workflow/CreatingAndInteractingWithAWebviewPanel.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/CreatingAndInteractingWithAWebviewPanel.md)
 
 **Components**: Cocoon → Mountain → Sky + Mountain → Wind → Cocoon
 
@@ -489,7 +489,7 @@ flowchart TD
 ### Workflow 6: Source Control Management
 
 **Source**:
-[`Documentation/GitHub/Workflow/SourceControlManagementSCM.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/<../Workflow/Source%20Control%20Management%20(SCM).md>)
+[`Documentation/GitHub/Workflow/SourceControlManagementSCM.md`](<https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/%3C../Workflow/Source%20Control%20Management%20(SCM).md%3E>)
 
 **Components**: Cocoon → Mountain → Cocoon → Mountain → Wind → Sky
 
@@ -509,7 +509,7 @@ flowchart TD
 ### Workflow 7: Command Palette
 
 **Source**:
-[`Documentation/GitHub/Workflow/ExecutingACommandFromTheCommandPalette.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow/ExecutingACommandFromTheCommandPalette.md)
+[`Documentation/GitHub/Workflow/ExecutingACommandFromTheCommandPalette.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/ExecutingACommandFromTheCommandPalette.md)
 
 **Components**: Sky → Wind → Mountain → Mountain → Wind
 
@@ -531,7 +531,7 @@ flowchart TD
 ### Workflow 8: Extension Tests
 
 **Source**:
-[`Documentation/GitHub/Workflow/RunningExtensionTests.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow/RunningExtensionTests.md)
+[`Documentation/GitHub/Workflow/RunningExtensionTests.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/RunningExtensionTests.md)
 
 **Components**: Wind → Mountain → Mountain → Cocoon Test → Mountain Main
 
@@ -612,7 +612,11 @@ graph TD
 
 ## See Also
 
-- [Spine Contract](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/SpineContract.md) - Detailed gRPC contract specification
-- [Component Documentation](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components) - Individual component documentation
-- [Workflow Examples](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/Workflow) - Detailed workflow examples
-- [Vine Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Vine.md) - gRPC protocol definition
+- [Spine Contract](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/SpineContract.md) -
+  Detailed gRPC contract specification
+- [Component Documentation](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components) -
+  Individual component documentation
+- [Workflow Examples](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow) -
+  Detailed workflow examples
+- [Vine Component](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Vine.md) -
+  gRPC protocol definition

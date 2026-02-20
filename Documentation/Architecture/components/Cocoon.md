@@ -229,10 +229,10 @@ Extensions are activated based on the following events:
 
 - [`vscode.workspace`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Workspace.ts) -
   Workspace management
-- [`vscode.window`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Window.ts) - Window and
-  UI management
-- [`vscode.commands`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Command.ts) - Command
-  registration and execution
+- [`vscode.window`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Window.ts) -
+  Window and UI management
+- [`vscode.commands`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Command.ts) -
+  Command registration and execution
 - [`vscode.extensions`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Extension.ts) -
   Extension API
 
@@ -427,7 +427,7 @@ See the following documentation for detailed analysis:
 - [Cocoon Implementation Plan](https://github.com/CodeEditorLand/Cocoon/tree/Current/Documentation/GitHub/CocoonImplementationPlan.md)
 - [Cocoon Implementation Summary](https://github.com/CodeEditorLand/Cocoon/tree/Current/Documentation/GitHub/CocoonImplementationSummary.md)
 - [Extension Host Analysis](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Bootstrap/Documentation/ExtensionHostAnalysis.md)
-- [Refactoring Priorities](https://github.com/CodeEditorLand/Land/tree/Current/Architecture/recommendations/RefactoringPriorities.md)
+- [Refactoring Priorities](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/recommendations/RefactoringPriorities.md)
 - [Deep Dive](https://github.com/CodeEditorLand/Cocoon/tree/Current/Documentation/GitHub/DeepDive.md)
 
 ---
@@ -630,16 +630,16 @@ reducing the editing experience compared to VS Code.
 
 For additional context on Cocoon's implementation status and priorities, see:
 
-- [Refactoring Priorities - Cocoon Section](https://github.com/CodeEditorLand/Land/tree/Current/Architecture/recommendations/RefactoringPriorities.md)
-- [Implementation Roadmap](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/IMPLEMENTATION_ROADMAP.md)
+- [Refactoring Priorities - Cocoon Section](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/recommendations/RefactoringPriorities.md)
+- [Implementation Roadmap](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/IMPLEMENTATION_ROADMAP.md)
 - [Extension Host Analysis](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Bootstrap/Documentation/ExtensionHostAnalysis.md)
 
 ---
 
 ## Key Files Reference
 
-| File                                                                                                                                 | Purpose             |
-| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------- |
+| File                                                                                                                                                                  | Purpose             |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
 | [`Element/Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Bootstrap/Implementation/CocoonMain.ts) | Main entry point    |
 | [`Element/Cocoon/Source/Services/ExtensionHostService.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/ExtensionHostService.ts)             | Extension lifecycle |
 | [`Element/Cocoon/Source/Services/GRPCServerService.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/GRPCServerService.ts)                   | gRPC server         |
@@ -650,9 +650,11 @@ For additional context on Cocoon's implementation status and priorities, see:
 
 ## See Also
 
-- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Mountain.md) - Native backend
-- [Vine Component](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Vine.md) - gRPC protocol
-- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/integration/CommunicationFlows.md) - Detailed
-  communication patterns
+- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Mountain.md) -
+  Native backend
+- [Vine Component](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Vine.md) -
+  gRPC protocol
+- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/integration/CommunicationFlows.md) -
+  Detailed communication patterns
 - [Application Startup Workflow](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/ApplicationStartupAndHandshake.md) -
   Startup sequence

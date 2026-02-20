@@ -82,7 +82,7 @@ Element/<Name>/
 
 ### Sky - UI Component Layer
 
-**Element**: [`Sky/`](https://github.com/CodeEditorLand/Sky/tree/main/)
+**Element**: [`Sky/`](https://github.com/CodeEditorLand/Sky/tree/Current/)
 
 **Purpose**: Declarative UI components built with Astro framework
 
@@ -125,13 +125,14 @@ Element/Sky/
 - `@codeeditorland/output` - VSCode workbench assets
 - `@codeeditorland/common` - Shared utilities
 
-**See**: [`Documentation/Architecture/components/Sky.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Sky.md)
+**See**:
+[`Documentation/Architecture/components/Sky.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Sky.md)
 
 ---
 
 ### Wind - Service Layer
 
-**Element**: [`Wind/`](https://github.com/CodeEditorLand/Wind/tree/main/)
+**Element**: [`Wind/`](https://github.com/CodeEditorLand/Wind/tree/Current/)
 
 **Purpose**: UI service layer implementing VS Code workbench services using
 Effect-TS
@@ -192,13 +193,15 @@ Element/Wind/
 - `effect` - Effect-TS framework
 - Tauri APIs
 
-**See**: [`Documentation/Architecture/components/Wind.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Wind.md)
+**See**:
+[`Documentation/Architecture/components/Wind.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Wind.md)
 
 ---
 
 ### Mountain - Native Backend
 
-**Element**: [`Mountain/`](https://github.com/CodeEditorLand/Mountain/tree/main/)
+**Element**:
+[`Mountain/`](https://github.com/CodeEditorLand/Mountain/tree/Current/)
 
 **Purpose**: Native backend implementing core platform functionality
 
@@ -242,13 +245,13 @@ Element/Mountain/
 - System libraries
 
 **See**:
-[`Documentation/Architecture/components/Mountain.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md)
+[`Documentation/Architecture/components/Mountain.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Mountain.md)
 
 ---
 
 ### Air - Background Daemon
 
-**Element**: [`Air/`](https://github.com/CodeEditorLand/Air/tree/main/)
+**Element**: [`Air/`](https://github.com/CodeEditorLand/Air/tree/Current/)
 
 **Purpose**: Background daemon for long-running operations
 
@@ -278,13 +281,14 @@ Element/Air/
 
 - gRPC client for Mountain communication
 
-**See**: [`Documentation/Architecture/components/Air.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Air.md)
+**See**:
+[`Documentation/Architecture/components/Air.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Air.md)
 
 ---
 
 ### Cocoon - Extension Host
 
-**Element**: [`Cocoon/`](https://github.com/CodeEditorLand/Cocoon/tree/main/)
+**Element**: [`Cocoon/`](https://github.com/CodeEditorLand/Cocoon/tree/Current/)
 
 **Purpose**: Extension host that runs extensions and provides VS Code API
 compatibility
@@ -323,13 +327,13 @@ Element/Cocoon/
 - VSCode extension API (shimmed)
 
 **See**:
-[`Documentation/Architecture/components/Cocoon.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Cocoon.md)
+[`Documentation/Architecture/components/Cocoon.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Cocoon.md)
 
 ---
 
 ### Vine - gRPC Protocol
 
-**Element**: [`Vine/`](https://github.com/CodeEditorLand/Vine/tree/main/)
+**Element**: [`Vine/`](https://github.com/CodeEditorLand/Vine/tree/Current/)
 
 **Purpose**: gRPC protocol definitions for communication
 
@@ -359,7 +363,8 @@ Element/Vine/
 
 - ProtoBuf compiler
 
-**See**: [`Documentation/Architecture/components/Vine.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Vine.md)
+**See**:
+[`Documentation/Architecture/components/Vine.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/Vine.md)
 
 ---
 
@@ -367,7 +372,7 @@ Element/Vine/
 
 ### Common - Shared Utilities
 
-**Element**: [`Common/`](https://github.com/CodeEditorLand/Common/tree/main/)
+**Element**: [`Common/`](https://github.com/CodeEditorLand/Common/tree/Current/)
 
 **Purpose**: Shared utilities and common types
 
@@ -386,7 +391,7 @@ Element/Vine/
 
 ### Output - VSCode Workbench Assets
 
-**Element**: [`Output/`](https://github.com/CodeEditorLand/Output/tree/main/)
+**Element**: [`Output/`](https://github.com/CodeEditorLand/Output/tree/Current/)
 
 **Purpose**: VSCode workbench assets and bundled resources
 
@@ -421,7 +426,7 @@ Element/Output/
 
 ### Worker - Web Worker
 
-**Element**: [`Worker/`](https://github.com/CodeEditorLand/Worker/tree/main/)
+**Element**: [`Worker/`](https://github.com/CodeEditorLand/Worker/tree/Current/)
 
 **Purpose**: Web worker for offloading computations
 
@@ -437,7 +442,7 @@ Element/Output/
 
 ### Echo - Echo Service
 
-**Element**: [`Echo/`](https://github.com/CodeEditorLand/Echo/tree/main/)
+**Element**: [`Echo/`](https://github.com/CodeEditorLand/Echo/tree/Current/)
 
 **Purpose**: Echo service for testing and diagnostics
 
@@ -447,7 +452,7 @@ Element/Output/
 
 ### Grove - Grove Service
 
-**Element**: [`Grove/`](https://github.com/CodeEditorLand/Land/tree/main/Element/Grove)
+**Element**: [`Grove/`](https://github.com/CodeEditorLand/Grove/tree/Current)
 
 **Purpose**: Grove service implementation
 
@@ -457,7 +462,7 @@ Element/Output/
 
 ### Mist - Mist Service
 
-**Element**: [`Mist/`](https://github.com/CodeEditorLand/Land/tree/main/Element/Mist)
+**Element**: [`Mist/`](https://github.com/CodeEditorLand/Mist/tree/Current)
 
 **Purpose**: Mist service implementation
 
@@ -467,7 +472,7 @@ Element/Output/
 
 ### Rest - Rest Service
 
-**Element**: [`Rest/`](https://github.com/CodeEditorLand/Rest/tree/main/)
+**Element**: [`Rest/`](https://github.com/CodeEditorLand/Rest/tree/Current/)
 
 **Purpose**: REST API service
 
@@ -477,7 +482,8 @@ Element/Output/
 
 ### SideCar - SideCar Service
 
-**Element**: [`SideCar/`](https://github.com/CodeEditorLand/SideCar/tree/main/)
+**Element**:
+[`SideCar/`](https://github.com/CodeEditorLand/SideCar/tree/Current/)
 
 **Purpose**: SideCar service implementation
 
@@ -703,10 +709,13 @@ pnpm run test
 
 ## See Also
 
-- [Architecture Overview](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/README.md) - Main architecture documentation
-- [Component Documentation](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components) - Individual component details
-- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) - Inter-component
-  communication
-- [Build Process](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/BuildProcess.md) - Detailed build information
-- [Wind Distribution Fix](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/WindDistributionFix.md) - Module
-  distribution
+- [Architecture Overview](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/README.md) -
+  Main architecture documentation
+- [Component Documentation](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components) -
+  Individual component details
+- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/integration/CommunicationFlows.md) -
+  Inter-component communication
+- [Build Process](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/components/BuildProcess.md) -
+  Detailed build information
+- [Wind Distribution Fix](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Architecture/integration/WindDistributionFix.md) -
+  Module distribution

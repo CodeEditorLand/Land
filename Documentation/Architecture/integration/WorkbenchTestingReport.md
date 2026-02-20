@@ -15,7 +15,8 @@ distributed and accessible.
 
 ### Build Status
 
-- **Build Command:** `bash Maintain/Debug.sh`
+- **Build Command:** `cargo run --bin Maintain -- build -p debug-browser`
+- **Alternative (legacy):** `bash Maintain/Debug.sh`
 - **Build Result:** ✅ SUCCESS (partial - app bundle created successfully, DMG
   bundling failed due to packaging script issue, not related to workbench
   changes)
@@ -155,9 +156,11 @@ files
 
 ### Workbench Import Fixes
 
-✅ [`Wind.astro`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Sky/Source/Workbench/Wind.astro) - Uses static file
-path ✅ [`Default.astro`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Sky/Source/Workbench/Default.astro) - Uses
-static file path ✅ All workbenches properly configured for static imports
+✅
+[`Wind.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Wind.astro) -
+Uses static file path ✅
+[`Default.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Default.astro) -
+Uses static file path ✅ All workbenches properly configured for static imports
 
 ## Test Results Summary
 

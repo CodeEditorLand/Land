@@ -14,7 +14,7 @@ Unhandled Promise Rejection: TypeError: undefined is not an object (evaluating '
 ## Root Cause
 
 1. **Wind was commented out** from the `Link` array in
-   [`Element/Sky/Source/Function/Debug.ts:78`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Sky/Source/Function/Debug.ts:78),
+   [`Element/Sky/Source/Function/Debug.ts:78`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Function/Debug.ts),
    preventing Vite from resolving Wind imports during development
 2. **No static copy configuration** for Wind's built files to be included in the
    Sky build output
@@ -25,7 +25,7 @@ Unhandled Promise Rejection: TypeError: undefined is not an object (evaluating '
 ### 1. Enabled Wind in Link Array
 
 **File:**
-[`Element/Sky/Source/Function/Debug.ts`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Sky/Source/Function/Debug.ts)
+[`Element/Sky/Source/Function/Debug.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Function/Debug.ts)
 
 Uncommented `@codeeditorland/wind` in the `Link` array to enable Vite module
 resolution:
@@ -42,7 +42,7 @@ export const Link = [
 ### 2. Added Wind to Static Copy Configuration
 
 **File:**
-[`Element/Sky/Source/Function/Debug.ts`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Sky/Source/Function/Debug.ts)
+[`Element/Sky/Source/Function/Debug.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Function/Debug.ts)
 
 Added Wind build outputs to `Static.targets` for bundling mode:
 
@@ -87,8 +87,8 @@ This follows the same pattern used for `@codeeditorland/output` and
 
 **Files:**
 
-- [`Element/Sky/Source/Workbench/Wind.astro`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Sky/Source/Workbench/Wind.astro)
-- [`Element/Sky/Source/Workbench/Default.astro`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Sky/Source/Workbench/Default.astro)
+- [`Element/Sky/Source/Workbench/Wind.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Wind.astro)
+- [`Element/Sky/Source/Workbench/Default.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Default.astro)
 
 Changed from npm package imports to static file URLs:
 
@@ -125,7 +125,8 @@ Changed from npm package imports to static file URLs:
 
 ### 4. Added Vite Resolve Alias (Optional Enhancement)
 
-**File:** [`Element/Sky/astro.config.ts`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Sky/astro.config.ts)
+**File:**
+[`Element/Sky/astro.config.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/astro.config.ts)
 
 Added alias configuration for easier import resolution:
 
@@ -231,13 +232,13 @@ To verify the fix:
 
 ## Related Files Modified
 
-- [`Element/Sky/Source/Function/Debug.ts`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Sky/Source/Function/Debug.ts) -
+- [`Element/Sky/Source/Function/Debug.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Function/Debug.ts) -
   Link array and Static targets
-- [`Element/Sky/astro.config.ts`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Sky/astro.config.ts) - Vite resolve
-  alias
-- [`Element/Sky/Source/Workbench/Wind.astro`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Sky/Source/Workbench/Wind.astro) -
+- [`Element/Sky/astro.config.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/astro.config.ts) -
+  Vite resolve alias
+- [`Element/Sky/Source/Workbench/Wind.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Wind.astro) -
   Import statements
-- [`Element/Sky/Source/Workbench/Default.astro`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/Element/Sky/Source/Workbench/Default.astro) -
+- [`Element/Sky/Source/Workbench/Default.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Default.astro) -
   Import statements
 
 ## Architecture Patterns

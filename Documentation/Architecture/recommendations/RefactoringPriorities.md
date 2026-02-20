@@ -35,7 +35,7 @@ based on impact, urgency, and effort required.
 #### 1. Mountain IPC Layer Code Duplication
 
 **Component**: Mountain  
-**Location**: [`Element/Mountain/Source/IPC/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC)
+**Location**: [`Element/Mountain/Source/IPC/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC)
 
 **Issue**: Significant code duplication across IPC modules
 
@@ -59,7 +59,7 @@ pub mod common {
 **Estimated Effort**: 2 weeks
 
 **Related Refactoring**: See
-[`Element/Mountain/Source/IPC/RefactoringSummary.md`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/RefactoringSummary.md)
+[`Element/Mountain/Source/IPC/RefactoringSummary.md`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/RefactoringSummary.md)
 
 #### 2. Cocoon API Parity Gaps
 
@@ -105,7 +105,7 @@ intelligence |
 #### 4. Air Indexing Performance
 
 **Component**: Air  
-**Location**: [`Element/Air/Source/Indexing/`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing)
+**Location**: [`Element/Air/Source/Indexing/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing)
 
 **Issue**: Large projects can be slow to index
 
@@ -145,7 +145,7 @@ intelligence |
 #### 6. Sky Component Coverage
 
 **Component**: Sky  
-**Location**: [`Element/Sky/Source/`](https://github.com/CodeEditorLand/Sky/tree/main/Source)
+**Location**: [`Element/Sky/Source/`](https://github.com/CodeEditorLand/Sky/tree/Current/Source)
 
 **Issue**: Not all UI components implemented
 
@@ -205,7 +205,7 @@ intelligence |
 #### 1. Mountain Command System Consolidation
 
 **Component**: Mountain  
-**Location**: [`Element/Mountain/Source/Command/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Command)
+**Location**: [`Element/Mountain/Source/Command/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Command)
 and registry
 
 **Issue**: Multiple command execution paths
@@ -253,7 +253,7 @@ and registry
 #### 4. Air Language Support Expansion
 
 **Component**: Air  
-**Location**: [`Element/Air/Source/Indexing/Language/`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language)
+**Location**: [`Element/Air/Source/Indexing/Language/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Language)
 
 **Issue**: Limited language support (Rust, TypeScript only)
 
@@ -285,7 +285,7 @@ and registry
 #### 6. Mountain Connection Pool Implementation
 
 **Component**: Mountain  
-**Location**: [`Element/Mountain/Source/IPC/Connection/Pool/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/Connection/Pool)
+**Location**: [`Element/Mountain/Source/IPC/Connection/Pool/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/Connection/Pool)
 
 **Issue**: Connection pool implementation incomplete
 
@@ -336,7 +336,7 @@ and registry
 #### 1. Mountain Message Compression
 
 **Component**: Mountain  
-**Location**: [`Element/Mountain/Source/IPC/Encryption/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/Encryption)
+**Location**: [`Element/Mountain/Source/IPC/Encryption/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/Encryption)
 
 **Issue**: Message compression not fully utilized
 
@@ -351,7 +351,7 @@ and registry
 #### 2. Air Configuration Hot Reload Testing
 
 **Component**: Air  
-**Location**: [`Element/Air/Source/Configuration/HotReload.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Configuration/HotReload.rs)
+**Location**: [`Element/Air/Source/Configuration/HotReload.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Configuration/HotReload.rs)
 
 **Issue**: Configuration hot-reload not fully tested
 
@@ -398,8 +398,9 @@ and registry
 #### 5. Air Metrics and Tracing
 
 **Component**: Air  
-**Location**: [`Element/Air/Source/Metrics/`](https://github.com/CodeEditorLand/Air/tree/main/Source/Metrics)
-and [`Element/Air/Source/Tracing/`](https://github.com/CodeEditorLand/Air/tree/main/Source/Tracing)
+**Location**: [`Element/Air/Source/Metrics/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Metrics)
+and
+[`Element/Air/Source/Tracing/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Tracing)
 
 **Issue**: Basic implementation, needs enhancement
 
@@ -695,18 +696,21 @@ and [`Element/Air/Source/Tracing/`](https://github.com/CodeEditorLand/Air/tree/m
 
 ## Key Files Reference
 
-| File                                                                                                                                                         | Purpose                    |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- |
-| [`Element/Mountain/Source/IPC/RefactoringSummary.md`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/IPC/RefactoringSummary.md)                                             | IPC refactoring plan       |
-| [`Element/Cocoon/Documentation/GitHub/CocoonImplementationPlan.md`](https://github.com/CodeEditorLand/Cocoon/tree/main/Documentation/GitHub/CocoonImplementationPlan.md)               | Cocoon implementation plan |
-| [`Element/Cocoon/Source/Bootstrap/Documentation/ExtensionHostAnalysis.md`](https://github.com/CodeEditorLand/Cocoon/tree/main/Source/Bootstrap/Documentation/ExtensionHostAnalysis.md) | Extension host analysis    |
+| File                                                                                                                                                                                      | Purpose                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| [`Element/Mountain/Source/IPC/RefactoringSummary.md`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/RefactoringSummary.md)                                           | IPC refactoring plan       |
+| [`Element/Cocoon/Documentation/GitHub/CocoonImplementationPlan.md`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Documentation/GitHub/CocoonImplementationPlan.md)               | Cocoon implementation plan |
+| [`Element/Cocoon/Source/Bootstrap/Documentation/ExtensionHostAnalysis.md`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Bootstrap/Documentation/ExtensionHostAnalysis.md) | Extension host analysis    |
 
 ---
 
 ## See Also
 
-- [Architecture Documentation](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/README.md) - Overall architecture
-- [Component Documentation](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components) - Individual component documentation
-- [Integration Documentation](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration) - Integration patterns
-- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) - Communication
-  patterns
+- [Architecture Documentation](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/README.md) -
+  Overall architecture
+- [Component Documentation](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components) -
+  Individual component documentation
+- [Integration Documentation](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration) -
+  Integration patterns
+- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) -
+  Communication patterns

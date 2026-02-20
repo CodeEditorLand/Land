@@ -201,7 +201,7 @@ Element/Air/
 ### Health Check System
 
 **Location**:
-[`Element/Air/Source/HealthCheck/mod.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/HealthCheck/mod.rs)
+[`Element/Air/Source/HealthCheck/mod.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/HealthCheck/mod.rs)
 
 Provides comprehensive health monitoring:
 
@@ -241,7 +241,7 @@ pub struct HealthCheckManager {
 ### Logging System
 
 **Location**:
-[`Element/Air/Source/Logging/mod.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Logging/mod.rs)
+[`Element/Air/Source/Logging/mod.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Logging/mod.rs)
 
 Provides structured logging with advanced features:
 
@@ -291,7 +291,7 @@ pub struct LogRotationConfig {
 ### Resilience Features
 
 **Location**:
-[`Element/Air/Source/Resilience/mod.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Resilience/mod.rs)
+[`Element/Air/Source/Resilience/mod.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Resilience/mod.rs)
 
 Provides resilience patterns for fault tolerance:
 
@@ -362,7 +362,7 @@ pub struct ResilienceOrchestrator {
 ## Indexing System
 
 **Location**:
-[`Element/Air/Source/Indexing/mod.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/mod.rs)
+[`Element/Air/Source/Indexing/mod.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/mod.rs)
 
 Provides code indexing for symbol navigation and search.
 
@@ -386,44 +386,44 @@ graph TB
 
 ### Supported Languages
 
-| Language       | Parser                                                                                | Status         |
-| -------------- | ------------------------------------------------------------------------------------- | -------------- |
-| **Rust**       | [`ParseRust.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language/ParseRust.rs)             | ✅ Implemented |
-| **TypeScript** | [`ParseTypeScript.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language/ParseTypeScript.rs) | ✅ Implemented |
-| **JavaScript** | Reuses TypeScript parser                                                              | ✅ Implemented |
-| **C#**         | Not implemented                                                                       | ❌ Future      |
-| **Python**     | Not implemented                                                                       | ❌ Future      |
+| Language       | Parser                                                                                                                 | Status         |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------- |
+| **Rust**       | [`ParseRust.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Language/ParseRust.rs)             | ✅ Implemented |
+| **TypeScript** | [`ParseTypeScript.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Language/ParseTypeScript.rs) | ✅ Implemented |
+| **JavaScript** | Reuses TypeScript parser                                                                                               | ✅ Implemented |
+| **C#**         | Not implemented                                                                                                        | ❌ Future      |
+| **Python**     | Not implemented                                                                                                        | ❌ Future      |
 
 ### Index Components
 
 #### Scanner
 
 **Location**:
-[`Element/Air/Source/Indexing/Scan/`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Scan)
+[`Element/Air/Source/Indexing/Scan/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Scan)
 
 Scans files and directories:
 
-- [`ScanDirectory.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Scan/ScanDirectory.rs) -
+- [`ScanDirectory.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Scan/ScanDirectory.rs) -
   Directory scanning
-- [`ScanFile.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Scan/ScanFile.rs) - File
-  scanning
+- [`ScanFile.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Scan/ScanFile.rs) -
+  File scanning
 
 #### Parser
 
 **Location**:
-[`Element/Air/Source/Indexing/Language/`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language)
+[`Element/Air/Source/Indexing/Language/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Language)
 
 Language-specific parsers:
 
-- [`ParseRust.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language/ParseRust.ts) -
+- [`ParseRust.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Language/ParseRust.rs) -
   Rust source parsing
-- [`ParseTypeScript.ts`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language/ParseTypeScript.ts) -
+- [`ParseTypeScript.ts`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Language/ParseTypeScript.ts) -
   TypeScript/JavaScript parsing
 
 #### Symbol Extractor
 
 **Location**:
-[`Element/Air/Source/Indexing/Process/ExtractSymbols.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Process/ExtractSymbols.rs)
+[`Element/Air/Source/Indexing/Process/ExtractSymbols.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Process/ExtractSymbols.rs)
 
 Extracts symbols from parsed code:
 
@@ -439,25 +439,25 @@ Extracted Symbols:
 #### Index Store
 
 **Location**:
-[`Element/Air/Source/Indexing/Store/`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Store)
+[`Element/Air/Source/Indexing/Store/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Store)
 
 Stores and queries indexed data:
 
-- [`StoreEntry.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Store/StoreEntry.rs) -
+- [`StoreEntry.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Store/StoreEntry.rs) -
   Index entries
-- [`QueryIndex.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Store/QueryIndex.ts) -
+- [`QueryIndex.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Store/QueryIndex.rs) -
   Query functionality
-- [`UpdateIndex.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Store/UpdateIndex.rs) -
+- [`UpdateIndex.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Store/UpdateIndex.rs) -
   Index updates
 
 #### Background Indexer
 
 **Location**:
-[`Element/Air/Source/Indexing/Background/`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Background)
+[`Element/Air/Source/Indexing/Background/`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Background)
 
 Background indexing:
 
-- [`StartWatcher.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Background/StartWatcher.rs) -
+- [`StartWatcher.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Background/StartWatcher.rs) -
   File watching for incremental indexing
 
 ### Index Lifecycle
@@ -484,7 +484,7 @@ sequenceDiagram
 ## Configuration Management
 
 **Location**:
-[`Element/Air/Source/Configuration/mod.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Configuration/mod.rs)
+[`Element/Air/Source/Configuration/mod.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Configuration/mod.rs)
 
 Provides configuration management with hot-reload.
 
@@ -499,7 +499,7 @@ Provides configuration management with hot-reload.
 ### Hot Reload
 
 **Location**:
-[`Element/Air/Source/Configuration/HotReload.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Configuration/HotReload.rs)
+[`Element/Air/Source/Configuration/HotReload.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Configuration/HotReload.rs)
 
 Features:
 
@@ -515,7 +515,7 @@ Features:
 ### Metrics Collection
 
 **Location**:
-[`Element/Air/Source/Metrics/mod.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Metrics/mod.rs)
+[`Element/Air/Source/Metrics/mod.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Metrics/mod.rs)
 
 Tracks operational metrics:
 
@@ -527,7 +527,7 @@ Tracks operational metrics:
 ### Distributed Tracing
 
 **Location**:
-[`Element/Air/Source/Tracing/mod.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Tracing/mod.rs)
+[`Element/Air/Source/Tracing/mod.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Tracing/mod.rs)
 
 Provides request tracing:
 
@@ -542,7 +542,8 @@ Provides request tracing:
 
 ### Protocol Definition
 
-**Location**: [`Element/Air/Proto/Air.proto`](https://github.com/CodeEditorLand/Air/tree/main/Proto/Air.proto)
+**Location**:
+[`Element/Air/Proto/Air.proto`](https://github.com/CodeEditorLand/Air/tree/Current/Proto/Air.proto)
 
 Defines the gRPC service contract:
 
@@ -571,7 +572,7 @@ service AirService {
 ### Server Implementation
 
 **Location**:
-[`Element/Air/Source/Vine/Server/AirVinegRPCService.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Vine/Server/AirVinegRPCService.rs)
+[`Element/Air/Source/Vine/Server/AirVinegRPCService.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Vine/Server/AirVinegRPCService.rs)
 
 Implements the gRPC service:
 
@@ -587,14 +588,15 @@ Implements the gRPC service:
 ### Mountain Integration
 
 **Location**:
-[`Element/Mountain/Source/Air/`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Air)
+[`Element/Mountain/Source/Air/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Air)
 
 Mountain integrates with Air through:
 
 - **Air Client**:
-  [`AirClient.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Air/AirClient.ts) - gRPC client
+  [`AirClient.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Air/AirClient.rs) -
+  gRPC client
 - **Service Provider**:
-  [`AirServiceProvider.rs`](https://github.com/CodeEditorLand/Mountain/tree/main/Source/Air/AirServiceProvider.ts) -
+  [`AirServiceProvider.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Air/AirServiceProvider.rs) -
   Service wrapper
 
 ### Communication Flow
@@ -617,7 +619,7 @@ sequenceDiagram
 ### CLI Integration
 
 **Location**:
-[`Element/Air/Source/CLI/mod.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/CLI/mod.rs)
+[`Element/Air/Source/CLI/mod.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/CLI/mod.rs)
 
 Provides command-line interface:
 
@@ -657,15 +659,16 @@ productivity and user experience.
     - Display currently processing file in UI
 - [ ] Optimize symbol extraction algorithms
     - Profile current
-      [`ExtractSymbols`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Process/ExtractSymbols.rs)
+      [`ExtractSymbols`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Process/ExtractSymbols.rs)
       performance
     - Implement memoization for expensive parsing operations
     - Use efficient data structures for symbol storage (e.g., hash maps, tries)
 - [ ] Add LSP integration for language-agnostic indexing
     - Integrate with Language Server Protocol for accurate semantic indexing
     - Support standard LSP features: go-to-definition, references, completion
-    - Create [`LspClient`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language) module
-      for LSP communication
+    - Create
+      [`LspClient`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Language)
+      module for LSP communication
 - [ ] Implement parallel indexing for multiple files
     - Use [`tokio::spawn`](https://docs.rs/tokio) for concurrent file processing
     - Implement work-stealing queue for load balancing
@@ -691,31 +694,33 @@ using other languages.
 
 - [ ] Add C# parser module in `Element/Air/Source/Indexing/Language/`
     - Create
-      [`ParseCSharp.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language/ParseCSharp.rs)
+      [`ParseCSharp.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Language/ParseCSharp.rs)
       for C# syntax parsing
     - Implement symbol extraction for classes, methods, properties, interfaces
     - Support .NET-specific constructs (namespaces, generics, attributes)
 - [ ] Add Python parser module
     - Create
-      [`ParsePython.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language/ParsePython.rs)
+      [`ParsePython.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Language/ParsePython.rs)
       for Python syntax parsing
     - Extract functions, classes, methods, module-level variables
     - Handle Python-specific features (decorators, async/await, type hints)
 - [ ] Support for more languages as needed
-    - Add [`ParseGo.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language/ParseGo.rs)
+    - Add
+      [`ParseGo.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Language/ParseGo.rs)
       for Go
     - Add
-      [`ParseJava.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language/ParseJava.rs)
+      [`ParseJava.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Language/ParseJava.rs)
       for Java
     - Consider adding JavaScript, C++, PHP based on user demand
 - [ ] Create parser plugin system for extensibility
-    - Define [`ParserPlugin`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language) trait
-      for language parsers
+    - Define
+      [`ParserPlugin`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Language)
+      trait for language parsers
     - Implement plugin discovery and registration mechanism
     - Allow third-party parsers to be loaded dynamically
 - [ ] Implement language detection
     - Create
-      [`DetectLanguage.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/Language/DetectLanguage.rs)
+      [`DetectLanguage.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/Language/DetectLanguage.rs)
       for file type identification
     - Use file extensions and shebang lines for detection
     - Support `.editorconfig` and `.gitattributes` for overrides
@@ -857,21 +862,23 @@ instability, while lack of cache management reduces efficiency and performance.
 
 ## Key Files Reference
 
-| File                                                                                                                 | Purpose                  |
-| -------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| [`Element/Air/Source/Binary.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Binary.rs)                                                 | Binary entry point       |
-| [`Element/Air/Source/Vine/Server/AirVinegRPCService.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Vine/Server/AirVinegRPCService.rs) | gRPC server              |
-| [`Element/Air/Source/HealthCheck/mod.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/HealthCheck/mod.rs)                               | Health check system      |
-| [`Element/Air/Source/Logging/mod.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Logging/mod.rs)                                       | Logging system           |
-| [`Element/Air/Source/Resilience/mod.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Resilience/mod.rs)                                 | Resilience features      |
-| [`Element/Air/Source/Indexing/mod.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Indexing/mod.rs)                                     | Indexing system          |
-| [`Element/Air/Source/Configuration/HotReload.rs`](https://github.com/CodeEditorLand/Air/tree/main/Source/Configuration/HotReload.rs)               | Configuration hot-reload |
+| File                                                                                                                                                  | Purpose                  |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| [`Element/Air/Source/Binary.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Binary.rs)                                                 | Binary entry point       |
+| [`Element/Air/Source/Vine/Server/AirVinegRPCService.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Vine/Server/AirVinegRPCService.rs) | gRPC server              |
+| [`Element/Air/Source/HealthCheck/mod.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/HealthCheck/mod.rs)                               | Health check system      |
+| [`Element/Air/Source/Logging/mod.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Logging/mod.rs)                                       | Logging system           |
+| [`Element/Air/Source/Resilience/mod.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Resilience/mod.rs)                                 | Resilience features      |
+| [`Element/Air/Source/Indexing/mod.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Indexing/mod.rs)                                     | Indexing system          |
+| [`Element/Air/Source/Configuration/HotReload.rs`](https://github.com/CodeEditorLand/Air/tree/Current/Source/Configuration/HotReload.rs)               | Configuration hot-reload |
 
 ---
 
 ## See Also
 
-- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md) - Native backend
-- [Vine Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Vine.md) - gRPC protocol
-- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) - Detailed
-  communication patterns
+- [Mountain Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md) -
+  Native backend
+- [Vine Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Vine.md) -
+  gRPC protocol
+- [Communication Flows](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/CommunicationFlows.md) -
+  Detailed communication patterns

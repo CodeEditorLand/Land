@@ -1,47 +1,12 @@
 {
-	"compilerOptions": {
-		"emitDeclarationOnly": true,
-
-		"jsx": "preserve",
-
-		"noEmit": true,
-
-		"outDir": "Target",
-
-		"rootDir": "."
-	},
-
-	"exclude": ["**/node_modules/**"],
-
-	"extends": "@playform/build/tsconfig",
-
-	"files": [],
-
-	"include": ["./Element/"],
-
-	"references": [
-		{
-			"path": "./Element/Output"
-		},
-
-		{
-			"path": "./Element/Cocoon"
-		},
-
-		{
-			"path": "./Element/Wind"
-		},
-
-		{
-			"path": "./Element/Sky"
-		},
-
-		{
-			"path": "./Element/Worker"
-		}
-	],
-
-	"watchOptions": {
-		"excludeDirectories": ["**/node_modules/**", "**/Target/**"]
-	}
+  "files": [],
+  "references": [
+    { "path": "Element/Sky" },
+    { "path": "Element/Worker" },
+    { "path": "Element/Output" },
+    { "path": "Element/Wind" }
+  ],
+  "watchOptions": {
+    "excludeDirectories": ["**/node_modules/**", "**/Target/**"]
+  }
 }
