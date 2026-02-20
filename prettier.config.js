@@ -125,13 +125,9 @@ export default {
 	importOrderTypeScriptVersion: "5.5.4",
 
 	// =========================================================================
-	// Plugin: Tailwind CSS
-	// =========================================================================
-	tailwindConfig: "./tailwind.config.js",
-
-	// =========================================================================
 	// File Overrides
 	// =========================================================================
+	// Note: tailwindConfig is only applied to files that use Tailwind CSS classes
 	overrides: [
 		// JavaScript / JSX
 		{
