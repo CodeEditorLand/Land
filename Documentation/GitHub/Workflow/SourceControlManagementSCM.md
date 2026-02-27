@@ -2,12 +2,93 @@
 
 > **⚠️ Verification Status:** This workflow describes SCM provider registration
 > and Git integration. Verify against
-> [`Element/Cocoon/Source/Services/Extension.ts`](Element/Cocoon/Source/Services/Extension.ts)
+> [`Element/Cocoon/Source/Services/Extension.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Extension.ts)
 > for extension activation and Mountain's Git provider implementation.
 
 **Goal:** A user opens a project that is a Git repository. The SCM view in the
 side bar populates with a list of changed files. The user can click a file to
 see a diff view.
+
+```mermaid
+flowchart TB
+    subgraph C1["Phase 1: Registration & Discovery"]
+        GA["Git Extension<br/>activate()"]
+        CSC["vscode.scm.createSourceControl()"]
+        CSP["ScmProvider Service"]
+        M1["$registerScmProvider<br/>gRPC to Mountain"]
+        WF["vscode.workspace.workspaceFolders"]
+        STAT["vscode.workspace.fs.stat<br/>(.git directory)"]
+        M2["tokio::fs::metadata<br/>native call"]
+        CONF[".git exists"]
+    end
+
+    subgraph C2["Phase 2: Populate SCM View"]
+        GS["git.status<br/>--porcelain -z"]
+        API["vscode.git API"]
+        M3["$gitExec<br/>gRPC to Mountain"]
+        GP["GitProvider<br/>spawn git process"]
+        STDOUT["stdout: raw output"]
+        PARSE["Parse status<br/>build file list"]
+        SRS["SourceControlResourceState<br/>URI + decorations"]
+        RGS["resourceGroups.Changes<br/>update state"]
+        M4["$updateScmGroup<br/>gRPC notification"]
+        E1["sky://scm/update-group<br/>Tauri event"]
+    end
+
+    subgraph C3["Phase 3: UI Rendering"]
+        SCM["SCM View Component"]
+        LIST["Render file list<br/>e.g., M src/main.ts"]
+    end
+
+    subgraph C4["Phase 4: Diff View"]
+        USR["User clicks file"]
+        CMD["vscode.open<br/>with git: URI"]
+        DEI["DiffEditorInput"]
+        MOD["Modified side<br/>file:// URI<br/>IFileService.read"]
+        ORIG["Original side<br/>git: URI<br/>Content Provider"]
+        M5["$gitExec<br/>git show HEAD:file"]
+        ORG_CONT["Original content<br/>from Mountain"]
+        DIFF["DiffEditor<br/>side-by-side view"]
+    end
+
+    GA --> CSC
+    CSC --> CSP
+    CSP --> M1
+ WF --> STAT
+    STAT --> M2
+    M2 --> CONF
+    CONF --> GS
+    GS --> API
+    API --> M3
+    M3 --> GP
+    GP --> STDOUT
+    STDOUT --> PARSE
+    PARSE --> SRS
+    SRS --> RGS
+    RGS --> M4
+    M4 --> E1
+    E1 --> SCM
+    SCM --> LIST
+    LIST --> USR
+    USR --> CMD
+    CMD --> DEI
+    DEI -->|load both sides| MOD
+    DEI -->|load both sides| ORIG
+    MOD -->|standard read| FS["IFileService"]
+    ORIG --> M5
+    M5 --> GP2["GitProvider<br/>git show"]
+    GP2 --> ORG_CONT
+    ORG_CONT --> ORIG
+    FS --> MOD_CONT["Modified content"]
+    MOD_CONT --> DIFF
+    ORG_CONT --> DIFF
+    DIFF -->|"side-by-side"| VIEW["User sees diff"]
+
+    style C1 fill:#e1f5ff
+    style C2 fill:#fff4e1
+    style C3 fill:#ffe1f5
+    style C4 fill:#e1ffe1
+```
 
 ---
 

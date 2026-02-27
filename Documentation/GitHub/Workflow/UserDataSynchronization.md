@@ -2,13 +2,59 @@
 
 > **⚠️ Verification Status:** This workflow describes the user data
 > synchronization architecture. Verify against
-> [`Element/Mountain/Source/Environment/SynchronizationProvider.rs`](Element/Mountain/Source/Environment/SynchronizationProvider.rs)
+> [`Element/Mountain/Source/Environment/SynchronizationProvider.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/SynchronizationProvider.rs)
 > for the actual implementation.
 
 **Goal:** A user logs into their account on a new machine. The application
 automatically downloads their settings (`settings.json`), keybindings, and list
 of installed extensions from a remote server and applies them to the new
 installation.
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant UI as Wind/Sky UI
+    participant AS as AuthenticationService
+    participant AP as AuthenticationProvider
+    participant M1 as Mountain<br/>(OAuth Handler)
+    participant ASVC as UserDataAutoSyncService
+    participant UDSS as UserDataSyncService
+    participant SS as SettingsSynchronizer
+    participant UDS as UserDataSyncStoreService
+    participant RS as Remote Sync Server
+    participant CS as ConfigurationService
+    participant CP as ConfigurationProvider<br/>(Cocoon)
+    participant EXT as Extensions
+
+    User->>UI: Click "Sign In"
+    UI->>AS: workbench.action.authentication.signIn
+    AS->>AP: Get auth session<br/>(OAuth)
+    AP->>M1: $getSession gRPC
+    M1->>M1: OAuth flow<br/>Open browser
+    M1->>M1: Store token in keyring<br/>(SecretsProvider)
+    M1-->>AP: OAuth token
+    AP-->>AS: Success
+    AS->>ASVC: Trigger sync after sign-in
+    ASVC->>UDSS: sync()
+    UDSS->>SS: SettingsSynchronizer.sync()
+    SS->>UDS: GET request<br/>(with OAuth token)
+    UDS->>RS: GET /user/data/settings<br/>Authorization: token
+    RS-->>UDS: Remote settings.json
+    UDS-->>SS: Remote content
+    SS->>SS: FsReader.read<br/>(local settings.json)
+    SS->>SS: Three-way merge<br/>Local + Remote + Base
+    SS->>SS: Resolve conflicts intelligently
+    SS->>SS: FsWriter.write<br/>(merged settings.json)
+    SS->>CS: reloadConfiguration()
+    CS->>CS: Re-read config files
+    CS->>CS: Update AppState.Configuration
+    CS->>CP: $acceptConfigurationChanged<br/>gRPC notification
+    CS->>UI: sky://configuration/changed<br/>Tauri event
+    CP->>EXT: onDidChangeConfiguration event
+    UI->>UI: Settings UI updates<br/>Editor appearance changes
+    EXT->>EXT: Extension adjusts behavior<br/>using new settings
+    UI-->>User: Synchronization complete
+```
 
 ---
 

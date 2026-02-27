@@ -14,13 +14,104 @@ Unhandled Promise Rejection: TypeError: undefined is not an object (evaluating '
 ## Root Cause
 
 1. **Wind was commented out** from the `Link` array in
-   [`Element/Sky/Source/Function/Debug.ts:78`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Function/Debug.ts),
+   [`Element/Sky/Source/Function/Debug.ts:78`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Function/Debug.ts#L78),
    preventing Vite from resolving Wind imports during development
 2. **No static copy configuration** for Wind's built files to be included in the
    Sky build output
 3. **URL-based imports** needed for browser ES modules to work at runtime
 
 ## Solution Implemented
+
+## Wind Module Distribution Architecture
+
+```mermaid
+graph TB
+    subgraph Wind["Wind Package (Element/Wind)"]
+        WSRC["Source/"]
+        WTS["TypeScript Code"]
+        WF["Function/Install.ts"]
+        WE["Effect/Bootstrap.ts, IPC.ts, Mountain.ts"]
+        WCFG["Configuration/"]
+        WT["Types/"]
+
+        WTS --> WF
+        WTS --> WE
+        WTS --> WCFG
+        WTS --> WT
+
+        WTGT["Target/ (Build Output)"]
+        WJS["*.js files"]
+        WBOOT["Bootstrap/"]
+        WEFF["Effect/<br/>index.ts exports"]
+        WFUN["Function/<br/>Install.js exports"]
+        WTP["Types/"]
+
+        WEFF --> WE
+        WFUN --> WF
+    end
+
+    subgraph Sky["Sky Package (Element/Sky)"]
+        SDT["Debug.ts<br/>(Link array)"]
+        SA["astro.config.ts<br/>(resolve alias)"]
+        SWSRC["Wind.astro<br/>Default.astro"]
+
+        SDT -->|Link array| LINK["@codeeditorland/wind"]
+        SA -->|alias| ALIAS["@codeeditorland/wind → /Static/Wind"]
+        SWSRC -->|imports| IMP["/Static/Wind/Function/Install.js<br/>/Static/Wind/Effect/index.js"]
+
+        STGT["Target/ (Build Output)"]
+        SVAR["Static/"]
+        SWIND["Static/Wind/"]
+        SWJS["*.js (copied from Wind)"]
+        SWBOOT["Bootstrap/<br/>copied"]
+        SWEFF["Effect/<br/>copied"]
+        SWFUN["Function/<br/>copied"]
+        SWTP["Types/<br/>copied"]
+
+        SVAR --> SWIND
+        SWIND --> SWJS
+        SWIND --> SWBOOT
+        SWIND --> SWEFF
+        SWIND --> SWFUN
+        SWIND --> SWTP
+    end
+
+    subgraph NPM["Node Modules"]
+        NM["@codeeditorland/wind<br/>(pnpm workspace link)"]
+        NM -. linked to .-> SDT
+    end
+
+    subgraph Build["Build Process"]
+        VITE["Vite Build"]
+        SPC["vite-plugin-static-copy"]
+    end
+
+    subgraph Runtime["Runtime in Built Binary"]
+        BRW["Browser ES Modules"]
+        MOD["Load from /Static/Wind/<br/>Absolute URLs"]
+
+        BRW --> MOD
+        MOD -->|"resolve"| SWJS
+        MOD -->|"resolve"| SWEFF
+        MOD -->|"resolve"| SWFUN
+    end
+
+    WTS -. build .-> WTGT
+    WTGT -->|"copy via"| SPC
+    SPC -->|"to"| STGT
+
+    VITE --> SPC
+    VITE -->|"resolves"| LINK
+    VITE -->|"uses"| ALIAS
+
+    MOD -. runtime .-> IMP
+
+    style Wind fill:#e1f5ff
+    style Sky fill:#fff4e1
+    style NPM fill:#ffe1f5
+    style Build fill:#e1ffe1
+    style Runtime fill:#f5e1ff
+```
 
 ### 1. Enabled Wind in Link Array
 
@@ -34,7 +125,7 @@ resolution:
 export const Link = [
 	"@codeeditorland/common",
 	"@codeeditorland/output",
-	"@codeeditorland/wind",  // ✅ ENABLED
+	"@codeeditorland/wind", // ✅ ENABLED
 	"@codeeditorland/worker",
 ];
 ```

@@ -392,9 +392,9 @@ Similar patterns are used for other Elements:
 In development, modules are resolved from `node_modules/` using package names:
 
 ```typescript
-import { Install } from "@codeeditorland/wind"
-import { runBootstrap } from "@codeeditorland/wind/Effect"
-import * as vscode from "@codeeditorland/output/vscode"
+import * as vscode from "@codeeditorland/output/vscode";
+import { Install } from "@codeeditorland/wind";
+import { runBootstrap } from "@codeeditorland/wind/Effect";
 ```
 
 Vite resolves these imports during development using the workspace symlinks.
@@ -404,9 +404,9 @@ Vite resolves these imports during development using the workspace symlinks.
 In production, modules resolve to static file URLs:
 
 ```typescript
-import { Install } from "/Static/Wind/Function/Install.js"
-import { runBootstrap } from "/Static/Wind/Effect/index.js"
-import * as monaco from "/Static/Monaco/editor.main.js"
+import * as monaco from "/Static/Monaco/editor.main.js";
+import { runBootstrap } from "/Static/Wind/Effect/index.js";
+import { Install } from "/Static/Wind/Function/Install.js";
 ```
 
 This is required because:
@@ -432,13 +432,13 @@ resolve: {
 This allows:
 
 ```typescript
-import { Install } from "@codeeditorland/wind/Function/Install.js"
+import { Install } from "@codeeditorland/wind/Function/Install.js";
 ```
 
 Instead of:
 
 ```typescript
-import { Install } from "/Static/Wind/Function/Install.js"
+import { Install } from "/Static/Wind/Function/Install.js";
 ```
 
 ### TypeScript Errors
@@ -456,11 +456,11 @@ development but will be available after build.
 
 ```typescript
 declare module "/Static/Wind/Function/Install.js" {
-  export { Install } from "@codeeditorland/wind/Function/Install";
+	export { Install } from "@codeeditorland/wind/Function/Install";
 }
 
 declare module "/Static/Wind/Effect/index.js" {
-  export * from "@codeeditorland/wind/Effect";
+	export * from "@codeeditorland/wind/Effect";
 }
 ```
 
@@ -549,7 +549,7 @@ To build manually, follow this order:
 **Import pattern**:
 
 ```typescript
-import { Install } from "@codeeditorland/wind"
+import { Install } from "@codeeditorland/wind";
 ```
 
 **Build command**:
@@ -572,7 +572,7 @@ pnpm run dev # Astro dev server with HMR
 **Import pattern**:
 
 ```typescript
-import { Install } from "/Static/Wind/Function/Install.js"
+import { Install } from "/Static/Wind/Function/Install.js";
 ```
 
 **Build command**:

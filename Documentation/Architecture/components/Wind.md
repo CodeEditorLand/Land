@@ -199,32 +199,33 @@ Wind services follow a consistent Effect-TS pattern:
 ```typescript
 // Service interface definition
 export interface ServiceService {
-  readonly operation: (input: Input) => Effect.Effect<Output, Error, Context>
+	readonly operation: (input: Input) => Effect.Effect<Output, Error, Context>;
 }
 
 // Live implementation
 export const ServiceLive = Layer.effect(
-  ServiceService,
-  Effect.gen(function* () {
-    return {
-      operation: (input) => Effect.gen(function* () {
-        // Implementation using Effect
-        const result = yield* someOperation(input)
-        return result
-      })
-    }
-  })
-)
+	ServiceService,
+	Effect.gen(function* () {
+		return {
+			operation: (input) =>
+				Effect.gen(function* () {
+					// Implementation using Effect
+					const result = yield* someOperation(input);
+					return result;
+				}),
+		};
+	}),
+);
 
 // Mock implementation for testing
 export const ServiceMock = Layer.effect(
-  ServiceService,
-  Effect.gen(function* () {
-    return {
-      operation: (input) => Effect.succeed(mockOutput)
-    }
-  })
-)
+	ServiceService,
+	Effect.gen(function* () {
+		return {
+			operation: (input) => Effect.succeed(mockOutput),
+		};
+	}),
+);
 ```
 
 ### Error Handling
@@ -233,20 +234,26 @@ Each service includes typed error handling:
 
 ```typescript
 // Error types
-export class ServiceOperationError extends Data.TaggedError("ServiceOperationError")<{
-  readonly message: string
-  readonly cause: unknown
+export class ServiceOperationError extends Data.TaggedError(
+	"ServiceOperationError",
+)<{
+	readonly message: string;
+	readonly cause: unknown;
 }> {}
 
-export class ServiceNotFoundError extends Data.TaggedError("ServiceNotFoundError")<{
-  readonly message: string
+export class ServiceNotFoundError extends Data.TaggedError(
+	"ServiceNotFoundError",
+)<{
+	readonly message: string;
 }> {}
 
 // Error handling in service
-operation: (input) => Effect.tryPromise({
-  try: () => riskyOperation(input),
-  catch: (cause) => new ServiceOperationError({ message: "Operation failed", cause })
-})
+operation: (input) =>
+	Effect.tryPromise({
+		try: () => riskyOperation(input),
+		catch: (cause) =>
+			new ServiceOperationError({ message: "Operation failed", cause }),
+	});
 ```
 
 ### Service Layers
@@ -256,31 +263,32 @@ Services are composed into layers:
 ```typescript
 // Platform-specific layers
 export const TauriLiveLayer = Layer.mergeAll(
-  IPC.IPCServiceLive,
-  Mountain.MountainServiceLive,
-  Configuration.ConfigurationServiceLive
-)
+	IPC.IPCServiceLive,
+	Mountain.MountainServiceLive,
+	Configuration.ConfigurationServiceLive,
+);
 
-export const ElectronLiveLayer = Layer.mergeAll(
-  // Electron-specific implementations
-)
+export const ElectronLiveLayer = Layer
+	.mergeAll
+	// Electron-specific implementations
+	();
 
 // Test layer
 export const TestLiveLayer = Layer.mergeAll(
-  IPC.IPCServiceMock,
-  Mountain.MountainServiceMock,
-  Configuration.ConfigurationServiceMock
-)
+	IPC.IPCServiceMock,
+	Mountain.MountainServiceMock,
+	Configuration.ConfigurationServiceMock,
+);
 
 // Complete application layer
 export const AppLiveLayer = Layer.mergeAll(
-  TauriLiveLayer,
-  StatusBar.StatusBarServiceLive,
-  ActivityBar.ActivityBarServiceLive,
-  Sidebar.SidebarServiceLive,
-  Panel.PanelServiceLive,
-  // ... other services
-)
+	TauriLiveLayer,
+	StatusBar.StatusBarServiceLive,
+	ActivityBar.ActivityBarServiceLive,
+	Sidebar.SidebarServiceLive,
+	Panel.PanelServiceLive,
+	// ... other services
+);
 ```
 
 ---
@@ -297,16 +305,16 @@ The preload script provides minimal IPC functionality and VSCode API shims:
 ```typescript
 // VSCode API shim
 const vscode = {
-  postMessage: (message: unknown) => {
-    ipcRenderer.send('vscode-message', message)
-  },
-  onMessage: (callback: Function) => {
-    ipcRenderer.on('vscode-message', callback)
-  }
-}
+	postMessage: (message: unknown) => {
+		ipcRenderer.send("vscode-message", message);
+	},
+	onMessage: (callback: Function) => {
+		ipcRenderer.on("vscode-message", callback);
+	},
+};
 
 // Expose to window
-window.vscode = vscode
+window.vscode = vscode;
 ```
 
 ### IPC Service
@@ -317,26 +325,37 @@ The IPC service wraps Tauri's invoke API with Effect-TS:
 
 ```typescript
 export const IPCServiceLive = Layer.effect(
-  IPCService,
-  Effect.gen(function* () {
-    return {
-      invoke: <T>(command: string, args?: unknown) =>
-        Effect.tryPromise({
-          try: async () => {
-            return await window.__TAURI_INVOKE__(command, args) as T
-          },
-          catch: (cause) => new IPCError({ message: `IPC invoke failed: ${command}`, cause })
-        }),
-      on: (channel: string, listener: Function) =>
-        Effect.tryPromise({
-          try: async () => {
-            return await window.__TAURI_LISTEN__(channel, listener)
-          },
-          catch: (cause) => new IPCError({ message: `IPC listen failed: ${channel}`, cause })
-        })
-    }
-  })
-)
+	IPCService,
+	Effect.gen(function* () {
+		return {
+			invoke: <T>(command: string, args?: unknown) =>
+				Effect.tryPromise({
+					try: async () => {
+						return (await window.__TAURI_INVOKE__(
+							command,
+							args,
+						)) as T;
+					},
+					catch: (cause) =>
+						new IPCError({
+							message: `IPC invoke failed: ${command}`,
+							cause,
+						}),
+				}),
+			on: (channel: string, listener: Function) =>
+				Effect.tryPromise({
+					try: async () => {
+						return await window.__TAURI_LISTEN__(channel, listener);
+					},
+					catch: (cause) =>
+						new IPCError({
+							message: `IPC listen failed: ${channel}`,
+							cause,
+						}),
+				}),
+		};
+	}),
+);
 ```
 
 ---
@@ -426,23 +445,23 @@ The bootstrap service manages the initialization sequence:
 
 ```typescript
 export const BootstrapService = {
-  run: Effect.gen(function* () {
-    // Stage 1: Environment detection
-    const env = yield* BootstrapService.detectEnvironment()
+	run: Effect.gen(function* () {
+		// Stage 1: Environment detection
+		const env = yield* BootstrapService.detectEnvironment();
 
-    // Stage 2: Configuration loading
-    const config = yield* BootstrapService.loadConfiguration()
+		// Stage 2: Configuration loading
+		const config = yield* BootstrapService.loadConfiguration();
 
-    // Stage 3: Service initialization
-    const services = yield* BootstrapService.initializeServices(config)
+		// Stage 3: Service initialization
+		const services = yield* BootstrapService.initializeServices(config);
 
-    // Stage 4: Service registration
-    yield* BootstrapService.registerServices(services)
+		// Stage 4: Service registration
+		yield* BootstrapService.registerServices(services);
 
-    // Stage 5: Ready state
-    return { env, config, services, status: 'ready' }
-  })
-}
+		// Stage 5: Ready state
+		return { env, config, services, status: "ready" };
+	}),
+};
 ```
 
 ---
@@ -504,13 +523,13 @@ Element/Sky/Target/Static/Wind/     # Copied from wind/Target
 Development uses npm package imports:
 
 ```typescript
-import { Install } from "@codeeditorland/wind"
+import { Install } from "@codeeditorland/wind";
 ```
 
 Production uses static file URLs:
 
 ```typescript
-import { Install } from "/Static/Wind/Function/Install.js"
+import { Install } from "/Static/Wind/Function/Install.js";
 ```
 
 ---
@@ -566,6 +585,219 @@ Wind provides VSCode API compatibility through polyfills and services:
 | [`../Element/Wind/Source/Effect/Sidebar/Layer/SidebarLive.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Sidebar/Layer/SidebarLive.ts)                 | Sidebar implementation                 |
 | [`../Element/Wind/Source/Effect/Panel/Layer/PanelLive.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Panel/Layer/PanelLive.ts)                         | Panel implementation                   |
 | [`../Element/Wind/Source/Function/Install/Function/Install.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Function/Install/Function/Install.ts)               | Installation function                  |
+
+---
+
+## Known Issues and TODOs
+
+> **Reference**: See
+> [`../recommendations/RefactoringPriorities.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/recommendations/RefactoringPriorities.md)
+> for complete prioritization details and impact analysis.
+
+---
+
+### High Priority Issues
+
+#### Service Error Handling Standardization
+
+**Impact**: Inconsistent error handling across services makes debugging
+difficult, provides poor user feedback, and hinders error recovery mechanisms.
+
+**User Experience**: Errors may not propagate correctly to the UI, leading to
+silent failures or confusing error messages that don't help users resolve
+issues.
+
+**Tasks**:
+
+- [ ] Establish consistent error types for all services
+    - Define base error hierarchy extending `Data.TaggedError`
+    - Create service-specific error types with proper context
+    - Implement error serialization for IPC communication
+- [ ] Improve error messages and context
+    - Add detailed error descriptions with actionable guidance
+    - Include error context (operation, parameters, stack trace)
+    - Map technical errors to user-friendly messages
+- [ ] Implement error recovery mechanisms
+    - Add retry logic for transient errors
+    - Implement fallback mechanisms where appropriate
+    - Add circuit breaker pattern for failing services
+- [ ] Create error documentation
+    - Document all error types and their meanings
+    - Add troubleshooting guide for common errors
+    - Create error code reference for quick lookup
+
+**Estimated Effort**: 2 weeks
+
+**Dependencies**:
+
+- Effect-TS error handling patterns
+- IPC error serialization
+
+---
+
+#### Bootstrap System Reliability
+
+**Impact**: Bootstrap system failures can prevent Wind services from
+initializing, making the entire application unusable.
+
+**User Experience**: Users may experience startup failures with limited error
+information, requiring full application restart or configuration changes.
+
+**Tasks**:
+
+- [ ] Add comprehensive bootstrap error handling
+    - Catch and report errors at each bootstrap stage
+    - Provide detailed error messages for failed stages
+    - Implement rollback when bootstrap fails mid-process
+- [ ] Implement bootstrap health checking
+    - Verify all services initialized successfully
+    - Check service dependencies are available
+    - Add health endpoints for monitoring
+- [ ] Add bootstrap telemetry
+    - Track bootstrap duration per stage
+    - Monitor bootstrap success/failure rates
+    - Collect bootstrap error patterns for analysis
+- [ ] Create bootstrap recovery mechanisms
+    - Implement automatic retry for failed stages
+    - Add bootstrap cache for faster subsequent startups
+    - Create bootstrap debug mode for troubleshooting
+
+**Estimated Effort**: 2 weeks
+
+**Dependencies**:
+
+- Effect-TS runtime
+- Health monitoring infrastructure
+
+---
+
+### Medium Priority Issues
+
+#### Service Performance Optimization
+
+**Impact**: Some services may have performance bottlenecks that affect overall
+application responsiveness, especially with large workspaces or complex
+operations.
+
+**User Experience**: Users may experience sluggish UI, delayed updates, or
+timeouts when performing certain operations.
+
+**Tasks**:
+
+- [ ] Profile and identify performance bottlenecks
+    - Identify slow service operations
+    - Measure service call latency
+    - Analyze memory usage patterns
+- [ ] Implement performance optimizations
+    - Add caching for frequently accessed data
+    - Optimize service layer composition
+    - Implement lazy loading for heavy services
+- [ ] Add performance monitoring
+    - Track service execution times
+    - Monitor service memory usage
+    - Aggregate performance metrics
+- [ ] Create performance benchmarks
+    - Establish baseline performance metrics
+    - Create regression tests for performance
+    - Document performance expectations
+
+**Estimated Effort**: 2-3 weeks
+
+---
+
+#### Polyfill Completeness and Testing
+
+**Impact**: Electron API polyfills may not cover all edge cases, leading to
+inconsistent behavior when using VSCode extensions that depend on these APIs.
+
+**User Experience**: Some VSCode extensions may not work correctly or may have
+limited functionality due to incomplete polyfill implementations.
+
+**Tasks**:
+
+- [ ] Audit polyfill coverage
+    - Compare polyfill implementations with actual Electron API
+    - Identify missing or incomplete polyfills
+    - Create polyfill compatibility matrix
+- [ ] Add comprehensive polyfill tests
+    - Unit tests for each polyfill function
+    - Integration tests with VSCode extensions
+    - Edge case testing for polyfill edge cases
+- [ ] Improve polyfill error handling
+    - Add graceful degradation for unsupported features
+    - Log warnings when polyfills are used with known limitations
+    - Provide user guidance for polyfill-related issues
+- [ ] Document polyfill limitations
+    - Clearly document which Electron features are not supported
+    - Provide workarounds where possible
+    - Track polyfill compatibility issues with VSCode updates
+
+**Estimated Effort**: 1-2 weeks
+
+---
+
+### Low Priority Issues
+
+#### Service Documentation Enhancement
+
+**Impact**: Service documentation could be more detailed with examples and usage
+guides, making it easier for developers to understand and extend Wind services.
+
+**User Experience**: Developers may struggle to understand how to use or extend
+Wind services, slowing down development and integration efforts.
+
+**Tasks**:
+
+- [ ] Add comprehensive service API documentation
+    - Document all service interfaces and methods
+    - Add TypeScript examples for each service
+    - Include error documentation for each operation
+- [ ] Create service usage guides
+    - Getting started guide for new services
+    - Examples of common service patterns
+    - Best practices for service implementation
+- [ ] Add service architecture documentation
+    - Explain Effect-TS patterns used in services
+    - Document service layer composition
+    - Create service dependency diagrams
+- [ ] Create service development tutorial
+    - Step-by-step guide for creating a new service
+    - Example service implementation
+    - Testing guide for services
+
+**Estimated Effort**: 1-2 weeks
+
+---
+
+#### TypeScript Type Safety Improvements
+
+**Impact**: Some services may have loosely typed interfaces, reducing the
+benefits of TypeScript's type checking and increasing the risk of runtime
+errors.
+
+**User Experience**: Developers may encounter runtime type errors that could
+have been caught at compile time, increasing debugging time.
+
+**Tasks**:
+
+- [ ] Tighten type definitions
+    - Review all service interfaces for loose typing
+    - Add stricter type constraints where appropriate
+    - Eliminate `any` types where possible
+- [ ] Add type guards and validation
+    - Implement runtime type checking for critical paths
+    - Add validation for IPC-bound data
+    - Create type guards for complex types
+- [ ] Improve type inference
+    - Leverage Effect-TS type inference where possible
+    - Add type annotations for better IDE support
+    - Document type patterns used in services
+- [ ] Add type testing
+    - Create type-level tests for service interfaces
+    - Test type compatibility with IPC serialization
+    - Validate type correctness across service boundaries
+
+**Estimated Effort**: 1 week
 
 ---
 

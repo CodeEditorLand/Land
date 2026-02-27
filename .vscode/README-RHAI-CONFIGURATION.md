@@ -59,42 +59,42 @@ configuration and Rhai scripts for dynamic environment variable resolution.
 
 ### Configuration Files
 
-1. **`.vscode/land-config.json`**
+1. **[`.vscode/land-config.json`](https://github.com/CodeEditorLand/Land/tree/Current/.vscode/land-config.json:1)**
     - Single source of truth for all build configuration
     - JSON5 format (supports comments and trailing commas)
     - Defines profiles, templates, and build commands
 
-2. **`.vscode/scripts/profiles/debug-profile.rhai`**
+2. **[`.vscode/scripts/profiles/debug-profile.rhai`](https://github.com/CodeEditorLand/Land/tree/Current/.vscode/scripts/profiles/debug-profile.rhai:1)**
     - Debug build configuration script
     - Dynamic env var calculation
     - Pre/post build hooks
 
-3. **`.vscode/scripts/profiles/production-profile.rhai`**
+3. **[`.vscode/scripts/profiles/production-profile.rhai`](https://github.com/CodeEditorLand/Land/tree/Current/.vscode/scripts/profiles/production-profile.rhai:1)**
     - Production build configuration script
     - Optimized settings for release
 
-4. **`.vscode/scripts/profiles/release-profile.rhai`**
+4. **[`.vscode/scripts/profiles/release-profile.rhai`](https://github.com/CodeEditorLand/Land/tree/Current/.vscode/scripts/profiles/release-profile.rhai:1)**
     - Release build configuration script
     - Full packaging and signing steps
 
 ### Rust Modules
 
-1. **`Element/Maintain/Source/Build/Rhai/mod.rs`**
+1. **[`Element/Maintain/Source/Build/Rhai/mod.rs`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Maintain/Source/Build/Rhai/mod.rs:1)**
     - Rhai engine initialization
     - Utility function registration
     - Public API exports
 
-2. **`Element/Maintain/Source/Build/Rhai/ConfigLoader.rs`**
+2. **[`Element/Maintain/Source/Build/Rhai/ConfigLoader.rs`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Maintain/Source/Build/Rhai/ConfigLoader.rs:1)**
     - Load and parse land-config.json
     - Extract profiles and templates
     - Profile validation
 
-3. **`Element/Maintain/Source/Build/Rhai/ScriptRunner.rs`**
+3. **[`Element/Maintain/Source/Build/Rhai/ScriptRunner.rs`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Maintain/Source/Build/Rhai/ScriptRunner.rs:1)**
     - Execute Rhai scripts
     - Extract env vars from scripts
     - Handle script hooks
 
-4. **`Element/Maintain/Source/Build/Rhai/EnvironmentResolver.rs`**
+4. **[`Element/Maintain/Source/Build/Rhai/EnvironmentResolver.rs`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Maintain/Source/Build/Rhai/EnvironmentResolver.rs:1)**
     - Merge env vars from all sources
     - Variable expansion (${VAR})
     - Apply to process environment
@@ -105,10 +105,10 @@ configuration and Rhai scripts for dynamic environment variable resolution.
 
 ```bash
 # Using the existing shell script (maintains compatibility)
-./Maintain/Debug.sh
+[`./Maintain/Debug.sh`](https://github.com/CodeEditorLand/Land/tree/Current/Maintain/Debug.sh:1)
 
 # Or manually with the new system
-./Target/release/Maintain --profile debug -- pnpm tauri build --debug
+[`./Target/release/Maintain`](https://github.com/CodeEditorLand/Land/tree/Current/Target/release/Maintain:1) --profile debug -- pnpm tauri build --debug
 ```
 
 ### Rhai Script Structure
@@ -149,7 +149,7 @@ export get_env_vars, pre_build_hook, post_build_hook, validate_environment;
 
 ### Adding a New Profile
 
-1. Add profile to `.vscode/land-config.json`:
+1. Add profile to [`.vscode/land-config.json`](https://github.com/CodeEditorLand/Land/tree/Current/.vscode/land-config.json:1):
 
 ```json
 {
@@ -166,12 +166,12 @@ export get_env_vars, pre_build_hook, post_build_hook, validate_environment;
 }
 ```
 
-2. Create the Rhai script `.vscode/scripts/profiles/custom-profile.rhai`
+2. Create the Rhai script [`.vscode/scripts/profiles/custom-profile.rhai`](https://github.com/CodeEditorLand/Land/tree/Current/.vscode/scripts/profiles/custom-profile.rhai:1)
 
 3. Use the new profile:
 
 ```bash
-./Target/release/Maintain --profile custom -- pnpm tauri build
+[./Target/release/Maintain](https://github.com/CodeEditorLand/Land/tree/Current/Target/release/Maintain:1) --profile custom -- pnpm tauri build
 ```
 
 ## Environment Variable Resolution Order

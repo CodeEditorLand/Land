@@ -425,7 +425,7 @@ flowchart TD
 ### Workflow 3: Language Feature (Hover)
 
 **Source**:
-[`Documentation/GitHub/Workflow/InvokingALanguageFeatureHoverProvider.md`](<https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/%3C../Workflow/Invoking%20a%20Language%20Feature%20(Hover%20Provider).md%3E>)
+[`Documentation/GitHub/Workflow/InvokingALanguageFeatureHoverProvider.md`](<https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/Invoking%20a%20Language%20Feature%20(Hover%20Provider).md>)
 
 **Components**: Sky → Wind → Mountain → Cocoon → Mountain → Wind → Sky
 
@@ -489,7 +489,7 @@ flowchart TD
 ### Workflow 6: Source Control Management
 
 **Source**:
-[`Documentation/GitHub/Workflow/SourceControlManagementSCM.md`](<https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/integration/%3C../Workflow/Source%20Control%20Management%20(SCM).md%3E>)
+[`Documentation/GitHub/Workflow/SourceControlManagementSCM.md`](<https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/Source%20Control%20Management%20(SCM).md>)
 
 **Components**: Cocoon → Mountain → Cocoon → Mountain → Wind → Sky
 

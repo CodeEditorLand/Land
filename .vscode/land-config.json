@@ -1,1079 +1,1103 @@
 {
-  /**
-   * Land Configuration - Single Source of Truth
-   * 
-   * This file serves as the central configuration for the entire monorepo:
-   * - Build process configuration
-   * - Environment variable management
-   * - Profile-based settings
-   * - Dynamic Rhai script integration
-   * - Workbench configuration
-   * - Feature flags
-   * - Binary configuration
-   * 
-   * Supported features:
-   * - Comments (lines starting with // or /**\/ blocks)
-   * - Trailing commas
-   * - Multiple configuration profiles
-   * - Template-based default values
-   * - Environment variable prefixes per crate
-   * 
-   * Version history:
-   * v1.2.0 - Added comprehensive environment variable inventory and CLI configuration
-   * v1.1.0 - Added workbench, features, and binary configuration
-   * v1.0.0 - Initial configuration structure
-   */
-   
-   "version": "1.2.0",
-   
-   /**
-    * Workbench Configuration
-    * Defines available workbenches and their feature sets.
-    */
-   "workbench": {
-    "default": "Browser",
-    "available": ["Browser", "Wind", "Mountain", "Electron", "BrowserProxy"],
-    "features": {
-      "Browser": {
-        "description": "Standard web-based VSCode workbench",
-        "coverage": "70-80%",
-        "complexity": "Low",
-        "polyfills": false,
-        "mountain_providers": false,
-        "wind_services": false,
-        "electron_apis": false,
-        "recommended_for": ["Web deployment", "Quick testing", "Minimal setup"]
-      },
-      "BrowserProxy": {
-        "description": "Browser workbench with Mountain services proxy",
-        "coverage": "70-80%",
-        "complexity": "Medium",
-        "polyfills": false,
-        "mountain_providers": true,
-        "wind_services": false,
-        "electron_apis": false,
-        "recommended_for": ["Proxy-based deployment", "Service delegation"]
-      },
-      "Mountain": {
-        "description": "Browser workbench with direct Mountain providers (RECOMMENDED)",
-        "coverage": "80-90%",
-        "complexity": "Medium",
-        "polyfills": true,
-        "mountain_providers": true,
-        "wind_services": true,
-        "electron_apis": false,
-        "recommended_for": ["Tauri desktop", "Production use", "Maximum compatibility"],
-        "recommended": true
-      },
-      "Wind": {
-        "description": "Native Wind-based workbench with custom UI",
-        "coverage": "60-70%",
-        "complexity": "High",
-        "polyfills": true,
-        "mountain_providers": false,
-        "wind_services": true,
-        "electron_apis": false,
-        "recommended_for": ["Custom UI", "Experimental features"]
-      },
-      "Electron": {
-        "description": "Full Electron workbench with complete polyfills",
-        "coverage": "95%+",
-        "complexity": "High",
-        "polyfills": true,
-        "mountain_providers": false,
-        "wind_services": true,
-        "electron_apis": true,
-        "recommended_for": ["Maximum VSCode compatibility", "Extension support"]
-      }
-    }
-  },
+	/**
+	 * Land Configuration - Single Source of Truth
+	 *
+	 * This file serves as the central configuration for the entire monorepo:
+	 * - Build process configuration
+	 * - Environment variable management
+	 * - Profile-based settings
+	 * - Dynamic Rhai script integration
+	 * - Workbench configuration
+	 * - Feature flags
+	 * - Binary configuration
+	 *
+	 * Supported features:
+	 * - Comments (lines starting with // or /**\/ blocks)
+	 * - Trailing commas
+	 * - Multiple configuration profiles
+	 * - Template-based default values
+	 * - Environment variable prefixes per crate
+	 *
+	 * Version history:
+	 * v1.2.0 - Added comprehensive environment variable inventory and CLI configuration
+	 * v1.1.0 - Added workbench, features, and binary configuration
+	 * v1.0.0 - Initial configuration structure
+	 */
 
-  /**
-   * Feature Flags
-   * Global feature toggles that can be enabled/disabled per profile.
-   */
-  "features": {
-    "tauri_ipc": {
-      "description": "Enable Tauri IPC communication",
-      "default": true,
-      "depends_on": []
-    },
-    "electron_polyfills": {
-      "description": "Enable Electron API polyfills",
-      "default": false,
-      "depends_on": []
-    },
-    "wind_services": {
-      "description": "Enable Wind service integration",
-      "default": true,
-      "depends_on": []
-    },
-    "mountain_providers": {
-      "description": "Enable Mountain provider integration",
-      "default": true,
-      "depends_on": ["wind_services"]
-    },
-    "vscode_protocols": {
-      "description": "Enable VSCode protocol handlers",
-      "default": true,
-      "depends_on": []
-    },
-    "webview_panels": {
-      "description": "Enable webview panel support",
-      "default": true,
-      "depends_on": []
-    },
-    "integrated_terminal": {
-      "description": "Enable integrated terminal",
-      "default": true,
-      "depends_on": ["wind_services"]
-    },
-    "language_servers": {
-      "description": "Enable language server support",
-      "default": true,
-      "depends_on": []
-    },
-    "debugger_integration": {
-      "description": "Enable debugger integration",
-      "default": true,
-      "depends_on": ["language_servers"]
-    },
-    "source_control": {
-      "description": "Enable source control integration",
-      "default": true,
-      "depends_on": []
-    },
-    "extension_host": {
-      "description": "Enable extension host support",
-      "default": true,
-      "depends_on": []
-    },
-    "remote_development": {
-      "description": "Enable remote development support",
-      "default": false,
-      "depends_on": []
-    }
-  },
+	"version": "1.2.0",
 
-  /**
-   * Binary Configuration
-   * Settings for binary builds and signing.
-   */
-  "binary": {
-    "name_template": "{Environment}_{Dependency}_{NodeVersion}_Mountain",
-    "identifier_template": "land.editor.binary.{env}.{dependency}.node{version}",
-    "version_format": "semver",
-    "sign": {
-      "macos": {
-        "identity": "",
-        "entitlements": "./Entitlements.plist",
-        "hardened_runtime": true,
-        "gatekeeper_assess": false
-      },
-      "windows": {
-        "certificate": "",
-        "timestamp_server": "http://timestamp.digicert.com",
-        "tsa_can_only_access_urls": []
-      },
-      "linux": {
-        "gpg_key": "",
-        "gpg_passphrase_env": "GPG_PASSPHRASE"
-      }
-    },
-    "notarize": {
-      "macos": {
-        "apple_id": "",
-        "password_env": "APPLE_ID_PASSWORD",
-        "team_id": ""
-      }
-    },
-    "updater": {
-      "enabled": true,
-      "endpoints": [
-        "https://releases.editor.land/{{target}}/{{arch}}/{{current_version}}"
-      ],
-      "pubkey": ""
-    }
-  },
+	/**
+	 * Workbench Configuration
+	 * Defines available workbenches and their feature sets.
+	 */
+	"workbench": {
+		"default": "Browser",
+		"available": [
+			"Browser",
+			"Wind",
+			"Mountain",
+			"Electron",
+			"BrowserProxy"
+		],
+		"features": {
+			"Browser": {
+				"description": "Standard web-based VSCode workbench",
+				"coverage": "70-80%",
+				"complexity": "Low",
+				"polyfills": false,
+				"mountain_providers": false,
+				"wind_services": false,
+				"electron_apis": false,
+				"recommended_for": [
+					"Web deployment",
+					"Quick testing",
+					"Minimal setup"
+				]
+			},
+			"BrowserProxy": {
+				"description": "Browser workbench with Mountain services proxy",
+				"coverage": "70-80%",
+				"complexity": "Medium",
+				"polyfills": false,
+				"mountain_providers": true,
+				"wind_services": false,
+				"electron_apis": false,
+				"recommended_for": [
+					"Proxy-based deployment",
+					"Service delegation"
+				]
+			},
+			"Mountain": {
+				"description": "Browser workbench with direct Mountain providers (RECOMMENDED)",
+				"coverage": "80-90%",
+				"complexity": "Medium",
+				"polyfills": true,
+				"mountain_providers": true,
+				"wind_services": true,
+				"electron_apis": false,
+				"recommended_for": [
+					"Tauri desktop",
+					"Production use",
+					"Maximum compatibility"
+				],
+				"recommended": true
+			},
+			"Wind": {
+				"description": "Native Wind-based workbench with custom UI",
+				"coverage": "60-70%",
+				"complexity": "High",
+				"polyfills": true,
+				"mountain_providers": false,
+				"wind_services": true,
+				"electron_apis": false,
+				"recommended_for": ["Custom UI", "Experimental features"]
+			},
+			"Electron": {
+				"description": "Full Electron workbench with complete polyfills",
+				"coverage": "95%+",
+				"complexity": "High",
+				"polyfills": true,
+				"mountain_providers": false,
+				"wind_services": true,
+				"electron_apis": true,
+				"recommended_for": [
+					"Maximum VSCode compatibility",
+					"Extension support"
+				]
+			}
+		}
+	},
 
-  /**
-   * Configuration profiles for different build scenarios.
-   * Each profile contains static environment variables and optional Rhai script references.
-   */
-  "profiles": {
-    /**
-     * Debug build profile
-     * Optimized for development with verbose logging and source maps
-     */
-    "debug": {
-      "description": "Debug build profile with full logging and development features",
-      "workbench": "Browser",
-      "env": {
-        "Debug": "true",
-        "Browser": "true",
-        "Bundle": "true",
-        "Clean": "true",
-        "Compile": "false",
-        "NODE_ENV": "development",
-        "NODE_VERSION": "22",
-        "NODE_OPTIONS": "--max-old-space-size=16384",
-        "RUST_LOG": "debug",
-        "AIR_LOG_JSON": "false",
-        "AIR_LOG_FILE": "",
-        "Level": "silent",
-        "Dependency": "Microsoft/VSCode"
-      },
-      "features": {
-        "tauri_ipc": true,
-        "electron_polyfills": false,
-        "wind_services": false,
-        "mountain_providers": false
-      },
-      "rhai_script": "scripts/profiles/debug-profile.rhai"
-    },
+	/**
+	 * Feature Flags
+	 * Global feature toggles that can be enabled/disabled per profile.
+	 */
+	"features": {
+		"tauri_ipc": {
+			"description": "Enable Tauri IPC communication",
+			"default": true,
+			"depends_on": []
+		},
+		"electron_polyfills": {
+			"description": "Enable Electron API polyfills",
+			"default": false,
+			"depends_on": []
+		},
+		"wind_services": {
+			"description": "Enable Wind service integration",
+			"default": true,
+			"depends_on": []
+		},
+		"mountain_providers": {
+			"description": "Enable Mountain provider integration",
+			"default": true,
+			"depends_on": ["wind_services"]
+		},
+		"vscode_protocols": {
+			"description": "Enable VSCode protocol handlers",
+			"default": true,
+			"depends_on": []
+		},
+		"webview_panels": {
+			"description": "Enable webview panel support",
+			"default": true,
+			"depends_on": []
+		},
+		"integrated_terminal": {
+			"description": "Enable integrated terminal",
+			"default": true,
+			"depends_on": ["wind_services"]
+		},
+		"language_servers": {
+			"description": "Enable language server support",
+			"default": true,
+			"depends_on": []
+		},
+		"debugger_integration": {
+			"description": "Enable debugger integration",
+			"default": true,
+			"depends_on": ["language_servers"]
+		},
+		"source_control": {
+			"description": "Enable source control integration",
+			"default": true,
+			"depends_on": []
+		},
+		"extension_host": {
+			"description": "Enable extension host support",
+			"default": true,
+			"depends_on": []
+		},
+		"remote_development": {
+			"description": "Enable remote development support",
+			"default": false,
+			"depends_on": []
+		}
+	},
 
-    /**
-     * Debug Wind Profile
-     * Debug build with Wind workbench
-     */
-    "debug-wind": {
-      "description": "Debug build with Wind workbench for native UI development",
-      "workbench": "Wind",
-      "env": {
-        "Debug": "true",
-        "Wind": "true",
-        "Bundle": "true",
-        "Clean": "true",
-        "Compile": "false",
-        "NODE_ENV": "development",
-        "NODE_VERSION": "22",
-        "NODE_OPTIONS": "--max-old-space-size=16384",
-        "RUST_LOG": "debug",
-        "Level": "silent",
-        "Dependency": "Microsoft/VSCode"
-      },
-      "features": {
-        "tauri_ipc": true,
-        "electron_polyfills": true,
-        "wind_services": true,
-        "mountain_providers": false
-      },
-      "rhai_script": "scripts/profiles/debug-wind-profile.rhai"
-    },
+	/**
+	 * Binary Configuration
+	 * Settings for binary builds and signing.
+	 */
+	"binary": {
+		"name_template": "{Environment}_{Dependency}_{NodeVersion}_Mountain",
+		"identifier_template": "land.editor.binary.{env}.{dependency}.node{version}",
+		"version_format": "semver",
+		"sign": {
+			"macos": {
+				"identity": "",
+				"entitlements": "./Entitlements.plist",
+				"hardened_runtime": true,
+				"gatekeeper_assess": false
+			},
+			"windows": {
+				"certificate": "",
+				"timestamp_server": "http://timestamp.digicert.com",
+				"tsa_can_only_access_urls": []
+			},
+			"linux": {
+				"gpg_key": "",
+				"gpg_passphrase_env": "GPG_PASSPHRASE"
+			}
+		},
+		"notarize": {
+			"macos": {
+				"apple_id": "",
+				"password_env": "APPLE_ID_PASSWORD",
+				"team_id": ""
+			}
+		},
+		"updater": {
+			"enabled": true,
+			"endpoints": [
+				"https://releases.editor.land/{{target}}/{{arch}}/{{current_version}}"
+			],
+			"pubkey": ""
+		}
+	},
 
-    /**
-     * Debug Mountain Profile (RECOMMENDED)
-     * Debug build with Mountain workbench - recommended for Tauri development
-     */
-    "debug-mountain": {
-      "description": "Debug build with Mountain workbench (RECOMMENDED for Tauri)",
-      "workbench": "Mountain",
-      "env": {
-        "Debug": "true",
-        "Mountain": "true",
-        "Bundle": "true",
-        "Clean": "true",
-        "Compile": "false",
-        "NODE_ENV": "development",
-        "NODE_VERSION": "22",
-        "NODE_OPTIONS": "--max-old-space-size=16384",
-        "RUST_LOG": "debug",
-        "Level": "silent",
-        "Dependency": "Microsoft/VSCode"
-      },
-      "features": {
-        "tauri_ipc": true,
-        "electron_polyfills": true,
-        "wind_services": true,
-        "mountain_providers": true
-      },
-      "rhai_script": "scripts/profiles/debug-mountain-profile.rhai"
-    },
+	/**
+	 * Configuration profiles for different build scenarios.
+	 * Each profile contains static environment variables and optional Rhai script references.
+	 */
+	"profiles": {
+		/**
+		 * Debug build profile
+		 * Optimized for development with verbose logging and source maps
+		 */
+		"debug": {
+			"description": "Debug build profile with full logging and development features",
+			"workbench": "Browser",
+			"env": {
+				"Debug": "true",
+				"Browser": "true",
+				"Bundle": "true",
+				"Clean": "true",
+				"Compile": "false",
+				"NODE_ENV": "development",
+				"NODE_VERSION": "22",
+				"NODE_OPTIONS": "--max-old-space-size=16384",
+				"RUST_LOG": "debug",
+				"AIR_LOG_JSON": "false",
+				"AIR_LOG_FILE": "",
+				"Level": "silent",
+				"Dependency": "Microsoft/VSCode"
+			},
+			"features": {
+				"tauri_ipc": true,
+				"electron_polyfills": false,
+				"wind_services": false,
+				"mountain_providers": false
+			},
+			"rhai_script": "scripts/profiles/debug-profile.rhai"
+		},
 
-    /**
-     * Debug Electron Profile
-     * Debug build with Electron workbench for maximum compatibility testing
-     */
-    "debug-electron": {
-      "description": "Debug build with Electron workbench for full API testing",
-      "workbench": "Electron",
-      "env": {
-        "Debug": "true",
-        "Electron": "true",
-        "Bundle": "true",
-        "Clean": "true",
-        "Compile": "false",
-        "NODE_ENV": "development",
-        "NODE_VERSION": "22",
-        "NODE_OPTIONS": "--max-old-space-size=16384",
-        "RUST_LOG": "debug",
-        "Level": "silent",
-        "Dependency": "Microsoft/VSCode"
-      },
-      "features": {
-        "tauri_ipc": true,
-        "electron_polyfills": true,
-        "wind_services": true,
-        "mountain_providers": false
-      },
-      "rhai_script": "scripts/profiles/debug-electron-profile.rhai"
-    },
+		/**
+		 * Debug Wind Profile
+		 * Debug build with Wind workbench
+		 */
+		"debug-wind": {
+			"description": "Debug build with Wind workbench for native UI development",
+			"workbench": "Wind",
+			"env": {
+				"Debug": "true",
+				"Wind": "true",
+				"Bundle": "true",
+				"Clean": "true",
+				"Compile": "false",
+				"NODE_ENV": "development",
+				"NODE_VERSION": "22",
+				"NODE_OPTIONS": "--max-old-space-size=16384",
+				"RUST_LOG": "debug",
+				"Level": "silent",
+				"Dependency": "Microsoft/VSCode"
+			},
+			"features": {
+				"tauri_ipc": true,
+				"electron_polyfills": true,
+				"wind_services": true,
+				"mountain_providers": false
+			},
+			"rhai_script": "scripts/profiles/debug-wind-profile.rhai"
+		},
 
-    /**
-     * Production build profile
-     * Optimized for release with minimal logging
-     */
-    "production": {
-      "description": "Production build profile optimized for release deployment",
-      "workbench": "Mountain",
-      "env": {
-        "Debug": "false",
-        "Mountain": "true",
-        "Bundle": "true",
-        "Clean": "true",
-        "Compile": "true",
-        "NODE_ENV": "production",
-        "NODE_VERSION": "22",
-        "NODE_OPTIONS": "--max-old-space-size=8192",
-        "RUST_LOG": "info",
-        "AIR_LOG_JSON": "false",
-        "Dependency": "Microsoft/VSCode"
-      },
-      "features": {
-        "tauri_ipc": true,
-        "electron_polyfills": true,
-        "wind_services": true,
-        "mountain_providers": true
-      },
-      "rhai_script": "scripts/profiles/production-profile.rhai"
-    },
+		/**
+		 * Debug Mountain Profile (RECOMMENDED)
+		 * Debug build with Mountain workbench - recommended for Tauri development
+		 */
+		"debug-mountain": {
+			"description": "Debug build with Mountain workbench (RECOMMENDED for Tauri)",
+			"workbench": "Mountain",
+			"env": {
+				"Debug": "true",
+				"Mountain": "true",
+				"Bundle": "true",
+				"Clean": "true",
+				"Compile": "false",
+				"NODE_ENV": "development",
+				"NODE_VERSION": "22",
+				"NODE_OPTIONS": "--max-old-space-size=16384",
+				"RUST_LOG": "debug",
+				"Level": "silent",
+				"Dependency": "Microsoft/VSCode"
+			},
+			"features": {
+				"tauri_ipc": true,
+				"electron_polyfills": true,
+				"wind_services": true,
+				"mountain_providers": true
+			},
+			"rhai_script": "scripts/profiles/debug-mountain-profile.rhai"
+		},
 
-    /**
-     * Release build profile
-     * Complete release with all packaging steps
-     */
-    "release": {
-      "description": "Release build profile with complete packaging and signing",
-      "workbench": "Mountain",
-      "env": {
-        "Debug": "false",
-        "Mountain": "true",
-        "Bundle": "true",
-        "Clean": "true",
-        "Compile": "true",
-        "NODE_ENV": "production",
-        "NODE_VERSION": "22",
-        "NODE_OPTIONS": "--max-old-space-size=8192",
-        "RUST_LOG": "warn",
-        "AIR_LOG_JSON": "false",
-        "Dependency": "Microsoft/VSCode"
-      },
-      "features": {
-        "tauri_ipc": true,
-        "electron_polyfills": true,
-        "wind_services": true,
-        "mountain_providers": true
-      },
-      "rhai_script": "scripts/profiles/release-profile.rhai"
-    },
+		/**
+		 * Debug Electron Profile
+		 * Debug build with Electron workbench for maximum compatibility testing
+		 */
+		"debug-electron": {
+			"description": "Debug build with Electron workbench for full API testing",
+			"workbench": "Electron",
+			"env": {
+				"Debug": "true",
+				"Electron": "true",
+				"Bundle": "true",
+				"Clean": "true",
+				"Compile": "false",
+				"NODE_ENV": "development",
+				"NODE_VERSION": "22",
+				"NODE_OPTIONS": "--max-old-space-size=16384",
+				"RUST_LOG": "debug",
+				"Level": "silent",
+				"Dependency": "Microsoft/VSCode"
+			},
+			"features": {
+				"tauri_ipc": true,
+				"electron_polyfills": true,
+				"wind_services": true,
+				"mountain_providers": false
+			},
+			"rhai_script": "scripts/profiles/debug-electron-profile.rhai"
+		},
 
-    /**
-     * Web Browser Profile
-     * For web-only deployment without Tauri
-     */
-    "web-browser": {
-      "description": "Web browser deployment profile without Tauri dependencies",
-      "workbench": "Browser",
-      "env": {
-        "Debug": "false",
-        "Browser": "true",
-        "Bundle": "true",
-        "Clean": "true",
-        "Compile": "true",
-        "NODE_ENV": "production",
-        "NODE_VERSION": "22",
-        "RUST_LOG": "warn",
-        "Dependency": "Microsoft/VSCode"
-      },
-      "features": {
-        "tauri_ipc": false,
-        "electron_polyfills": false,
-        "wind_services": false,
-        "mountain_providers": false
-      },
-      "rhai_script": "scripts/profiles/web-browser-profile.rhai"
-    },
+		/**
+		 * Production build profile
+		 * Optimized for release with minimal logging
+		 */
+		"production": {
+			"description": "Production build profile optimized for release deployment",
+			"workbench": "Mountain",
+			"env": {
+				"Debug": "false",
+				"Mountain": "true",
+				"Bundle": "true",
+				"Clean": "true",
+				"Compile": "true",
+				"NODE_ENV": "production",
+				"NODE_VERSION": "22",
+				"NODE_OPTIONS": "--max-old-space-size=8192",
+				"RUST_LOG": "info",
+				"AIR_LOG_JSON": "false",
+				"Dependency": "Microsoft/VSCode"
+			},
+			"features": {
+				"tauri_ipc": true,
+				"electron_polyfills": true,
+				"wind_services": true,
+				"mountain_providers": true
+			},
+			"rhai_script": "scripts/profiles/production-profile.rhai"
+		},
 
-    /**
-     * Bundler Preparation Profile
-     * Sets up environment for SWC or OXC bundler integration
-     */
-    "bundler-preparation": {
-      "description": "Prepares build system for SWC/OXC bundler integration",
-      "workbench": "Browser",
-      "env": {
-        "BUNDLER_TYPE": "swc",
-        "SWC_TARGET": "esnext",
-        "SWC_MODULE": "esnext",
-        "SWC_SOURCE_MAPS": "true",
-        "SWC_MINIFY": "false",
-        "SWC_TREE_SHAKING": "true"
-      },
-      "rhai_script": "scripts/bundler/bundler-preparation.rhai"
-    },
+		/**
+		 * Release build profile
+		 * Complete release with all packaging steps
+		 */
+		"release": {
+			"description": "Release build profile with complete packaging and signing",
+			"workbench": "Mountain",
+			"env": {
+				"Debug": "false",
+				"Mountain": "true",
+				"Bundle": "true",
+				"Clean": "true",
+				"Compile": "true",
+				"NODE_ENV": "production",
+				"NODE_VERSION": "22",
+				"NODE_OPTIONS": "--max-old-space-size=8192",
+				"RUST_LOG": "warn",
+				"AIR_LOG_JSON": "false",
+				"Dependency": "Microsoft/VSCode"
+			},
+			"features": {
+				"tauri_ipc": true,
+				"electron_polyfills": true,
+				"wind_services": true,
+				"mountain_providers": true
+			},
+			"rhai_script": "scripts/profiles/release-profile.rhai"
+		},
 
-    /**
-     * SWC Bundle Profile
-     * Uses SWC (Speedy Web Compiler) for high-performance bundling
-     */
-    "swc-bundle": {
-      "description": "SWC bundler for ultra-fast compilation and bundling",
-      "workbench": "Mountain",
-      "env": {
-        "BUNDLER_TYPE": "swc",
-        "SWC_TARGET": "es2022",
-        "SWC_MODULE": "esnext",
-        "SWC_SOURCE_MAPS": "true",
-        "SWC_MINIFY": "true",
-        "SWC_TREE_SHAKING": "true",
-        "NODE_ENV": "production",
-        "RUST_LOG": "info"
-      },
-      "rhai_script": "scripts/bundler/swc-bundle.rhai"
-    },
+		/**
+		 * Web Browser Profile
+		 * For web-only deployment without Tauri
+		 */
+		"web-browser": {
+			"description": "Web browser deployment profile without Tauri dependencies",
+			"workbench": "Browser",
+			"env": {
+				"Debug": "false",
+				"Browser": "true",
+				"Bundle": "true",
+				"Clean": "true",
+				"Compile": "true",
+				"NODE_ENV": "production",
+				"NODE_VERSION": "22",
+				"RUST_LOG": "warn",
+				"Dependency": "Microsoft/VSCode"
+			},
+			"features": {
+				"tauri_ipc": false,
+				"electron_polyfills": false,
+				"wind_services": false,
+				"mountain_providers": false
+			},
+			"rhai_script": "scripts/profiles/web-browser-profile.rhai"
+		},
 
-    /**
-     * OXC Bundle Profile
-     * Uses OXC (next-generation toolchain by Boshen) for bundling
-     */
-    "oxc-bundle": {
-      "description": "OXC bundler for next-generation JavaScript toolchain",
-      "workbench": "Mountain",
-      "env": {
-        "BUNDLER_TYPE": "oxc",
-        "OXC_TARGET": "es2022",
-        "OXC_MODULE": "esmodule",
-        "OXC_SOURCE_MAPS": "true",
-        "OXC_MINIFY": "true",
-        "OXC_TREE_SHAKING": "true",
-        "NODE_ENV": "production",
-        "RUST_LOG": "info"
-      },
-      "rhai_script": "scripts/bundler/oxc-bundle.rhai"
-    }
-  },
+		/**
+		 * Bundler Preparation Profile
+		 * Sets up environment for SWC or OXC bundler integration
+		 */
+		"bundler-preparation": {
+			"description": "Prepares build system for SWC/OXC bundler integration",
+			"workbench": "Browser",
+			"env": {
+				"BUNDLER_TYPE": "swc",
+				"SWC_TARGET": "esnext",
+				"SWC_MODULE": "esnext",
+				"SWC_SOURCE_MAPS": "true",
+				"SWC_MINIFY": "false",
+				"SWC_TREE_SHAKING": "true"
+			},
+			"rhai_script": "scripts/bundler/bundler-preparation.rhai"
+		},
 
-  /**
-   * Default template values used across all profiles.
-   * These serve as base values that can be overridden by profile-specific env vars.
-   */
-  "templates": {
-    "env": {
-      "MOUNTAIN_DIR": "Element/Mountain",
-      "MOUNTAIN_ORIGINAL_BASE_NAME": "Mountain",
-      "MOUNTAIN_BUNDLE_ID_PREFIX": "land.editor.binary",
-      "MOUNTAIN_HOST": "localhost",
-      "MOUNTAIN_PORT": "50051",
-      "MOUNTAIN_CONNECTION_TIMEOUT": "30000",
-      "MOUNTAIN_MAX_RETRIES": "3",
-      "MOUNTAIN_ENABLE_TLS": "false",
-      "MOUNTAIN_HEALTH_CHECK_PERIOD": "30000",
-      "AIR_LOG_DIR": "",
-      "VSCODE_APP_ROOT": ""
-    }
-  },
+		/**
+		 * SWC Bundle Profile
+		 * Uses SWC (Speedy Web Compiler) for high-performance bundling
+		 */
+		"swc-bundle": {
+			"description": "SWC bundler for ultra-fast compilation and bundling",
+			"workbench": "Mountain",
+			"env": {
+				"BUNDLER_TYPE": "swc",
+				"SWC_TARGET": "es2022",
+				"SWC_MODULE": "esnext",
+				"SWC_SOURCE_MAPS": "true",
+				"SWC_MINIFY": "true",
+				"SWC_TREE_SHAKING": "true",
+				"NODE_ENV": "production",
+				"RUST_LOG": "info"
+			},
+			"rhai_script": "scripts/bundler/swc-bundle.rhai"
+		},
 
-  /**
-   * Environment variable prefixes for each crate/package.
-   * Used to namespace environment variables and avoid conflicts.
-   */
-  "env_prefixes": {
-    "air": "AIR_",
-    "cocoon": "MOUNTAIN_",
-    "grove": "VSCODE_",
-    "maintain": "LAND_"
-  },
+		/**
+		 * OXC Bundle Profile
+		 * Uses OXC (next-generation toolchain by Boshen) for bundling
+		 */
+		"oxc-bundle": {
+			"description": "OXC bundler for next-generation JavaScript toolchain",
+			"workbench": "Mountain",
+			"env": {
+				"BUNDLER_TYPE": "oxc",
+				"OXC_TARGET": "es2022",
+				"OXC_MODULE": "esmodule",
+				"OXC_SOURCE_MAPS": "true",
+				"OXC_MINIFY": "true",
+				"OXC_TREE_SHAKING": "true",
+				"NODE_ENV": "production",
+				"RUST_LOG": "info"
+			},
+			"rhai_script": "scripts/bundler/oxc-bundle.rhai"
+		}
+	},
 
-  /**
-   * Build command templates.
-   * These are pre-configured command sequences that can be referenced by profiles.
-   */
-  "build_commands": {
-    "debug": "pnpm tauri build --debug",
-    "production": "pnpm tauri build",
-    "release": "pnpm tauri build",
-    "dev": "pnpm tauri dev",
-    "swc-bundle": "pnpm tauri build",
-    "oxc-bundle": "pnpm tauri build"
-  },
+	/**
+	 * Default template values used across all profiles.
+	 * These serve as base values that can be overridden by profile-specific env vars.
+	 */
+	"templates": {
+		"env": {
+			"MOUNTAIN_DIR": "Element/Mountain",
+			"MOUNTAIN_ORIGINAL_BASE_NAME": "Mountain",
+			"MOUNTAIN_BUNDLE_ID_PREFIX": "land.editor.binary",
+			"MOUNTAIN_HOST": "localhost",
+			"MOUNTAIN_PORT": "50051",
+			"MOUNTAIN_CONNECTION_TIMEOUT": "30000",
+			"MOUNTAIN_MAX_RETRIES": "3",
+			"MOUNTAIN_ENABLE_TLS": "false",
+			"MOUNTAIN_HEALTH_CHECK_PERIOD": "30000",
+			"AIR_LOG_DIR": "",
+			"VSCODE_APP_ROOT": ""
+		}
+	},
 
-  /**
-   * Environment Variable Inventory
-   * Complete list of all environment variables used across the build system.
-   * This serves as the single source of truth for environment variable management.
-   */
-  "environment_variables": {
-    /**
-     * Build Flags
-     * Boolean flags that control build behavior.
-     */
-    "build_flags": {
-      "Browser": {
-        "type": "boolean",
-        "description": "Enable Browser workbench build",
-        "values": ["true", "false"],
-        "config_path": "workbench.type.browser"
-      },
-      "Wind": {
-        "type": "boolean",
-        "description": "Enable Wind workbench build",
-        "values": ["true", "false"],
-        "config_path": "workbench.type.wind"
-      },
-      "Mountain": {
-        "type": "boolean",
-        "description": "Enable Mountain workbench build (RECOMMENDED)",
-        "values": ["true", "false"],
-        "config_path": "workbench.type.mountain"
-      },
-      "Electron": {
-        "type": "boolean",
-        "description": "Enable Electron workbench build",
-        "values": ["true", "false"],
-        "config_path": "workbench.type.electron"
-      },
-      "BrowserProxy": {
-        "type": "boolean",
-        "description": "Enable Browser workbench with Mountain proxy",
-        "values": ["true", "false"],
-        "config_path": "workbench.type.browser_proxy"
-      },
-      "Bundle": {
-        "type": "boolean",
-        "description": "Enable bundling of distribution packages",
-        "values": ["true", "false"],
-        "config_path": "build.bundle"
-      },
-      "Clean": {
-        "type": "boolean",
-        "description": "Perform clean build (remove artifacts)",
-        "values": ["true", "false"],
-        "config_path": "build.clean"
-      },
-      "Compile": {
-        "type": "boolean",
-        "description": "Enable compilation step",
-        "values": ["true", "false"],
-        "config_path": "build.compile"
-      },
-      "Debug": {
-        "type": "boolean",
-        "description": "Enable debug build mode",
-        "values": ["true", "false"],
-        "config_path": "build.debug"
-      }
-    },
+	/**
+	 * Environment variable prefixes for each crate/package.
+	 * Used to namespace environment variables and avoid conflicts.
+	 */
+	"env_prefixes": {
+		"air": "AIR_",
+		"cocoon": "MOUNTAIN_",
+		"grove": "VSCODE_",
+		"maintain": "LAND_"
+	},
 
-    /**
-     * Build Configuration
-     * String values for build configuration.
-     */
-    "build_config": {
-      "Level": {
-        "type": "string",
-        "description": "Build output log level",
-        "values": ["silent", "info", "debug", "trace"],
-        "default": "silent",
-        "config_path": "build.log_level"
-      },
-      "Dependency": {
-        "type": "string",
-        "description": "Dependency source (org/repo format)",
-        "values": ["Microsoft/VSCode", "tauri-apps/tauri", "CodeEditorLand/Editor"],
-        "default": "Microsoft/VSCode",
-        "config_path": "dependency.source"
-      }
-    },
+	/**
+	 * Build command templates.
+	 * These are pre-configured command sequences that can be referenced by profiles.
+	 */
+	"build_commands": {
+		"debug": "pnpm tauri build --debug",
+		"production": "pnpm tauri build",
+		"release": "pnpm tauri build",
+		"dev": "pnpm tauri dev",
+		"swc-bundle": "pnpm tauri build",
+		"oxc-bundle": "pnpm tauri build"
+	},
 
-    /**
-     * Node.js Configuration
-     * Node.js runtime settings.
-     */
-    "node": {
-      "NODE_ENV": {
-        "type": "string",
-        "description": "Node.js environment",
-        "values": ["development", "production", "test"],
-        "default": "development",
-        "config_path": "node.environment"
-      },
-      "NODE_VERSION": {
-        "type": "string",
-        "description": "Node.js version for sidecar bundling",
-        "values": ["22", "20", "18"],
-        "default": "22",
-        "config_path": "node.version"
-      },
-      "NODE_OPTIONS": {
-        "type": "string",
-        "description": "Node.js CLI options",
-        "default": "--max-old-space-size=16384",
-        "config_path": "node.options"
-      }
-    },
+	/**
+	 * Environment Variable Inventory
+	 * Complete list of all environment variables used across the build system.
+	 * This serves as the single source of truth for environment variable management.
+	 */
+	"environment_variables": {
+		/**
+		 * Build Flags
+		 * Boolean flags that control build behavior.
+		 */
+		"build_flags": {
+			"Browser": {
+				"type": "boolean",
+				"description": "Enable Browser workbench build",
+				"values": ["true", "false"],
+				"config_path": "workbench.type.browser"
+			},
+			"Wind": {
+				"type": "boolean",
+				"description": "Enable Wind workbench build",
+				"values": ["true", "false"],
+				"config_path": "workbench.type.wind"
+			},
+			"Mountain": {
+				"type": "boolean",
+				"description": "Enable Mountain workbench build (RECOMMENDED)",
+				"values": ["true", "false"],
+				"config_path": "workbench.type.mountain"
+			},
+			"Electron": {
+				"type": "boolean",
+				"description": "Enable Electron workbench build",
+				"values": ["true", "false"],
+				"config_path": "workbench.type.electron"
+			},
+			"BrowserProxy": {
+				"type": "boolean",
+				"description": "Enable Browser workbench with Mountain proxy",
+				"values": ["true", "false"],
+				"config_path": "workbench.type.browser_proxy"
+			},
+			"Bundle": {
+				"type": "boolean",
+				"description": "Enable bundling of distribution packages",
+				"values": ["true", "false"],
+				"config_path": "build.bundle"
+			},
+			"Clean": {
+				"type": "boolean",
+				"description": "Perform clean build (remove artifacts)",
+				"values": ["true", "false"],
+				"config_path": "build.clean"
+			},
+			"Compile": {
+				"type": "boolean",
+				"description": "Enable compilation step",
+				"values": ["true", "false"],
+				"config_path": "build.compile"
+			},
+			"Debug": {
+				"type": "boolean",
+				"description": "Enable debug build mode",
+				"values": ["true", "false"],
+				"config_path": "build.debug"
+			}
+		},
 
-    /**
-     * Rust Configuration
-     * Rust runtime settings.
-     */
-    "rust": {
-      "RUST_LOG": {
-        "type": "string",
-        "description": "Rust logging level",
-        "values": ["error", "warn", "info", "debug", "trace"],
-        "default": "info",
-        "config_path": "rust.log_level"
-      },
-      "RUST_BACKTRACE": {
-        "type": "string",
-        "description": "Rust backtrace mode",
-        "values": ["0", "1", "full"],
-        "default": "0",
-        "config_path": "rust.backtrace"
-      },
-      "MACOSX_DEPLOYMENT_TARGET": {
-        "type": "string",
-        "description": "macOS deployment target version",
-        "default": "10.13",
-        "config_path": "rust.macos_deployment_target"
-      }
-    },
+		/**
+		 * Build Configuration
+		 * String values for build configuration.
+		 */
+		"build_config": {
+			"Level": {
+				"type": "string",
+				"description": "Build output log level",
+				"values": ["silent", "info", "debug", "trace"],
+				"default": "silent",
+				"config_path": "build.log_level"
+			},
+			"Dependency": {
+				"type": "string",
+				"description": "Dependency source (org/repo format)",
+				"values": [
+					"Microsoft/VSCode",
+					"tauri-apps/tauri",
+					"CodeEditorLand/Editor"
+				],
+				"default": "Microsoft/VSCode",
+				"config_path": "dependency.source"
+			}
+		},
 
-    /**
-     * Mountain/Cocoon Configuration
-     * Mountain binary and service settings.
-     */
-    "mountain": {
-      "MOUNTAIN_DIR": {
-        "type": "string",
-        "description": "Mountain project directory",
-        "default": "Element/Mountain",
-        "config_path": "mountain.directory"
-      },
-      "MOUNTAIN_ORIGINAL_BASE_NAME": {
-        "type": "string",
-        "description": "Mountain base name for product naming",
-        "default": "Mountain",
-        "config_path": "mountain.base_name"
-      },
-      "MOUNTAIN_BUNDLE_ID_PREFIX": {
-        "type": "string",
-        "description": "Bundle identifier prefix",
-        "default": "land.editor.binary",
-        "config_path": "mountain.bundle_prefix"
-      },
-      "MOUNTAIN_HOST": {
-        "type": "string",
-        "description": "Mountain gRPC host",
-        "default": "localhost",
-        "config_path": "mountain.host"
-      },
-      "MOUNTAIN_PORT": {
-        "type": "string",
-        "description": "Mountain gRPC port",
-        "default": "50051",
-        "config_path": "mountain.port"
-      },
-      "MOUNTAIN_CONNECTION_TIMEOUT": {
-        "type": "string",
-        "description": "Connection timeout in milliseconds",
-        "default": "30000",
-        "config_path": "mountain.connection_timeout"
-      },
-      "MOUNTAIN_MAX_RETRIES": {
-        "type": "string",
-        "description": "Maximum connection retries",
-        "default": "3",
-        "config_path": "mountain.max_retries"
-      },
-      "MOUNTAIN_ENABLE_TLS": {
-        "type": "string",
-        "description": "Enable TLS for gRPC",
-        "default": "false",
-        "config_path": "mountain.enable_tls"
-      },
-      "MOUNTAIN_HEALTH_CHECK_PERIOD": {
-        "type": "string",
-        "description": "Health check period in milliseconds",
-        "default": "30000",
-        "config_path": "mountain.health_check_period"
-      }
-    },
+		/**
+		 * Node.js Configuration
+		 * Node.js runtime settings.
+		 */
+		"node": {
+			"NODE_ENV": {
+				"type": "string",
+				"description": "Node.js environment",
+				"values": ["development", "production", "test"],
+				"default": "development",
+				"config_path": "node.environment"
+			},
+			"NODE_VERSION": {
+				"type": "string",
+				"description": "Node.js version for sidecar bundling",
+				"values": ["22", "20", "18"],
+				"default": "22",
+				"config_path": "node.version"
+			},
+			"NODE_OPTIONS": {
+				"type": "string",
+				"description": "Node.js CLI options",
+				"default": "--max-old-space-size=16384",
+				"config_path": "node.options"
+			}
+		},
 
-    /**
-     * Tauri Configuration
-     * Tauri-specific environment variables.
-     */
-    "tauri": {
-      "TAURI_ENV_ARCH": {
-        "type": "string",
-        "description": "Target architecture",
-        "values": ["x86_64", "aarch64", "arm"],
-        "config_path": "tauri.arch"
-      },
-      "TAURI_ENV_DEBUG": {
-        "type": "string",
-        "description": "Tauri debug mode",
-        "values": ["true", "false"],
-        "config_path": "tauri.debug"
-      },
-      "TAURI_ENV_FAMILY": {
-        "type": "string",
-        "description": "OS family",
-        "values": ["unix", "windows"],
-        "config_path": "tauri.family"
-      },
-      "TAURI_ENV_PLATFORM": {
-        "type": "string",
-        "description": "Target platform",
-        "values": ["darwin", "linux", "win32", "android", "ios"],
-        "config_path": "tauri.platform"
-      },
-      "TAURI_ENV_PLATFORM_VERSION": {
-        "type": "string",
-        "description": "Platform version",
-        "config_path": "tauri.platform_version"
-      },
-      "TAURI_ENV_TARGET_TRIPLE": {
-        "type": "string",
-        "description": "Target triple (e.g., x86_64-apple-darwin)",
-        "config_path": "tauri.target_triple"
-      },
-      "TAURI_DEV_HOST": {
-        "type": "string",
-        "description": "Development server host",
-        "config_path": "tauri.dev_host"
-      },
-      "TAURI_DEV_ROOT_CERTIFICATE_PATH": {
-        "type": "string",
-        "description": "Root certificate path for dev server",
-        "config_path": "tauri.dev_cert_path"
-      },
-      "TAURI_CLI_PORT": {
-        "type": "string",
-        "description": "Tauri CLI port",
-        "default": "3000",
-        "config_path": "tauri.cli_port"
-      },
-      "TAURI_CLI_CONFIG_DEPTH": {
-        "type": "string",
-        "description": "Config search depth",
-        "config_path": "tauri.config_depth"
-      },
-      "TAURI_CLI_NO_DEV_SERVER_WAIT": {
-        "type": "string",
-        "description": "Skip dev server wait",
-        "config_path": "tauri.no_dev_server_wait"
-      },
-      "TAURI_CLI_WATCHER_IGNORE_FILENAME": {
-        "type": "string",
-        "description": "Watcher ignore filename",
-        "config_path": "tauri.watcher_ignore_file"
-      },
-      "TAURI_ANDROID_PROJECT_PATH": {
-        "type": "string",
-        "description": "Android project path",
-        "config_path": "tauri.android_project_path"
-      },
-      "TAURI_IOS_PROJECT_PATH": {
-        "type": "string",
-        "description": "iOS project path",
-        "config_path": "tauri.ios_project_path"
-      },
-      "TAURI_BUNDLER_WIX_FIPS_COMPLIANT": {
-        "type": "string",
-        "description": "WiX FIPS compliance",
-        "config_path": "tauri.wix_fips_compliant"
-      },
-      "TAURI_LINUX_AYATANA_APPINDICATOR": {
-        "type": "string",
-        "description": "Linux Ayatana appindicator support",
-        "config_path": "tauri.linux_appindicator"
-      },
-      "TAURI_SIGNING_PRIVATE_KEY": {
-        "type": "string",
-        "description": "Tauri signing private key",
-        "sensitive": true,
-        "config_path": "tauri.signing.private_key"
-      },
-      "TAURI_SIGNING_PRIVATE_KEY_PASSWORD": {
-        "type": "string",
-        "description": "Signing key password",
-        "sensitive": true,
-        "config_path": "tauri.signing.key_password"
-      },
-      "TAURI_SIGNING_RPM_KEY": {
-        "type": "string",
-        "description": "RPM signing key",
-        "sensitive": true,
-        "config_path": "tauri.signing.rpm_key"
-      },
-      "TAURI_SIGNING_RPM_KEY_PASSPHRASE": {
-        "type": "string",
-        "description": "RPM key passphrase",
-        "sensitive": true,
-        "config_path": "tauri.signing.rpm_passphrase"
-      },
-      "TAURI_SKIP_SIDECAR_SIGNATURE_CHECK": {
-        "type": "string",
-        "description": "Skip sidecar signature check",
-        "config_path": "tauri.skip_signature_check"
-      },
-      "TAURI_WEBVIEW_AUTOMATION": {
-        "type": "string",
-        "description": "Webview automation enabled",
-        "config_path": "tauri.webview_automation"
-      },
-      "TAURI_WINDOWS_SIGNTOOL_PATH": {
-        "type": "string",
-        "description": "Windows signtool path",
-        "config_path": "tauri.windows_signtool_path"
-      }
-    },
+		/**
+		 * Rust Configuration
+		 * Rust runtime settings.
+		 */
+		"rust": {
+			"RUST_LOG": {
+				"type": "string",
+				"description": "Rust logging level",
+				"values": ["error", "warn", "info", "debug", "trace"],
+				"default": "info",
+				"config_path": "rust.log_level"
+			},
+			"RUST_BACKTRACE": {
+				"type": "string",
+				"description": "Rust backtrace mode",
+				"values": ["0", "1", "full"],
+				"default": "0",
+				"config_path": "rust.backtrace"
+			},
+			"MACOSX_DEPLOYMENT_TARGET": {
+				"type": "string",
+				"description": "macOS deployment target version",
+				"default": "10.13",
+				"config_path": "rust.macos_deployment_target"
+			}
+		},
 
-    /**
-     * Apple Signing Configuration
-     * Apple developer account and signing settings.
-     */
-    "apple": {
-      "APPLE_API_ISSUER": {
-        "type": "string",
-        "description": "Apple API issuer ID",
-        "sensitive": true,
-        "config_path": "apple.api_issuer"
-      },
-      "APPLE_API_KEY": {
-        "type": "string",
-        "description": "Apple API key",
-        "sensitive": true,
-        "config_path": "apple.api_key"
-      },
-      "APPLE_API_KEY_PATH": {
-        "type": "string",
-        "description": "Path to API key file",
-        "config_path": "apple.api_key_path"
-      },
-      "APPLE_CERTIFICATE": {
-        "type": "string",
-        "description": "Base64 encoded certificate",
-        "sensitive": true,
-        "config_path": "apple.certificate"
-      },
-      "APPLE_CERTIFICATE_PASSWORD": {
-        "type": "string",
-        "description": "Certificate password",
-        "sensitive": true,
-        "config_path": "apple.certificate_password"
-      },
-      "APPLE_DEVELOPMENT_TEAM": {
-        "type": "string",
-        "description": "Development team ID",
-        "config_path": "apple.development_team"
-      },
-      "APPLE_ID": {
-        "type": "string",
-        "description": "Apple ID email",
-        "sensitive": true,
-        "config_path": "apple.id"
-      },
-      "APPLE_PASSWORD": {
-        "type": "string",
-        "description": "Apple ID app-specific password",
-        "sensitive": true,
-        "config_path": "apple.password"
-      },
-      "APPLE_PROVIDER_SHORT_NAME": {
-        "type": "string",
-        "description": "Provider short name",
-        "config_path": "apple.provider_short_name"
-      },
-      "APPLE_SIGNING_IDENTITY": {
-        "type": "string",
-        "description": "Signing identity",
-        "config_path": "apple.signing_identity"
-      },
-      "APPLE_TEAM_ID": {
-        "type": "string",
-        "description": "Team ID",
-        "config_path": "apple.team_id"
-      }
-    },
+		/**
+		 * Mountain/Cocoon Configuration
+		 * Mountain binary and service settings.
+		 */
+		"mountain": {
+			"MOUNTAIN_DIR": {
+				"type": "string",
+				"description": "Mountain project directory",
+				"default": "Element/Mountain",
+				"config_path": "mountain.directory"
+			},
+			"MOUNTAIN_ORIGINAL_BASE_NAME": {
+				"type": "string",
+				"description": "Mountain base name for product naming",
+				"default": "Mountain",
+				"config_path": "mountain.base_name"
+			},
+			"MOUNTAIN_BUNDLE_ID_PREFIX": {
+				"type": "string",
+				"description": "Bundle identifier prefix",
+				"default": "land.editor.binary",
+				"config_path": "mountain.bundle_prefix"
+			},
+			"MOUNTAIN_HOST": {
+				"type": "string",
+				"description": "Mountain gRPC host",
+				"default": "localhost",
+				"config_path": "mountain.host"
+			},
+			"MOUNTAIN_PORT": {
+				"type": "string",
+				"description": "Mountain gRPC port",
+				"default": "50051",
+				"config_path": "mountain.port"
+			},
+			"MOUNTAIN_CONNECTION_TIMEOUT": {
+				"type": "string",
+				"description": "Connection timeout in milliseconds",
+				"default": "30000",
+				"config_path": "mountain.connection_timeout"
+			},
+			"MOUNTAIN_MAX_RETRIES": {
+				"type": "string",
+				"description": "Maximum connection retries",
+				"default": "3",
+				"config_path": "mountain.max_retries"
+			},
+			"MOUNTAIN_ENABLE_TLS": {
+				"type": "string",
+				"description": "Enable TLS for gRPC",
+				"default": "false",
+				"config_path": "mountain.enable_tls"
+			},
+			"MOUNTAIN_HEALTH_CHECK_PERIOD": {
+				"type": "string",
+				"description": "Health check period in milliseconds",
+				"default": "30000",
+				"config_path": "mountain.health_check_period"
+			}
+		},
 
-    /**
-     * Android Configuration
-     * Android SDK and NDK settings.
-     */
-    "android": {
-      "ANDROID_HOME": {
-        "type": "string",
-        "description": "Android SDK home directory",
-        "config_path": "android.sdk_home"
-      },
-      "ANDROID_NDK_ROOT": {
-        "type": "string",
-        "description": "Android NDK root directory",
-        "config_path": "android.ndk_root"
-      },
-      "ANDROID_NDK": {
-        "type": "string",
-        "description": "Android NDK path",
-        "config_path": "android.ndk_path"
-      },
-      "ANDROID_STANDALONE_TOOLCHAIN": {
-        "type": "string",
-        "description": "Standalone toolchain path",
-        "config_path": "android.toolchain"
-      },
-      "NDK_HOME": {
-        "type": "string",
-        "description": "NDK home directory",
-        "config_path": "android.ndk_home"
-      },
-      "JAVA_HOME": {
-        "type": "string",
-        "description": "Java home directory",
-        "config_path": "android.java_home"
-      }
-    },
+		/**
+		 * Tauri Configuration
+		 * Tauri-specific environment variables.
+		 */
+		"tauri": {
+			"TAURI_ENV_ARCH": {
+				"type": "string",
+				"description": "Target architecture",
+				"values": ["x86_64", "aarch64", "arm"],
+				"config_path": "tauri.arch"
+			},
+			"TAURI_ENV_DEBUG": {
+				"type": "string",
+				"description": "Tauri debug mode",
+				"values": ["true", "false"],
+				"config_path": "tauri.debug"
+			},
+			"TAURI_ENV_FAMILY": {
+				"type": "string",
+				"description": "OS family",
+				"values": ["unix", "windows"],
+				"config_path": "tauri.family"
+			},
+			"TAURI_ENV_PLATFORM": {
+				"type": "string",
+				"description": "Target platform",
+				"values": ["darwin", "linux", "win32", "android", "ios"],
+				"config_path": "tauri.platform"
+			},
+			"TAURI_ENV_PLATFORM_VERSION": {
+				"type": "string",
+				"description": "Platform version",
+				"config_path": "tauri.platform_version"
+			},
+			"TAURI_ENV_TARGET_TRIPLE": {
+				"type": "string",
+				"description": "Target triple (e.g., x86_64-apple-darwin)",
+				"config_path": "tauri.target_triple"
+			},
+			"TAURI_DEV_HOST": {
+				"type": "string",
+				"description": "Development server host",
+				"config_path": "tauri.dev_host"
+			},
+			"TAURI_DEV_ROOT_CERTIFICATE_PATH": {
+				"type": "string",
+				"description": "Root certificate path for dev server",
+				"config_path": "tauri.dev_cert_path"
+			},
+			"TAURI_CLI_PORT": {
+				"type": "string",
+				"description": "Tauri CLI port",
+				"default": "3000",
+				"config_path": "tauri.cli_port"
+			},
+			"TAURI_CLI_CONFIG_DEPTH": {
+				"type": "string",
+				"description": "Config search depth",
+				"config_path": "tauri.config_depth"
+			},
+			"TAURI_CLI_NO_DEV_SERVER_WAIT": {
+				"type": "string",
+				"description": "Skip dev server wait",
+				"config_path": "tauri.no_dev_server_wait"
+			},
+			"TAURI_CLI_WATCHER_IGNORE_FILENAME": {
+				"type": "string",
+				"description": "Watcher ignore filename",
+				"config_path": "tauri.watcher_ignore_file"
+			},
+			"TAURI_ANDROID_PROJECT_PATH": {
+				"type": "string",
+				"description": "Android project path",
+				"config_path": "tauri.android_project_path"
+			},
+			"TAURI_IOS_PROJECT_PATH": {
+				"type": "string",
+				"description": "iOS project path",
+				"config_path": "tauri.ios_project_path"
+			},
+			"TAURI_BUNDLER_WIX_FIPS_COMPLIANT": {
+				"type": "string",
+				"description": "WiX FIPS compliance",
+				"config_path": "tauri.wix_fips_compliant"
+			},
+			"TAURI_LINUX_AYATANA_APPINDICATOR": {
+				"type": "string",
+				"description": "Linux Ayatana appindicator support",
+				"config_path": "tauri.linux_appindicator"
+			},
+			"TAURI_SIGNING_PRIVATE_KEY": {
+				"type": "string",
+				"description": "Tauri signing private key",
+				"sensitive": true,
+				"config_path": "tauri.signing.private_key"
+			},
+			"TAURI_SIGNING_PRIVATE_KEY_PASSWORD": {
+				"type": "string",
+				"description": "Signing key password",
+				"sensitive": true,
+				"config_path": "tauri.signing.key_password"
+			},
+			"TAURI_SIGNING_RPM_KEY": {
+				"type": "string",
+				"description": "RPM signing key",
+				"sensitive": true,
+				"config_path": "tauri.signing.rpm_key"
+			},
+			"TAURI_SIGNING_RPM_KEY_PASSPHRASE": {
+				"type": "string",
+				"description": "RPM key passphrase",
+				"sensitive": true,
+				"config_path": "tauri.signing.rpm_passphrase"
+			},
+			"TAURI_SKIP_SIDECAR_SIGNATURE_CHECK": {
+				"type": "string",
+				"description": "Skip sidecar signature check",
+				"config_path": "tauri.skip_signature_check"
+			},
+			"TAURI_WEBVIEW_AUTOMATION": {
+				"type": "string",
+				"description": "Webview automation enabled",
+				"config_path": "tauri.webview_automation"
+			},
+			"TAURI_WINDOWS_SIGNTOOL_PATH": {
+				"type": "string",
+				"description": "Windows signtool path",
+				"config_path": "tauri.windows_signtool_path"
+			}
+		},
 
-    /**
-     * CI/CD Configuration
-     * Continuous integration settings.
-     */
-    "ci": {
-      "CI": {
-        "type": "string",
-        "description": "CI environment flag",
-        "values": ["true", "false"],
-        "config_path": "ci.enabled"
-      },
-      "CMAKE": {
-        "type": "string",
-        "description": "CMake configuration",
-        "config_path": "ci.cmake"
-      },
-      "OUT_DIR": {
-        "type": "string",
-        "description": "Output directory",
-        "config_path": "ci.out_dir"
-      }
-    },
+		/**
+		 * Apple Signing Configuration
+		 * Apple developer account and signing settings.
+		 */
+		"apple": {
+			"APPLE_API_ISSUER": {
+				"type": "string",
+				"description": "Apple API issuer ID",
+				"sensitive": true,
+				"config_path": "apple.api_issuer"
+			},
+			"APPLE_API_KEY": {
+				"type": "string",
+				"description": "Apple API key",
+				"sensitive": true,
+				"config_path": "apple.api_key"
+			},
+			"APPLE_API_KEY_PATH": {
+				"type": "string",
+				"description": "Path to API key file",
+				"config_path": "apple.api_key_path"
+			},
+			"APPLE_CERTIFICATE": {
+				"type": "string",
+				"description": "Base64 encoded certificate",
+				"sensitive": true,
+				"config_path": "apple.certificate"
+			},
+			"APPLE_CERTIFICATE_PASSWORD": {
+				"type": "string",
+				"description": "Certificate password",
+				"sensitive": true,
+				"config_path": "apple.certificate_password"
+			},
+			"APPLE_DEVELOPMENT_TEAM": {
+				"type": "string",
+				"description": "Development team ID",
+				"config_path": "apple.development_team"
+			},
+			"APPLE_ID": {
+				"type": "string",
+				"description": "Apple ID email",
+				"sensitive": true,
+				"config_path": "apple.id"
+			},
+			"APPLE_PASSWORD": {
+				"type": "string",
+				"description": "Apple ID app-specific password",
+				"sensitive": true,
+				"config_path": "apple.password"
+			},
+			"APPLE_PROVIDER_SHORT_NAME": {
+				"type": "string",
+				"description": "Provider short name",
+				"config_path": "apple.provider_short_name"
+			},
+			"APPLE_SIGNING_IDENTITY": {
+				"type": "string",
+				"description": "Signing identity",
+				"config_path": "apple.signing_identity"
+			},
+			"APPLE_TEAM_ID": {
+				"type": "string",
+				"description": "Team ID",
+				"config_path": "apple.team_id"
+			}
+		},
 
-    /**
-     * API Configuration
-     * External API settings.
-     */
-    "api": {
-      "API_URL": {
-        "type": "string",
-        "description": "API endpoint URL",
-        "config_path": "api.url"
-      },
-      "API_KEY": {
-        "type": "string",
-        "description": "API key",
-        "sensitive": true,
-        "config_path": "api.key"
-      },
-      "API_PRIVATE_KEYS_DIR": {
-        "type": "string",
-        "description": "Private keys directory",
-        "config_path": "api.private_keys_dir"
-      },
-      "MODEL": {
-        "type": "string",
-        "description": "AI model name",
-        "config_path": "api.model"
-      },
-      "TEMPERATURE": {
-        "type": "string",
-        "description": "AI temperature setting",
-        "config_path": "api.temperature"
-      },
-      "TOP_P": {
-        "type": "string",
-        "description": "AI top P setting",
-        "config_path": "api.top_p"
-      },
-      "MAX": {
-        "type": "string",
-        "description": "Max tokens",
-        "config_path": "api.max_tokens"
-      },
-      "STREAM": {
-        "type": "string",
-        "description": "Streaming enabled",
-        "config_path": "api.stream"
-      }
-    },
+		/**
+		 * Android Configuration
+		 * Android SDK and NDK settings.
+		 */
+		"android": {
+			"ANDROID_HOME": {
+				"type": "string",
+				"description": "Android SDK home directory",
+				"config_path": "android.sdk_home"
+			},
+			"ANDROID_NDK_ROOT": {
+				"type": "string",
+				"description": "Android NDK root directory",
+				"config_path": "android.ndk_root"
+			},
+			"ANDROID_NDK": {
+				"type": "string",
+				"description": "Android NDK path",
+				"config_path": "android.ndk_path"
+			},
+			"ANDROID_STANDALONE_TOOLCHAIN": {
+				"type": "string",
+				"description": "Standalone toolchain path",
+				"config_path": "android.toolchain"
+			},
+			"NDK_HOME": {
+				"type": "string",
+				"description": "NDK home directory",
+				"config_path": "android.ndk_home"
+			},
+			"JAVA_HOME": {
+				"type": "string",
+				"description": "Java home directory",
+				"config_path": "android.java_home"
+			}
+		},
 
-    /**
-     * Other Configuration
-     * Miscellaneous environment variables.
-     */
-    "other": {
-      "JAEGER_VERSION": {
-        "type": "string",
-        "description": "Jaeger version",
-        "config_path": "other.jaeger_version"
-      },
-      "VITE_CJS_TRACE": {
-        "type": "string",
-        "description": "Vite CJS trace",
-        "config_path": "other.vite_cjs_trace"
-      },
-      "AIR_LOG_DIR": {
-        "type": "string",
-        "description": "AIR log directory",
-        "config_path": "other.air_log_dir"
-      },
-      "AIR_LOG_JSON": {
-        "type": "string",
-        "description": "AIR JSON logging",
-        "config_path": "other.air_log_json"
-      },
-      "AIR_LOG_FILE": {
-        "type": "string",
-        "description": "AIR log file path",
-        "config_path": "other.air_log_file"
-      },
-      "VSCODE_APP_ROOT": {
-        "type": "string",
-        "description": "VSCode app root",
-        "config_path": "other.vscode_app_root"
-      }
-    }
-  },
+		/**
+		 * CI/CD Configuration
+		 * Continuous integration settings.
+		 */
+		"ci": {
+			"CI": {
+				"type": "string",
+				"description": "CI environment flag",
+				"values": ["true", "false"],
+				"config_path": "ci.enabled"
+			},
+			"CMAKE": {
+				"type": "string",
+				"description": "CMake configuration",
+				"config_path": "ci.cmake"
+			},
+			"OUT_DIR": {
+				"type": "string",
+				"description": "Output directory",
+				"config_path": "ci.out_dir"
+			}
+		},
 
-  /**
-   * CLI Configuration
-   * Settings for the cargo CLI interface.
-   */
-  "cli": {
-    "default_profile": "debug-mountain",
-    "config_file": ".vscode/land-config.json",
-    "log_format": "pretty",
-    "colors": true,
-    "progress": true,
-    "dry_run_default": false,
-    "profile_aliases": {
-      "d": "debug",
-      "dm": "debug-mountain",
-      "dw": "debug-wind",
-      "de": "debug-electron",
-      "p": "production",
-      "r": "release",
-      "w": "web-browser"
-    }
-  }
+		/**
+		 * API Configuration
+		 * External API settings.
+		 */
+		"api": {
+			"API_URL": {
+				"type": "string",
+				"description": "API endpoint URL",
+				"config_path": "api.url"
+			},
+			"API_KEY": {
+				"type": "string",
+				"description": "API key",
+				"sensitive": true,
+				"config_path": "api.key"
+			},
+			"API_PRIVATE_KEYS_DIR": {
+				"type": "string",
+				"description": "Private keys directory",
+				"config_path": "api.private_keys_dir"
+			},
+			"MODEL": {
+				"type": "string",
+				"description": "AI model name",
+				"config_path": "api.model"
+			},
+			"TEMPERATURE": {
+				"type": "string",
+				"description": "AI temperature setting",
+				"config_path": "api.temperature"
+			},
+			"TOP_P": {
+				"type": "string",
+				"description": "AI top P setting",
+				"config_path": "api.top_p"
+			},
+			"MAX": {
+				"type": "string",
+				"description": "Max tokens",
+				"config_path": "api.max_tokens"
+			},
+			"STREAM": {
+				"type": "string",
+				"description": "Streaming enabled",
+				"config_path": "api.stream"
+			}
+		},
+
+		/**
+		 * Other Configuration
+		 * Miscellaneous environment variables.
+		 */
+		"other": {
+			"JAEGER_VERSION": {
+				"type": "string",
+				"description": "Jaeger version",
+				"config_path": "other.jaeger_version"
+			},
+			"VITE_CJS_TRACE": {
+				"type": "string",
+				"description": "Vite CJS trace",
+				"config_path": "other.vite_cjs_trace"
+			},
+			"AIR_LOG_DIR": {
+				"type": "string",
+				"description": "AIR log directory",
+				"config_path": "other.air_log_dir"
+			},
+			"AIR_LOG_JSON": {
+				"type": "string",
+				"description": "AIR JSON logging",
+				"config_path": "other.air_log_json"
+			},
+			"AIR_LOG_FILE": {
+				"type": "string",
+				"description": "AIR log file path",
+				"config_path": "other.air_log_file"
+			},
+			"VSCODE_APP_ROOT": {
+				"type": "string",
+				"description": "VSCode app root",
+				"config_path": "other.vscode_app_root"
+			}
+		}
+	},
+
+	/**
+	 * CLI Configuration
+	 * Settings for the cargo CLI interface.
+	 */
+	"cli": {
+		"default_profile": "debug-mountain",
+		"config_file": ".vscode/land-config.json",
+		"log_format": "pretty",
+		"colors": true,
+		"progress": true,
+		"dry_run_default": false,
+		"profile_aliases": {
+			"d": "debug",
+			"dm": "debug-mountain",
+			"dw": "debug-wind",
+			"de": "debug-electron",
+			"p": "production",
+			"r": "release",
+			"w": "web-browser"
+		}
+	}
 }

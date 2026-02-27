@@ -28,6 +28,140 @@ based on impact, urgency, and effort required.
 
 ---
 
+## Refactoring Priority Diagram
+
+```mermaid
+graph TB
+    subgraph ["Critical Priority Components"]
+        direction TB
+        M_IPC["Mountain IPC Refactoring<br/>Code Duplication"]
+        C_Debug["Cocoon Debug API"]
+        C_Test["Cocoon Test API"]
+        W_Services["Wind Missing Services"]
+        A_Indexing["Air Indexing Performance"]
+
+        classDef critical fill:#ff6b6b,stroke:#c92a2a,stroke-width:3px,color:#fff
+        class M_IPC,C_Debug,C_Test,W_Services,A_Indexing critical
+    end
+
+    subgraph ["High Priority Components"]
+        direction TB
+        M_Error["Mountain Error Handling"]
+        M_Pool["Mountain Connection Pool"]
+        C_Security["Cocoon Security Validation"]
+        C_Recovery["Cocoon Extension Crash Recovery"]
+        W_Perf["Wind Performance Optimization"]
+        S_Components["Sky Missing Components"]
+        A_Lang["Air Language Support"]
+
+        classDef high fill:#ffa94d,stroke:#e67700,stroke-width:3px,color:#fff
+        class M_Error,M_Pool,C_Security,C_Recovery,W_Perf,S_Components,A_Lang high
+    end
+
+    subgraph ["Medium Priority Components"]
+        direction TB
+        M_Command["Mountain Command System"]
+        C_Perf["Cocoon Module Interceptor"]
+        W_Advanced["Wind Advanced Features"]
+        S_Dark["Sky Dark Mode"]
+        S_Tests["Sky Component Tests"]
+        A_Reload["Air Config Hot Reload"]
+
+        classDef medium fill:#ffd43b,stroke:#f59f00,stroke-width:2px,color:#000
+        class M_Command,C_Perf,W_Advanced,S_Dark,S_Tests,A_Reload medium
+    end
+
+    subgraph ["Low Priority Components"]
+        direction TB
+        M_Compress["Mountain Message Compression"]
+        C_Features["Cocoon Advanced Features"]
+        W_Error["Wind Error Handling"]
+        W_Monitor["Wind Performance Monitoring"]
+        S_UI["Sky UI Customization"]
+        A_Metrics["Air Metrics and Tracing"]
+        V_Security["Vine Security Features"]
+
+        classDef low fill:#69db7c,stroke:#2b8a3e,stroke-width:2px,color:#000
+        class M_Compress,C_Features,W_Error,W_Monitor,S_UI,A_Metrics,V_Security low
+    end
+
+    subgraph ["Dependencies"]
+        M_IPC -->|Required for| M_Error
+        M_IPC -->|Required for| M_Command
+        M_IPC -->|Required for| M_Pool
+
+        C_Debug -->|Depends on| C_Security
+        C_Test -->|Depends on| C_Security
+        C_Debug -->|Enables| C_Recovery
+        C_Test -->|Enables| C_Recovery
+
+        W_Services -->|Required for| W_Perf
+        S_Components -->|Required for| S_Dark
+
+        A_Indexing -->|Supports| A_Lang
+        A_Lang -->|Supports| C_Features
+
+        V_Security -->|Enhances| M_IPC
+        V_Security -->|Enhances| C_Security
+    end
+
+    subgraph ["Cross-Cutting Concerns"]
+        direction LR
+        Docs["Documentation"]
+        Tests["Testing"]
+        Perf["Performance"]
+        Security["Security"]
+        DX["Developer Experience"]
+
+        classDef cross fill:#74c0fc,stroke:#1c7ed6,stroke-width:2px,color:#fff
+        class Docs,Tests,Perf,Security,DX cross
+    end
+
+    Docs -.Affects.-> M_IPC
+    Docs -.Affects.-> C_Debug
+    Tests -.Required for.-> M_Error
+    Tests -.Required for.-> C_Recovery
+    Perf -.Affects.-> W_Perf
+    Perf -.Affects.-> A_Indexing
+    Security -.Affects.-> C_Security
+    DX -.Affects.-> W_Error
+    DX -.Affects.-> S_UI
+
+    classDef default fill:#f8f9fa,stroke:#dee2e6,stroke-width:1px,color:#000
+```
+
+**Diagram Legend:**
+
+- **Red Nodes (Critical)**: Required for basic functionality - address
+  immediately (1-2 weeks)
+- **Orange Nodes (High)**: Significant impact on user experience - address soon
+  (1-2 months)
+- **Yellow Nodes (Medium)**: Important but not blocking - address中期 (3-6
+  months)
+- **Green Nodes (Low)**: Nice-to-have improvements - address later (6+ months)
+- **Blue Nodes (Cross-Cutting)**: Affects multiple components, apply throughout
+
+**Solid Arrows**: Direct dependency (must be completed before target) **Dotted
+Arrows**: Affects or enhances (not blocking but important)
+
+```mermaid
+graph LR
+    subgraph ["Component Refactoring Order"]
+        direction TB
+        P1["Phase 1: Critical<br/>4-6 weeks<br/>Mountain IPC, Cocoon APIs,<br/>Wind Services, Air Indexing"]
+        P2["Phase 2: High Priority<br/>4-6 weeks<br/>Security, Error Handling,<br/>Performance, Stability"]
+        P3["Phase 3: Medium Priority<br/>4-8 weeks<br/>Features, Reliability,<br/>Language Support"]
+        P4["Phase 4: Low Priority<br/>6+ weeks<br/>Improvements, Observability,<br/>DX Enhancements"]
+
+        classDef phase fill:#e7f5ff,stroke:#1971c2,stroke-width:2px,color:#000
+        class P1,P2,P3,P4 phase
+    end
+
+    P1 --> P2 --> P3 --> P4
+```
+
+---
+
 ## High Priority Issues
 
 ### Critical Issues

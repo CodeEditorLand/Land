@@ -10,6 +10,98 @@ specification.
 
 February 8, 2026
 
+## Service Lifecycle
+
+```mermaid
+sequenceDiagram
+    autonumber
+
+    participant Cocoon as Cocoon Extension
+    participant Service as CocoonService
+    participant Registry as Service Registry
+    participant FS as FileSystemService
+    participant Config as ConfigurationService
+    participant Cmd as CommandService
+
+    Note over Cocoon,Config: Service Registration Phase
+
+    Cocoon->>Service: initial_handshake()
+    Service-->>Cocoon: handshake_ack
+
+    Cocoon->>Service: init_extension_host(workspace_data)
+    Service->>Config: load_configuration()
+    Config-->>Service: config_data
+    Service-->>Cocoon: host_initialized
+
+    Cocoon->>Service: register_command(metadata)
+    Service->>Registry: store_command(metadata)
+    Registry-->>Service: command_id
+    Service-->>Cocoon: registration_success
+
+    Cocoon->>Service: register_hover_provider(provider)
+    Service->>Registry: store_provider("hover")
+    Registry-->>Service: provider_id
+    Service-->>Cocoon: registration_success
+
+    Cocoon->>Service: register_completion_item_provider(provider)
+    Service->>Registry: store_provider("completion")
+    Registry-->>Service: provider_id
+    Service-->>Cocoon: registration_success
+
+    Note over Cocoon,Config: Service Activation Phase
+
+    Cocoon->>Service: activate_extension()
+    Service->>Registry: enable_providers()
+    Registry-->>Service: providers_ready
+    Service-->>Cocoon: extension_activated
+
+    Note over Cocoon,Config: Service Invocation Phase
+
+    loop Multiple Invocations
+        Cocoon->>Service: provide_hover(position)
+        Service->>Registry: get_provider("hover")
+        Registry-->>Service: provider
+        Service-->>Cocoon: hover_result
+
+        Cocoon->>Service: provide_completion_items(position)
+        Service->>Registry: get_provider("completion")
+        Registry-->>Service: provider
+        Service-->>Cocoon: completion_items
+
+        Cocoon->>Service: execute_contributed_command(command_id)
+        Service->>Cmd: execute(command_id)
+        Cmd-->>Service: execution_result
+        Service-->>Cocoon: command_result
+
+        Cocoon->>Service: read_file(path)
+        Service->>FS: read_file(path)
+        FS-->>Service: file_content
+        Service-->>Cocoon: file_data
+
+        Cocoon->>Service: write_file(path, content)
+        Service->>FS: write_file(path, content)
+        FS-->>Service: write_success
+        Service-->>Cocoon: write_result
+    end
+
+    Note over Cocoon,Config: Service Deactivation Phase
+
+    Cocoon->>Service: deactivate_extension()
+    Service->>Registry: disable_providers()
+    Registry-->>Service: providers_disabled
+    Service-->>Cocoon: extension_deactivated
+
+    Cocoon->>Service: unregister_command(command_id)
+    Service->>Registry: remove_command(command_id)
+    Registry-->>Service: removal_success
+    Service-->>Cocoon: unregistration_success
+
+    Cocoon->>Service: unregister_provider(provider_id)
+    Service->>Registry: remove_provider(provider_id)
+    Registry-->>Service: removal_success
+    Service-->>Cocoon: unregistration_success
+```
+
 ## What Was Implemented
 
 ### 1. Updated Vine.proto with Complete Service Definitions

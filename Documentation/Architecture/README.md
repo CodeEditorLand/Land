@@ -225,7 +225,7 @@ graph LR
 ## Workflows
 
 Key application workflows documented in
-[../GitHub/Workflow/](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow):
+[Documentation/GitHub/Workflow](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow):
 
 1. [Application Startup & Handshake](https://github.com/CodeEditorLand/Land/tree/main/Documentation/GitHub/Workflow/ApplicationStartupAndHandshake.md) -
    Complete startup sequence

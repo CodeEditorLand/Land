@@ -2,14 +2,46 @@
 
 > **⚠️ Verification Status:** This workflow describes a conceptual test runner
 > architecture. The actual implementation details should be verified against
-> [`Element/Mountain/Source/Testing/`](Element/Mountain/Source/Testing/) and
-> [`Element/Cocoon/Source/Services/Extension.ts`](Element/Cocoon/Source/Services/Extension.ts)
+> [`Element/Mountain/Source/Testing/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Testing/)
+> and
+> [`Element/Cocoon/Source/Services/Extension.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Extension.ts)
 > for extension activation.
 
 **Goal:** An extension developer wants to run automated tests for their
 extension. They trigger a command that launches a new, clean instance of the
 application (the "Extension Development Host"), runs the extension's tests
 within it, and reports the results.
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant Main as Main Mountain<br/>(VSCode Instance)
+    participant TestHost as Test Host<br/>(Extension Dev Host)
+    participant TestCocoon as Test Cocoon<br/>(CLI Test Runner)
+    participant TRS as Test Runner Service
+
+    Dev->>Main: Launch with<br/>--extensionDevelopmentPath
+    Main->>Main: Activate extension<br/>in development mode
+    Dev->>Main: Run Tests command<br/>(Ctrl+Shift+P)
+    Main->>TRS: Trigger test run
+    TRS->>TRS: Construct special arguments:<br/>--extensionDevelopmentPath<br/>--extensionTestsPath<br/>VSCODE_IPC_HOOK_CLI
+    TRS->>TestHost: Spawn new Mountain instance<br/>(Extension Development Host)
+    TestHost->>TestHost: Detect --extension... flags<br/>Knows it's test instance
+    TestHost->>TestCocoon: Launch Cocoon sidecar<br/>with special env vars
+    TestCocoon->>TestCocoon: Detect VSCODE_IPC_HOOK_CLI<br/>Enter CLI test runner mode
+    TestCocoon->>TestCocoon: Execute test runner script<br/>(mocha)
+    TestCocoon->>TestCocoon: Load extension test files
+    TestCocoon->>Main: gRPC: executeCommand<br/>(lightweight vscode shim)
+    Main->>Main: Execute command<br/>Update UI
+    Main-->>TestCocoon: gRPC response
+    TestCocoon->>TestCocoon: Run assertions<br/>Check document state
+    TestCocoon->>Main: gRPC: get textDocuments<br/>Verify state
+    Main-->>TestCocoon: Document state
+    TestCocoon->>TestCocoon: All tests complete
+    TestCocoon->>TRS: Exit with code (0/1)<br/>Stdout: test results
+    TRS->>Main: Parse results<br/>Display notification<br/>(e.g., "10 passed, 0 failed")
+    Main-->>Dev: Test results displayed
+```
 
 ---
 

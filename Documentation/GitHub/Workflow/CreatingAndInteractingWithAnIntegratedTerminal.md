@@ -5,6 +5,57 @@ terminal. A native shell process (`bash`, `powershell`, etc.) is spawned, and
 its input/output are fully connected to a terminal UI component (like Xterm.js)
 in the frontend.
 
+```mermaid
+flowchart TB
+    subgraph Request["Phase 1: Terminal Creation Request"]
+        Start(["Start"]) --> Choice{Request Source?}
+        Choice -->|Extension| ExtCall["Extension calls<br/>createTerminal()"]
+        Choice -->|User| UserCmd["User executes<br/>Command Palette command"]
+        ExtCall --> Provider["Request routed to<br/>TerminalProvider"]
+        UserCmd --> Provider
+    end
+
+    subgraph Spawning["Phase 2: Native PTY Spawning"]
+        Provider --> CreateTerminal["TerminalProvider.CreateTerminal()"]
+        CreateTerminal --> GetId["Get unique TerminalId"]
+        GetId --> DetermineShell["Determine shell type"]
+        DetermineShell --> OpenPTY["Spawn pseudo-terminal<br/>(portable-pty)"]
+        OpenPTY --> SpawnShell["Spawn shell process<br/>as PTY child"]
+        SpawnShell --> CreateState["Create TerminalStateDto"]
+        CreateState --> SpawnTasks["Spawn I/O Tasks"]
+    end
+
+    subgraph Tasks["I/O Task Spawning"]
+        SpawnTasks --> WriterTask["Writer Task<br/>(waits for input)"]
+        SpawnTasks --> ReaderTask["Reader Task<br/>(reads output)"]
+        SpawnTasks --> WaiterTask["Waiter Task<br/>(monitors shell exit)"]
+    end
+
+    subgraph UI["Phase 3: UI Rendering"]
+        CreateState --> NotifyOpen["$acceptTerminalOpened<br/>gRPC notification"]
+        CreateState --> NotifyPID["$acceptTerminalProcessId<br/>gRPC notification"]
+        NotifyOpen --> CocoonService["Cocoon Terminal Service"]
+        NotifyPID --> CocoonService
+        ReaderTask --> TauriEvent["Tauri emit<br/>sky://terminal/data"]
+        TauriEvent --> TerminalUI["Terminal UI Component<br/>(Xterm.js)"]
+        TerminalUI --> Output["Display shell output"]
+    end
+
+    subgraph Input["Phase 4: User Input Loop"]
+        UserInput(["User types command"]) --> Capture["Xterm.js captures keystrokes"]
+        Capture --> SendText["TauriInvoke<br/>mountain://terminal/send-text"]
+        SendText --> SendTextLogic["SendTextToTerminalLogic"]
+        SendTextLogic --> LookupDTO["Lookup TerminalStateDto"]
+        LookupDTO --> SendToChannel["Send to mpsc channel"]
+        SendToChannel --> WriterTask
+        WriterTask --> WritePTY["Write to PTY master"]
+        WritePTY --> ShellExec["Shell executes command"]
+        ShellExec --> PTYOutput["Shell writes to stdout"]
+        PTYOutput --> ReaderTask
+        ReaderTask --> TauriEvent
+    end
+```
+
 ---
 
 #### **Phase 1: Terminal Creation Request (`Cocoon` or `Wind`)**
@@ -22,7 +73,7 @@ in the frontend.
 
 #### **Phase 2: Native PTY Spawning (`Mountain`)**
 
-2. **[`TerminalProvider.CreateTerminal()`](Element/Mountain/Source/Environment/TerminalProvider.rs:122)
+2. **[`TerminalProvider.CreateTerminal()`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/TerminalProvider.rs#L122)
    (`Mountain`)**
 
 - **Action:** The `CreateTerminal` method is executed on the
@@ -70,7 +121,7 @@ in the frontend.
 #### **Phase 3: UI Rendering and State Sync (`Cocoon` -> `Wind/Sky`)**
 
 5. **Cocoon Terminal Service
-   ([`Element/Cocoon/Source/Services/`](Element/Cocoon/Source/Services/))**
+   ([`Element/Cocoon/Source/Services/`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/))**
 
 - **Action:** The terminal service in `Cocoon` receives the `Opened`,
   `ProcessId`, and `Data` notifications from `Mountain`.

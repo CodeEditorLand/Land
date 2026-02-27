@@ -5,6 +5,72 @@ page or a complex data visualization. It uses the `createWebviewPanel` API to do
 this. The user can then interact with this panel, sending messages back to the
 extension.
 
+```mermaid
+stateDiagram-v2
+    [*] --> Creating: Extension calls<br/>createWebviewPanel()
+
+    state Creating {
+        [*] --> SendRequest
+        SendRequest --> CreateDTO
+        CreateDTO --> GRPCRequest
+        note right of GRPCRequest: $createWebviewPanel<br/>to Mountain
+    }
+
+    Creating --> Initialized: Mountain generates<br/>handle & emits event
+
+    state Initialized {
+        [*] --> ReceiveHandle
+        ReceiveHandle --> CreateWebviewShim
+        CreateWebviewShim --> ReturnToExtension
+        note right of ReturnToExtension: Shim stores handle
+    }
+
+    Initialized --> ContentSet: Extension sets<br/>webview.html
+    Initialized --> Active: Webview component<br/>created & visible
+
+    state ContentSet {
+        [*] --> SetHTML
+        SetHTML --> GRPCSetHtml
+        note right of GRPCSetHtml: $setWebviewHtml<br/>to Mountain
+    }
+
+    ContentSet --> Active: Webview renders HTML
+
+    state Active {
+        [*] --> Ready
+        Ready --> ReceivingMessages
+        Ready --> FocusGain: User focuses
+        FocusGain --> Ready
+        Ready --> FocusLoss: User blurs
+        FocusLoss --> Ready
+    }
+
+    state ReceivingMessages {
+        [*] --> UserClicks
+        UserClicks --> PostMessage
+        PostMessage --> TauriCommand
+        note right of TauriCommand: mountain://webview/on-message
+        TauriCommand --> GRPCNotify
+        note right of GRPCNotify: $onDidReceiveMessage<br/>to Cocoon
+        GRPCNotify --> FireEvent
+        FireEvent --> ExtensionHandler
+        note right of ExtensionHandler: Extension receives<br/>onDidReceiveMessage
+    }
+
+    ReceivingMessages --> Active
+
+    Active --> Disposed: Extension disposes<br/>or user closes
+
+    state Disposed {
+        [*] --> Cleanup
+        Cleanup --> RemoveState
+        RemoveState --> NotifyClosed
+        note right of NotifyClosed: gRPC notification
+    }
+
+    Disposed --> [*]
+```
+
 ---
 
 #### **Phase 1: Extension Creates the Webview (`Cocoon`)**
@@ -36,7 +102,7 @@ extension.
       to the `WebviewProvider` trait implementation on the
       `MountainEnvironment`.
 
-5.  **[`WebviewProvider.CreateWebviewPanel()`](Element/Mountain/Source/Environment/WebviewProvider.rs:206)
+5.  **[`WebviewProvider.CreateWebviewPanel()`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/WebviewProvider.rs#L206)
     (`Mountain`)**
 
 - **Action:** The `CreateWebviewPanel` method is executed on the
@@ -77,7 +143,7 @@ extension.
     - It sends a **`$setWebviewHtml` gRPC request to `Mountain`**, including the
       `handle` and the HTML string.
 
-9.  **[`WebviewProvider`](Element/Mountain/Source/Environment/WebviewProvider.rs)
+9.  **[`WebviewProvider`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/WebviewProvider.rs)
     (`Mountain`)**
 
 - **Action:** The `$setWebviewHtml` request is received and dispatched to the

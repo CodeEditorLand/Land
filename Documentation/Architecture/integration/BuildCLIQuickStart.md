@@ -3,14 +3,16 @@
 ## Important Note on Package Names
 
 The build system uses PascalCase naming convention. The package is named
-`Maintain` in [`Element/Maintain/Cargo.toml`](Element/Maintain/Cargo.toml:38).
+`Maintain` in
+[`Element/Maintain/Cargo.toml`](https://github.com/CodeEditorLand/Maintain/tree/Current/Cargo.toml#L38).
 
 ## CLI Overview
 
 The Land Build System CLI provides a configuration-driven build system that
 enables triggering builds directly with Cargo instead of shell scripts. It reads
-configuration from [`.vscode/land-config.json`](.vscode/land-config.json:1) and
-supports multiple build profiles.
+configuration from
+[`.vscode/land-config.json`](https://github.com/CodeEditorLand/Land/tree/main/.vscode/land-config.json#L1)
+and supports multiple build profiles.
 
 ```
 Usage: Maintain [OPTIONS] [-- <BUILD_ARGS>...] [COMMAND]
@@ -303,7 +305,9 @@ cargo run --bin Maintain -- list-profiles # ✅ Works
 
 If you see "Failed to load configuration", ensure:
 
-1. The file [`.vscode/land-config.json`](.vscode/land-config.json:1) exists
+1. The file
+   [`.vscode/land-config.json`](https://github.com/CodeEditorLand/Land/tree/main/.vscode/land-config.json#L1)
+   exists
 2. The file has valid JSON5 format
 3. The file contains the `version` field at the root level
 

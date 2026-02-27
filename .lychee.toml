@@ -1,33 +1,43 @@
 # Lychee configuration for CodeEditorLand documentation
 
+# Files to check for links
+include_ext = [
+	".md",
+	".rs",   # Rust source files
+	".ts",   # TypeScript source files
+	".tsx",  # TypeScript JSX files
+	".js",   # JavaScript files
+	".json", # JSON files (may contain URLs)
+]
+
 # Exclude certain patterns
 exclude = [
-  # Local development links
-  "http://localhost:*",
-  "http://127.0.0.1:*",
-  
-  # Email links
-  "mailto:*",
-  
-  # Internal rust-doc links
-  "rust/doc/",
-  "Documentation/Rust/", 
-  "Element/*/Documentation/Rust/",
-  
-  # Effect module (third-party dependency)
-  "Documentation/Module/effect/",
-  "effect-ts.github.io",
-  
-  # VSCode internal links
-  "vscode-workbench",
-  "workbench/contrib/chat",
-  
-  # Build artifacts
-  "/debug/build/",
-  "/target/debug/build/",
-  
-  # Placeholder/example links
-  "example.com",
+	# Local development links
+	"http://localhost:*",
+	"http://127.0.0.1:*",
+
+	# Email links
+	"mailto:*",
+
+	# Internal rust-doc links
+	"rust/doc/",
+	"Documentation/Rust/",
+	"Element/*/Documentation/Rust/",
+
+	# Effect module (third-party dependency)
+	"Documentation/Module/effect/",
+	"effect-ts.github.io",
+
+	# VSCode internal links
+	"vscode-workbench",
+	"workbench/contrib/chat",
+
+	# Build artifacts
+	"/debug/build/",
+	"/target/debug/build/",
+
+	# Placeholder/example links
+	"example.com",
 ]
 
 # Allow redirects
@@ -40,13 +50,7 @@ timeout = 30
 max_concurrency = 10
 
 # Exclude paths
-exclude_path = [
-  "node_modules",
-  "target",
-  "Rust/doc",
-  "effect",
-  ".git",
-]
+exclude_path = ["node_modules", "target", "Rust/doc", "effect", ".git"]
 
 # Accepted status codes
 accept = [200, 204, 301, 302, 307, 308]

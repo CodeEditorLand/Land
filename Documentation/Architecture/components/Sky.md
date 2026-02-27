@@ -580,13 +580,13 @@ graph LR
 Development uses package names:
 
 ```typescript
-import { Install } from "@codeeditorland/wind"
+import { Install } from "@codeeditorland/wind";
 ```
 
 Production uses static URLs:
 
 ```typescript
-import { Install } from "/Static/Wind/Function/Install.js"
+import { Install } from "/Static/Wind/Function/Install.js";
 ```
 
 For details on the module distribution fix, see
@@ -654,6 +654,171 @@ State is managed through:
 | [`Source/Workbench/Mountain.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Mountain.astro)                         | A2: Browser + providers (RECOMMENDED) |
 | [`Source/Workbench/Electron.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Electron.astro)                         | A3: Electron + polyfills              |
 | [`Source/Workbench/Native/WindWorkbench.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Workbench/Native/WindWorkbench.astro) | A4: Native Wind implementation        |
+
+---
+
+## Known Issues and TODOs
+
+> **Reference**: See
+> [`../recommendations/RefactoringPriorities.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/recommendations/RefactoringPriorities.md)
+> for complete prioritization details and impact analysis.
+
+---
+
+### High Priority Issues
+
+#### A3 Electron Workbench Stability
+
+**Impact**: Electron workbench polyfills have inconsistent behavior, causing CSP
+errors and potential security vulnerabilities. This limits the reliability of
+approach A3 for production use.
+
+**User Experience**: Users may see browser console errors related to
+`vscode-file://` protocol, and some Electron-exclusive features may not function
+correctly.
+
+**Tasks**:
+
+- [ ] Fix CSP errors with vscode-file:// protocol
+    - Update Content Security Policy to allow vscode-file:// URLs
+    - Implement proper protocol handling in polyfills
+    - Test all Electron-restricted features
+- [ ] Verify polyfill completeness
+    - Audit all 7 Electron API polyfills for correctness
+    - Add unit tests for each polyfill
+    - Document which polyfills are fully functional
+- [ ] Consider deprecation path for A3
+    - Document known limitations clearly
+    - Guide users toward A2 (Mountain) approach
+    - Evaluate if A3 should be removed in future release
+
+**Estimated Effort**: 1-2 weeks
+
+**Dependencies**:
+
+- Electron API compatibility testing
+- CSP policy validation
+
+---
+
+#### Native Workbench Feature Parity
+
+**Impact**: Native workbench (A4) has limited feature coverage (60-70%),
+reducing its usefulness as a long-term alternative to VS Code workbench.
+
+**User Experience**: Users who choose the native workbench approach will miss
+many VS Code features, potentially limiting adoption and productivity.
+
+**Tasks**:
+
+- [ ] Expand native component functionality
+    - Complete ActivityBar implementation
+    - Enhance Sidebar with view management
+    - Add advanced Editor features (multiple tabs, split view)
+    - Implement Panel layout management
+    - Add StatusBar dynamic updates
+- [ ] Implement missing VS Code features
+    - Multi-file editing support
+    - Editor actions and context menus
+    - Keyboard shortcut handling
+    - Search and replace interface
+- [ ] Improve native workbench integration
+    - Better Wind service integration for all components
+    - Implement proper event handling between components
+    - Add state persistence across sessions
+
+**Estimated Effort**: 3-4 weeks
+
+**Dependencies**:
+
+- Wind service availability
+- UI component library
+
+---
+
+### Medium Priority Issues
+
+#### Build Process Optimization
+
+**Impact**: Static file copying and build process could be more efficient,
+affecting development workflow and build times.
+
+**User Experience**: Longer build times and manual configuration changes reduce
+developer productivity.
+
+**Tasks**:
+
+- [ ] Automate Wind module distribution
+    - Create automated build script for copying Wind modules
+    - Remove manual static file configuration from Debug.ts
+    - Integrate with Sky build process
+- [ ] Optimize build pipeline
+    - Implement incremental builds for faster development cycles
+    - Add build caching for unchanged modules
+    - Configure Vite for better performance
+- [ ] Add build validation
+    - Verify Wind module availability after build
+    - Check for missing dependencies
+    - Validate module integrity
+
+**Estimated Effort**: 1 week
+
+---
+
+#### Workbench Configuration Management
+
+**Impact**: Multiple workbench approaches make configuration complex and
+error-prone, especially when switching between approaches or managing different
+deployment scenarios.
+
+**User Experience**: Difficult to configure workbench correctly, leading to
+errors and confusion when trying different approaches.
+
+**Tasks**:
+
+- [ ] Create unified workbench configuration
+    - Single configuration file for all workbench approaches
+    - Clear documentation of each approach's requirements
+    - Configuration validation and error messages
+- [ ] Add workbench switcher UI
+    - Allow users to select workbench approach from UI
+    - Display feature coverage and trade-offs
+    - Provide recommendations based on use case
+- [ ] Implement approach migration tools
+    - Tools to migrate between workbench approaches
+    - Preserve user settings and preferences
+    - Document migration steps and caveats
+
+**Estimated Effort**: 2 weeks
+
+---
+
+### Low Priority Issues
+
+#### Documentation Improvements
+
+**Impact**: Documentation could be enhanced with more examples, tutorials, and
+guides to help developers get started with Sky.
+
+**User Experience**: New users may struggle to understand Sky's architecture and
+how to customize it for their needs.
+
+**Tasks**:
+
+- [ ] Add getting started tutorials
+    - Step-by-step guide for installing and running Sky
+    - Tutorial for creating a custom page
+    - Example of integrating a new component
+- [ ] Create component examples
+    - Example implementations of common UI patterns
+    - Samples of workbench customization
+    - Integration examples with Wind services
+- [ ] Improve API documentation
+    - Document all available components and props
+    - Add TypeScript type definitions usage examples
+    - Create interactive component playground (if feasible)
+
+**Estimated Effort**: 1-2 weeks
 
 ---
 

@@ -917,6 +917,215 @@ graph LR
 
 ---
 
+## Known Issues and TODOs
+
+> **Reference**: See
+> [`../recommendations/RefactoringPriorities.md`](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/recommendations/RefactoringPriorities.md)
+> for complete prioritization details and impact analysis.
+
+---
+
+### High Priority Issues
+
+#### Protocol Version Compatibility
+
+**Impact**: The protocol versioning strategy needs clear implementation to
+ensure backward and forward compatibility when introducing new features or
+breaking changes.
+
+**User Experience**: Users may experience communication failures between
+Mountain and Cocoon if protocol versions are mismatched, requiring manual
+intervention.
+
+**Tasks**:
+
+- [ ] Implement protocol version negotiation
+    - Add version field to all gRPC messages
+    - Implement version checking on connection establishment
+    - Add graceful degradation for version mismatches
+- [ ] Define version compatibility rules
+    - Document which protocol versions are compatible
+    - Create version compatibility matrix
+    - Define upgrade path for breaking changes
+- [ ] Add version migration tools
+    - Create tools to migrate between protocol versions
+    - Implement automatic message conversion for compatible changes
+    - Document migration procedures for manual updates
+- [ ] Implement version testing
+    - Test communication between different protocol versions
+    - Verify backward compatibility with older clients
+    - Test forward compatibility with newer servers
+
+**Estimated Effort**: 2 weeks
+
+**Dependencies**:
+
+- Both Mountain and Cocoon implementation
+- Testing infrastructure for version compatibility
+
+---
+
+#### Error Handling and Recovery
+
+**Impact**: Insufficient error handling details in the protocol make it
+difficult to provide meaningful error messages and implement proper recovery
+mechanisms.
+
+**User Experience**: Errors may be reported generically without sufficient
+context, making it difficult for users to understand and resolve issues.
+
+**Tasks**:
+
+- [ ] Enhance error message format
+    - Add detailed error context to all gRPC errors
+    - Include error codes for programmatic handling
+    - Add stack traces in development mode
+- [ ] Define error recovery patterns
+    - Document which errors are retryable
+    - Specify recovery mechanisms for each error type
+    - Add error categories (transient, permanent, retryable)
+- [ ] Implement error tracking
+    - Add error logging with correlation IDs
+    - Track error rates and patterns
+    - Create error dashboards for monitoring
+- [ ] Create error documentation
+    - Document all possible error codes
+    - Provide troubleshooting guides for common errors
+    - Add examples of error handling in client code
+
+**Estimated Effort**: 1-2 weeks
+
+---
+
+### Medium Priority Issues
+
+#### Protocol Validation and Testing
+
+**Impact**: Lack of comprehensive protocol validation and automated tests may
+lead to bugs that are only discovered at runtime.
+
+**User Experience**: Users may encounter unexpected failures due to protocol
+violations that could have been caught during development.
+
+**Tasks**:
+
+- [ ] Add protocol validation tools
+    - Create validators for proto file structure
+    - Implement message format validators
+    - Add semantic validation for protocol contracts
+- [ ] Expand automated testing
+    - Add unit tests for all gRPC methods
+    - Create integration tests for full communication flows
+    - Add fuzz testing for message serialization/deserialization
+- [ ] Implement contract tests
+    - Create contract tests for protocol compliance
+    - Test generated code against protocol specification
+    - Verify behavior matches protocol documentation
+- [ ] Add protocol compliance checks to CI/CD
+    - Integrate protocol validation in build pipeline
+    - Run contract tests on every commit
+    - Automatically reject protocol-breaking changes
+
+**Estimated Effort**: 2 weeks
+
+---
+
+#### Performance Optimization
+
+**Impact**: Large payloads and inefficient serialization may affect
+communication performance, especially for operations like file operations or
+search results.
+
+**User Experience**: Users may experience slow response times for certain
+operations, particularly those involving large data transfers.
+
+**Tasks**:
+
+- [ ] Profile message serialization performance
+    - Measure serialization/deserialization times for common messages
+    - Identify bottlenecks in protocol buffers
+    - Profile with realistic workload sizes
+- [ ] Optimize large message handling
+    - Implement streaming for large payloads (e.g., file contents)
+    - Add message compression for suitable types
+    - Consider chunking for very large messages
+- [ ] Add performance monitoring
+    - Track message sizes and processing times
+    - Monitor gRPC call latency
+    - Create performance baselines and alerts
+- [ ] Document performance characteristics
+    - Document expected performance for each operation
+    - Provide recommendations for optimizing gRPC usage
+    - Include performance considerations in protocol design
+
+**Estimated Effort**: 1-2 weeks
+
+---
+
+### Low Priority Issues
+
+#### Protocol Documentation Enhancement
+
+**Impact**: Protocol documentation could be more detailed with examples, making
+it easier for developers to understand and extend the protocol.
+
+**User Experience**: Developers may struggle to understand protocol details or
+implement new features, slowing down development.
+
+**Tasks**:
+
+- [ ] Add usage examples
+    - Provide example requests/responses for each RPC method
+    - Include common usage patterns
+    - Add example code for client implementations
+- [ ] Create protocol design documentation
+    - Document design decisions and rationale
+    - Explain protocol evolution strategy
+    - Include architecture diagrams
+- [ ] Add migration guide
+    - Guide for adding new RPC methods
+    - Process for breaking changes
+    - Version update procedures
+- [ ] Create troubleshooting guide
+    - Common protocol issues and solutions
+    - Debugging tips for gRPC communication
+    - Performance tuning guidelines
+
+**Estimated Effort**: 1 week
+
+---
+
+#### Code Generation Improvements
+
+**Impact**: Generated code could be more ergonomic and better integrated with
+the development workflow, improving developer productivity.
+
+**User Experience**: Developers may find working with generated code cumbersome,
+requiring additional boilerplate or manual adjustments.
+
+**Tasks**:
+
+- [ ] Improve generated code ergonomics
+    - Add helper methods for common operations
+    - Improve TypeScript type definitions
+    - Generate idiomatic code for each language
+- [ ] Automate code generation workflow
+    - Integrate code generation into build process
+    - Add watch mode for proto file changes
+    - Automatically regenerate on proto updates
+- [ ] Add code generation validation
+    - Verify generated code compiles without errors
+    - Check generated code quality metrics
+    - Validate generated code against protocol
+- [ ] Create code generation documentation
+    - Document code generation process
+    - Explain customizing generated code
+    - Provide troubleshooting for generation issues
+
+**Estimated Effort**: 1 week
+
+---
+
 ## See Also
 
 - [Mountain Component](https://github.com/CodeEditorLand/Land/tree/main/Documentation/Architecture/components/Mountain.md) -

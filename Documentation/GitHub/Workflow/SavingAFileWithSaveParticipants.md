@@ -4,6 +4,53 @@
 has registered a "Save Participant" to format the document before the save is
 written to disk. The file is formatted, then saved.
 
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant UI as Wind/Sky UI
+    participant ES as EditorService
+    participant TFEM as TextFileEditorModelManager
+    participant WCF as WorkingCopyFileService
+    participant EHS as ExtHostSaveParticipant
+    participant CIP as Cocoon IPC Server
+    participant EDSP as ExtHostDocumentSaveParticipant
+    participant PE as Prettier Extension
+    participant BES as BulkEditService
+    participant FS as FileService
+    participant TDFSP as TauriDiskFileSystemProvider
+    participant Mnt as Mountain Backend
+
+    User->>UI: Press Ctrl+S
+    UI->>ES: workbench.action.files.save
+    ES->>TFEM: save() on EditorInput
+    TFEM->>TFEM: Check dirty state
+    TFEM->>WCF: runSaveParticipants()
+    WCF->>WCF: Gather ISaveParticipants
+    WCF->>EHS: participate()
+    EHS->>CIP: $participateInSave<br/>gRPC request
+    CIP->>EDSP: Dispatch to service
+    EDSP->>EDSP: Fire onWillSaveTextDocument
+    EDSP->>PE: Event to extension
+    PE->>PE: Calculate formatting edits
+    PE-->>EDSP: Promise<TextEdit[]>
+    EDSP->>EDSP: Collect all extension edits
+    EDSP->>CIP: $participateInSave response<br/>TextEdit DTOs
+    CIP-->>EHS: gRPC response
+    EHS-->>WCF: TextEdit array
+    WCF->>BES: Apply edits to document
+    BES->>BES: Apply TextEdits<br/>Update model in memory
+    BES-->>TFEM: Edits applied
+    TFEM->>FS: IFileService.writeFile()
+    FS->>TDFSP: Lookup provider for URI
+    TDFSP->>Mnt: WriteFile Effect<br/>TauriInvoke
+    Mnt->>Mnt: tokio::fs::write()
+    Mnt-->>TDFSP: Success response
+    TDFSP-->>FS: Write complete
+    FS-->>TFEM: Save successful
+    TFEM->>UI: Update dirty indicator<br/>Remove filled circle
+    UI-->>User: Save complete
+```
+
 ---
 
 #### **Phase 1: User Action and Initial Save Trigger (`Wind/Sky`)**
@@ -15,7 +62,7 @@ written to disk. The file is formatted, then saved.
       command.
 
 2.  **`IEditorService.save()`
-    ([`Element/Wind/Source/Workbench/`](Element/Wind/Source/Workbench/))**
+    ([`Element/Wind/Source/Workbench/`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Workbench/))**
     - **Action:** The `save` method on our `EditorService` is called.
     - It identifies the active editor and its corresponding `EditorInput`.
     - It calls the `save` method on the `EditorInput` instance.
@@ -111,8 +158,8 @@ written to disk. The file is formatted, then saved.
         - The effect makes a `TauriInvoke` call to the `Mountain` backend.
         - The `FsWriter` implementation in `Mountain` receives the call.
 
-14. **[`FileSystem`](Element/Mountain/Source/FileSystem/) Providers
-    (`Mountain`)**
+14. **[`FileSystem`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/FileSystem/)
+    Providers (`Mountain`)**
 
 - **Action:** The file write operation is executed through the FileSystem
   provider.

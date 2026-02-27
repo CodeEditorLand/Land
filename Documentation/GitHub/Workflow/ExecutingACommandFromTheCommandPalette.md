@@ -5,6 +5,60 @@ a command (e.g., "Format Document"), and selects it. The corresponding action is
 executed. This workflow covers both a native command and an extension-provided
 command.
 
+```mermaid
+flowchart LR
+    subgraph OpenPalette["Phase 1: Opening Command Palette"]
+        UserKeybind(["User presses<br/>Ctrl+Shift+P"]) --> Dispatch["Dispatch<br/>workbench.action.showCommands"]
+        Dispatch --> InvokeQuickInput["QuickInputService.quickAccess.show()"]
+        InvokeQuickInput --> CommandsProvider["CommandsQuickAccessProvider"]
+    end
+
+    subgraph FetchCommands["Phase 2: Fetching Command List"]
+        CommandsProvider --> GetAllCommands["TauriInvoke<br/>mountain://command/get-all"]
+        GetAllCommands --> Track1["Track Dispatcher"]
+        Track1 --> Effect1["Common::command::GetAllCommands<br/>Effect"]
+        Effect1 --> CommandProviderGetAll
+    end
+
+    subgraph GetAll["GetAllCommands Execution"]
+        CommandProviderGetAll["Mountain<br/>CommandProvider.GetAllCommands()"] --> LockRegistry["Acquire lock on<br/>CommandRegistry"]
+        LockRegistry --> GetKeys["Get command ID keys<br/>from HashMap"]
+        GetKeys --> ReturnIds["Return command ID list"]
+    end
+
+    ReturnIds --> DisplayList
+
+    subgraph DisplaySelect["Phase 3: Displaying & Selecting"]
+        DisplayList["Populate Quick Pick UI<br/>with command list"] --> UserSelect(["User types & selects<br/>command"])
+        UserSelect --> ExecuteService["ICommandService.executeCommand()"]
+    end
+
+    ExecuteService --> NativeCheck{Native or<br/>Extension?}
+
+    subgraph NativeFlow["Phase 4A: Native Command Execution"]
+        NativeCheck -->|Native| NativeInvoke["TauriInvoke<br/>mountain://command/execute"]
+        NativeInvoke --> Track2["Track Dispatcher"]
+        Track2 --> Effect2["Common::command::ExecuteCommand<br/>Effect"]
+        Effect2 --> LookupNative["Lookup command in<br/>CommandRegistry"]
+        LookupNative --> NativeHandler["Invoke native Rust<br/>function pointer"]
+        NativeHandler --> NativeResult["Execute command logic"]
+        NativeResult --> ReturnNative["Return result"]
+    end
+
+    subgraph ExtensionFlow["Phase 4B: Extension Command Execution"]
+        NativeCheck -->|Extension| ExtensionCmd["TauriInvoke<br/>mountain://command/execute"]
+        ExtensionCmd --> Track3["Track Dispatcher"]
+        Track3 --> Effect3["Common::command::ExecuteCommand<br/>Effect"]
+        Effect3 --> LookupExt["Lookup Proxied handler<br/>in CommandRegistry"]
+        LookupExt --> ProxyRequest["IpcProvider makes<br/>$executeContributedCommand<br/>gRPC request"]
+        ProxyRequest --> CocoonRPC["Cocoon gRPC Server"]
+        CocoonRPC --> LookupProvider["Lookup command in<br/>Cocoon registry"]
+        LookupProvider --> ExecuteExt["Execute extension's<br/>JavaScript function"]
+        ExecuteExt --> ReturnExt["Return result to Mountain"]
+        ReturnExt --> ForwardToWind["Forward result to Wind"]
+    end
+```
+
 ---
 
 #### **Phase 1: Opening the Command Palette (`Wind/Sky`)**
@@ -31,8 +85,9 @@ command.
 
 #### **Phase 2: Fetching the Command List (`Mountain`)**
 
-4. **[`track.rs`](Element/Mountain/Source/Track/TrackLogic.rs) &
-   [`CommandProvider.rs`](Element/Mountain/Source/Environment/CommandProvider.rs)
+4. **[`track.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Track/TrackLogic.rs)
+   &
+   [`CommandProvider.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/CommandProvider.rs)
    (`Mountain`)**
 
 - **Action:** The Tauri command is dispatched to `track`, which creates the
@@ -41,7 +96,7 @@ command.
     - The `MountainEnvironment`'s implementation of
       `CommandExecutor::GetAllCommands` is called. It delegates to the handler.
 
-5. **[`CommandProvider.GetAllCommands()`](Element/Mountain/Source/Environment/CommandProvider.rs:322)**
+5. **[`CommandProvider.GetAllCommands()`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/CommandProvider.rs#L322)**
 
 - **Action:** The `GetAllCommands` method is executed.
     - It acquires a lock on `AppState.CommandRegistry`.
@@ -79,7 +134,7 @@ command.
     - The `AppRuntime` executes it.
     - The `MountainEnvironment`'s `CommandExecutor::ExecuteCommand` is called.
 
-10. **[`CommandProvider.ExecuteCommand()`](Element/Mountain/Source/Environment/CommandProvider.rs:231)
+10. **[`CommandProvider.ExecuteCommand()`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/CommandProvider.rs#L231)
     (`Mountain`)**
 
 - **Action:** The `ExecuteCommand` method is executed.

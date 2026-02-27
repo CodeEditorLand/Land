@@ -53,6 +53,90 @@ process.
 
 ## Implementation Strategy
 
+## Cocoon Health Monitoring Architecture
+
+```mermaid
+graph TB
+    subgraph CMR["Cocoon Management (Mountain)"]
+        CM["CocoonManagement"]
+        CPS["CocoonProcessState"]
+        CH["Child Process Handle"]
+        STATE["Arc<Mutex<State>>"]
+    end
+
+    subgraph HM["Health Monitoring System"]
+        HM["HealthMonitor"]
+        HS["HealthStatus"]
+        HI["HealthIssue<br/>(ConnectionLoss,<br/>PerformanceDegradation,<br/>MemoryPressure,<br/>ProcessCrashed)"]
+        SL["SeverityLevel<br/>(Low, Medium,<br/>High, Critical)"]
+        SCORE["Health Score 0-100"]
+
+        THRESH["Thresholds:<br/>90-100 Healthy<br/>70-89 Warning<br/>50-69 Degraded<br/><50 Critical"]
+    end
+
+    subgraph CHECKS["Health Checks"]
+        PLC["1. Process Liveness<br/>try_wait() every 5s"]
+        GRC["2. gRPC Connectivity<br/>Ping port 50052 every 10s"]
+        VHC["3. Vine Protocol Health<br/>Check every 15s"]
+        RMC["4. Resource Monitoring<br/>Check stdout/stderr<br/>error patterns"]
+    end
+
+    subgraph RECOVERY["Auto-Restart Mechanism"]
+        RESTART["Restart Conditions:<br/>• Process crash<br/>• Score < 50 for >30s<br/>• Critical connectivity<br/>• Multiple failures"]
+        LIMITS["Restart Limits:<br/>• Max 3 attempts in 5min<br/>• Exponential backoff<br/>• 1s, 2s, 4s delays"]
+        PROC["Restart Procedure:<br/>1. Terminate if running<br/>2. Update state to Restarting<br/>3. Wait backoff period<br/>4. Spawn new process<br/>5. Perform handshake<br/>6. Reset health monitor"]
+        GS["Graceful Shutdown:<br/>• Vine shutdown signal<br/>• 5s grace period<br/>• Force kill if unresponsive"]
+    end
+
+    subgraph BG["Background Task"]
+        TASK["tokio::spawn<br/>monitor_cocoon_health_task()"]
+        LOOP["Loop every 10s:<br/>1. Check process liveness<br/>2. Check gRPC connectivity<br/>3. Check Vine protocol<br/>4. Update health score<br/>5. Trigger restart if needed"]
+    end
+
+    subgraph TRACK["State Tracking"]
+        ST["State Transitions:<br/>Idle → Spawning → Running → Unhealthy → Restarting → Terminated"]
+        TS["Timestamps for<br/>health scoring"]
+        LOG["State transitions<br/>logged for debugging"]
+    end
+
+    CM --> STATE
+    STATE --> CPS
+    CPS --> CH
+
+    HM --> HS
+    HS --> HI
+    HS --> SL
+    HM --> SCORE
+    SCORE --> THRESH
+
+    HM -->|triggers| CHECKS
+    CHECKS --> PLC
+    CHECKS --> GRC
+    CHECKS --> VHC
+    CHECKS --> RMC
+
+    THRESH -->|Score < 50| RESTART
+    RESTART --> LIMITS
+    LIMITS --> PROC
+    PROC --> GS
+
+    TASK --> LOOP
+    LOOP -->|executes| CHECKS
+    LOOP -->|updates| HM
+
+    CPS -->|updates on events| TRACK
+    TRACK --> ST
+    TRACK --> TS
+    TRACK --> LOG
+
+    style CMR fill:#e1f5ff
+    style HM fill:#fff4e1
+    style CHECKS fill:#ffe1f5
+    style RECOVERY fill:#e1ffe1
+    style BG fill:#f5e1ff
+    style TRACK fill:#fff0e1
+```
+
 ### Phase 1: Process State Tracking
 
 **Objective**: Track Cocoon process state throughout its lifecycle

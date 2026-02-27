@@ -23,6 +23,74 @@ shell scripts.
 8. [Implementation Roadmap](#8-implementation-roadmap)
 9. [Implementation Summary](#9-implementation-summary)
 
+## Build System Architecture Transition
+
+```mermaid
+flowchart LR
+    subgraph OLD["Old Build Flow (Shell Scripts)"]
+        USR1["User runs bash script"]
+        SS1["Shell Script<br/>(Debug.sh, Release.sh)"]
+        EV1["Set Environment Variables<br/>(Browser, Bundle, NODE_ENV, etc.)"]
+        CB1["Call Cargo Binary<br/>./Target/release/Maintain"]
+        CG["Read env vars<br/>Generate config"]
+        MCF["Modify Cargo.toml<br/>Modify tauri.conf.json"]
+        TB1["pnpm tauri build<br/>(through shell)"]
+    end
+
+    subgraph NEW["New Build Flow (Cargo CLI)"]
+        USR2["User runs cargo"]
+        CLI["cargo run --bin Maintain<br/>-- --profile debug"]
+        CL["Parse CLI args<br/>(clap)"]
+        CFG["Read land-config.json<br/>Resolve profile"]
+        ER["EnvironmentResolver<br/>Generate env vars"]
+        RS["Run Rhai script<br/>(optional)"]
+        TB2["pnpm tauri build<br/>(direct)"]
+    end
+
+    subgraph COMMON["Shared Components"]
+        Mnt["Mountain"]
+        TBP["Tauri Build Process"]
+        AST["Astro/Vite Build<br/>(Element/Sky)"]
+        BIN["Binary Output"]
+    end
+
+    subgraph COMPAT["Backward Compatibility"]
+        WRAP["Shell Script Wrapper<br/>(calls cargo CLI)"]
+        ALT1["Alt: bash Maintain/Debug.sh"]
+        PASS["Pass-through to cargo CLI"]
+    end
+
+    USR1 --> SS1
+    SS1 --> EV1
+    EV1 --> CB1
+    CB1 --> CG
+    CG --> MCF
+    MCF --> TB1
+    TB1 --> TBP
+
+    USR2 --> CLI
+    CLI --> CL
+    CL --> CFG
+    CFG --> ER
+    ER --> RS
+    RS --> TB2
+    TB2 --> TBP
+
+    TBP --> AST
+    AST --> BIN
+
+    ALT1 --> WRAP
+    WRAP --> PASS
+    PASS --> CLI
+
+    style OLD fill:#ffcccc
+    style NEW fill:#ccffcc
+    style COMMON fill:#ccccff
+    style COMPAT fill:#ffffcc
+
+    SS1 -. legacy .-> WRAP
+```
+
 ---
 
 ## 1. Current State Analysis

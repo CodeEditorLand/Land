@@ -82,7 +82,7 @@ Electron=true pnpm tauri dev
 
 ### Automatic Sky Server Start
 
-The [`tauri.conf.json`](Element/Mountain/tauri.conf.json:60) configuration
+The [`tauri.conf.json`](https://github.com/CodeEditorLand/Mountain/tree/Current/tauri.conf.json#L60) configuration
 includes:
 
 ```json
@@ -99,7 +99,7 @@ When you run `pnpm tauri dev`:
 
 1. Tauri executes `beforeDevCommand` which starts the Sky dev server
 2. Sky runs on `http://localhost:9999` (configured in
-   [`astro.config.ts`](Element/Sky/astro.config.ts:52))
+   [`astro.config.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/astro.config.ts#L52))
 3. Tauri loads the web content from the Sky dev server
 4. Hot Module Replacement (HMR) is automatically enabled
 
@@ -110,7 +110,7 @@ automatically. This is the standard Tauri development workflow.
 
 ## Configuration Files
 
-### Tauri Configuration ([`tauri.conf.json`](Element/Mountain/tauri.conf.json))
+### Tauri Configuration ([`tauri.conf.json`](https://github.com/CodeEditorLand/Mountain/tree/Current/tauri.conf.json))
 
 Key settings for development:
 
@@ -132,7 +132,7 @@ Key settings for development:
 }
 ```
 
-### Sky Configuration ([`astro.config.ts`](Element/Sky/astro.config.ts))
+### Sky Configuration ([`astro.config.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/astro.config.ts))
 
 ```typescript
 export default defineConfig({
@@ -152,7 +152,7 @@ export default defineConfig({
 });
 ```
 
-### Debug Configuration ([`Debug.ts`](Element/Sky/Source/Function/Debug.ts))
+### Debug Configuration ([`Debug.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Function/Debug.ts))
 
 The `Host` variable is resolved as follows:
 
@@ -180,7 +180,7 @@ export const Host = process.env["TAURI_DEV_HOST"]
 
 ## Available Scripts
 
-### Root Package Scripts ([`package.json`](package.json))
+### Root Package Scripts ([`package.json`](https://github.com/CodeEditorLand/Land/tree/Current/package.json))
 
 ```bash
 # Mountain workbench (default)
@@ -310,15 +310,15 @@ export NODE_ENV=development
 
 ## Related Files
 
-- [`Element/Mountain/tauri.conf.json`](Element/Mountain/tauri.conf.json) - Tauri
+- [`Element/Mountain/tauri.conf.json`](https://github.com/CodeEditorLand/Mountain/tree/Current/tauri.conf.json) - Tauri
   configuration
-- [`Element/Mountain/Cargo.toml`](Element/Mountain/Cargo.toml) - Rust
+- [`Element/Mountain/Cargo.toml`](https://github.com/CodeEditorLand/Mountain/tree/Current/Cargo.toml) - Rust
   dependencies
-- [`Element/Sky/astro.config.ts`](Element/Sky/astro.config.ts) - Astro/Vite
+- [`Element/Sky/astro.config.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/astro.config.ts) - Astro/Vite
   configuration
-- [`Element/Sky/package.json`](Element/Sky/package.json) - Node dependencies
-- [`Element/Sky/Source/Function/Debug.ts`](Element/Sky/Source/Function/Debug.ts) -
+- [`Element/Sky/package.json`](https://github.com/CodeEditorLand/Sky/tree/Current/package.json) - Node dependencies
+- [`Element/Sky/Source/Function/Debug.ts`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Function/Debug.ts) -
   Environment resolution
-- [`Maintain/Dev-Mountain.sh`](Maintain/Dev-Mountain.sh) - Dev startup script
-- [`Maintain/Debug.sh`](Maintain/Debug.sh) - Debug build script
-- [`package.json`](package.json) - Root package with dev scripts
+- [`Maintain/Dev-Mountain.sh`](https://github.com/CodeEditorLand/Land/tree/Current/Maintain/Dev-Mountain.sh) - Dev startup script
+- [`Maintain/Debug.sh`](https://github.com/CodeEditorLand/Land/tree/Current/Maintain/Debug.sh) - Debug build script
+- [`package.json`](https://github.com/CodeEditorLand/Land/tree/Current/package.json) - Root package with dev scripts

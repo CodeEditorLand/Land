@@ -4,6 +4,58 @@
 their mouse over a specific word in the editor, the extension's logic is
 executed, and the resulting tooltip is displayed in the UI.
 
+```mermaid
+sequenceDiagram
+    participant Ext as Extension<br/>(in Cocoon)
+    participant Cocoon as Cocoon<br/>(Extension Host)
+    participant Mountain as Mountain<br/>(Native Backend)
+    participant Wind as Wind<br/>(VSCode UI)
+    participant UI as Monaco Editor<br/>(User Interface)
+
+    Note over Ext,UI: Phase 1: Registration
+    Ext->>Cocoon: vscode.languages.registerHoverProvider()
+    activate Cocoon
+    Cocoon->>Cocoon: Store provider with unique handle
+    Cocoon->>Mountain: $registerHoverProvider gRPC request
+    activate Mountain
+    Mountain->>Mountain: Create ProviderRegistrationDto
+    Mountain->>Mountain: Store in AppState.LanguageProviders
+    deactivate Mountain
+    deactivate Cocoon
+
+    Note over Ext,UI: Phase 2: User Hover Request
+    UI->>Wind: User hovers over word
+    activate Wind
+    Wind->>Wind: Monaco hover controller triggers
+    Wind->>Wind: LanguageFeaturesService.getHover()
+    Wind->>Mountain: TauriInvoke mountain://language-feature/provide-hover
+    deactivate Wind
+
+    Note over Ext,UI: Phase 3: Host Orchestration
+    activate Mountain
+    Mountain->>Mountain: Query AppState for "mylang" providers
+    Mountain->>Cocoon: $provideHover gRPC request<br/>(handle, URI, position)
+    activate Cocoon
+
+    Note over Ext,UI: Phase 4: Extension Execution
+    Cocoon->>Cocoon: Lookup provider by handle
+    Cocoon->>Ext: Call provider.provideHover()
+    activate Ext
+    Ext-->>Cocoon: Return Hover object {contents: ['Hello World']}
+    deactivate Ext
+    Cocoon->>Cocoon: Serialize to HoverResultDto
+    Cocoon-->>Mountain: Return HoverResultDto
+    deactivate Cocoon
+
+    Note over Ext,UI: Phase 5: UI Update
+    Mountain-->>Wind: Return hover data
+    deactivate Mountain
+    activate Wind
+    Wind->>UI: Pass hover data to Monaco controller
+    UI->>UI: Render tooltip widget
+    deactivate Wind
+```
+
 ---
 
 #### **Phase 1: Extension Registration (`Cocoon`)**
@@ -32,23 +84,23 @@ executed, and the resulting tooltip is displayed in the UI.
     - It passes the request to the `track` dispatcher.
 
 4.  **Dispatcher
-    ([`Mountain/src/track/TrackLogic.rs`](Element/Mountain/Source/Track/TrackLogic.rs))**
+    ([`Mountain/src/track/TrackLogic.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Track/TrackLogic.rs))**
 
 - **Action:** `DispatchSidecarRequest` is called.
     - It maps the method name (`$registerHoverProvider`) to an `ActionEffect`
       via `EffectCreation`. The effect is `LanguageFeature::RegisterProvider`.
 
-5. **[`LanguageFeatureProvider.RegisterProvider()`](Element/Mountain/Source/Environment/LanguageFeatureProvider/mod.rs:49)
+5. **[`LanguageFeatureProvider.RegisterProvider()`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/LanguageFeatureProvider/mod.rs#L49)
    (`Mountain`)**
 
 - **Action:** The `AppRuntime` executes the `RegisterProvider` effect.
 - The `MountainEnvironment`'s implementation of the
   `LanguageFeatureProviderRegistry` trait is called.
 - It delegates to the
-  [`Registration`](Element/Mountain/Source/Environment/LanguageFeatureProvider/Registration.rs)
+  [`Registration`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/LanguageFeatureProvider/Registration.rs)
   helper module.
 
-6. **[`Registration.register_provider()`](Element/Mountain/Source/Environment/LanguageFeatureProvider/Registration.rs)
+6. **[`Registration.register_provider()`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/LanguageFeatureProvider/Registration.rs)
    (`Mountain`)**
 
 - **Action:** The `register_provider` helper function creates a
@@ -87,7 +139,7 @@ executed, and the resulting tooltip is displayed in the UI.
     - It dispatches this to the `track` module.
     - The `track` module creates the `LanguageFeature::ProvideHover` effect.
 
-10. **[`LanguageFeatureProvider.ProvideHover()`](Element/Mountain/Source/Environment/LanguageFeatureProvider/FeatureMethods.rs)
+10. **[`LanguageFeatureProvider.ProvideHover()`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/LanguageFeatureProvider/FeatureMethods.rs)
     (`Mountain`)**
 
 - **Action:** The `AppRuntime` executes the `ProvideHover` effect.
