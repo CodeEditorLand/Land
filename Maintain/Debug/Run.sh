@@ -8,16 +8,14 @@
 # It reads configuration from .vscode/land-config.json.
 #
 # Usage:
-#   bash Maintain/Debug/Run.sh                    # Default debug profile
-#   bash Maintain/Debug/Run.sh --profile wind     # Run with Wind workbench
-#   bash Maintain/Debug/Run.sh --profile mountain # Run with Mountain workbench
-#   bash Maintain/Debug/Run.sh --profile electron # Run with Electron workbench
+# bash Maintain/Debug/Run.sh # Default debug profile
+# bash Maintain/Debug/Run.sh --profile mountain # Run with Mountain workbench
+# bash Maintain/Debug/Run.sh --profile electron # Run with Electron workbench
 #
 # Available profiles:
-#   debug           - Default Browser workbench with hot-reload
-#   debug-wind      - Wind workbench with hot-reload
-#   debug-mountain  - Mountain workbench with hot-reload [RECOMMENDED]
-#   debug-electron  - Electron workbench with hot-reload
+# debug - Default Browser workbench with hot-reload
+# debug-mountain - Mountain workbench with hot-reload [RECOMMENDED]
+# debug-electron - Electron workbench with hot-reload
 #
 # Features:
 #   - Hot-reload enabled by default
@@ -62,10 +60,9 @@ while [[ $# -gt 0 ]]; do
       echo "  --help, -h             Show this help message"
       echo ""
       echo "Available profiles:"
-      echo "  debug           - Browser workbench with hot-reload"
-      echo "  debug-wind      - Wind workbench with hot-reload"
-      echo "  debug-mountain  - Mountain workbench with hot-reload [RECOMMENDED]"
-      echo "  debug-electron  - Electron workbench with hot-reload"
+      echo " debug - Browser workbench with hot-reload"
+      echo " debug-mountain - Mountain workbench with hot-reload [RECOMMENDED]"
+      echo " debug-electron - Electron workbench with hot-reload"
       echo ""
       echo "Features:"
       echo "  - Hot-reload: Automatically reload on file changes"
@@ -105,20 +102,7 @@ case $PROFILE in
     export NODE_VERSION=22
     export NODE_OPTIONS="--max-old-space-size=16384"
     ;;
-  debug-wind)
-    echo "Using Wind workbench"
-    export Wind=true
-    export Bundle=true
-    export Clean=true
-    export Compile=false
-    export Debug=true
-    export Level=silent
-    export Dependency=Microsoft/VSCode
-    export NODE_ENV=development
-    export NODE_VERSION=22
-    export NODE_OPTIONS="--max-old-space-size=16384"
-    ;;
-  debug-mountain)
+   debug-mountain)
     echo "Using Mountain workbench (RECOMMENDED)"
     export Mountain=true
     export Bundle=true
@@ -145,10 +129,10 @@ case $PROFILE in
     export NODE_OPTIONS="--max-old-space-size=16384"
     ;;
   *)
-    echo "Unknown profile: $PROFILE"
-    echo "Available profiles: debug, debug-wind, debug-mountain, debug-electron"
-    exit 1
-    ;;
+  echo "Unknown profile: $PROFILE"
+  echo "Available profiles: debug, debug-mountain, debug-electron"
+  exit 1
+  ;;
 esac
 
 # Run the development server

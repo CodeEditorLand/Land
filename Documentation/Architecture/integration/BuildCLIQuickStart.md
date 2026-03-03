@@ -233,15 +233,14 @@ compatibility.
 
 Short aliases are available for quick access to common profiles:
 
-| Alias | Full Profile   |
+| Alias | Full Profile |
 | ----- | -------------- |
-| `d`   | debug          |
-| `dm`  | debug-mountain |
-| `dw`  | debug-wind     |
-| `de`  | debug-electron |
-| `p`   | production     |
-| `r`   | release        |
-| `w`   | web-browser    |
+| `d` | debug |
+| `dm` | debug-mountain |
+| `de` | debug-electron |
+| `p` | production |
+| `r` | release |
+| `w` | web-browser |
 
 ## Example Usage
 
@@ -278,8 +277,7 @@ cargo run --bin Maintain -- list-profiles
 
 Output shows profiles organized by type:
 
-- **Debug Profiles**: `debug`, `debug-electron`, `debug-mountain` (RECOMMENDED),
-  `debug-wind`
+- **Debug Profiles**: `debug`, `debug-electron`, `debug-mountain` (RECOMMENDED)
 - **Release Profiles**: `production`, `release`, `web-browser`
 - **Bundler Profiles**: `bundler-preparation`, `oxc-bundle`, `swc-bundle`
 

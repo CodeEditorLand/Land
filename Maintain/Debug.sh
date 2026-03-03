@@ -8,9 +8,8 @@
 # Maintain/Debug/Build.sh for legacy compatibility.
 #
 # Usage:
-#   bash Maintain/Debug.sh                    # Default debug profile
-#   bash Maintain/Debug.sh --profile wind     # Debug with Wind workbench
-#   bash Maintain/Debug.sh --profile mountain # Debug with Mountain workbench
+# bash Maintain/Debug.sh # Default debug profile
+# bash Maintain/Debug.sh --profile mountain # Debug with Mountain workbench
 #
 # For new development, consider using:
 #   - Maintain/Debug/Build.sh - For debug builds

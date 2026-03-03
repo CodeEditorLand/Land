@@ -8,9 +8,9 @@
 # is automatically started via Tauri's beforeDevCommand configuration.
 #
 # Usage:
-#   bash Maintain/Dev-Mountain.sh                    # Default: Mountain workbench
-#   bash Maintain/Dev-Mountain.sh --profile wind     # Wind workbench
-#   bash Maintain/Dev-Mountain.sh --profile electron # Electron workbench
+# bash Maintain/Dev-Mountain.sh # Default: Mountain workbench
+# bash Maintain/Dev-Mountain.sh --profile browser # Browser workbench
+# bash Maintain/Dev-Mountain.sh --profile electron # Electron workbench
 #
 # Workflow:
 #   1. Sets environment variables (Mountain=true, NODE_ENV=development)
@@ -45,21 +45,19 @@ while [[ $# -gt 0 ]]; do
             echo "  --help, -h            Show this help message"
             echo ""
             echo "Available profiles:"
-            echo "  mountain  - Mountain workbench (80-90% features) [DEFAULT]"
-            echo "  wind      - Wind workbench (60-70% features)"
-            echo "  electron  - Electron workbench (95%+ features)"
-            echo "  browser   - Browser workbench (70-80% features)"
+            echo " mountain - Mountain workbench (80-90% features) [DEFAULT]"
+            echo " electron - Electron workbench (95%+ features)"
+            echo " browser - Browser workbench (70-80% features)"
             echo ""
             echo "Environment Variables:"
-            echo "  Mountain=true     Enable Mountain workbench"
-            echo "  Wind=true         Enable Wind workbench"
-            echo "  Electron=true     Enable Electron workbench"
-            echo "  Browser=true      Enable Browser workbench"
+            echo " Mountain=true Enable Mountain workbench"
+            echo " Electron=true Enable Electron workbench"
+            echo " Browser=true Enable Browser workbench"
             echo ""
             echo "Examples:"
-            echo "  $0                                    # Default Mountain dev"
-            echo "  $0 --profile wind                     # Wind workbench dev"
-            echo "  $0 --profile electron                 # Electron workbench dev"
+            echo " $0 # Default Mountain dev"
+            echo " $0 --profile browser # Browser workbench dev"
+            echo " $0 --profile electron # Electron workbench dev"
             exit 0
             ;;
         *)
@@ -79,15 +77,11 @@ echo ""
 
 # Set environment variables based on profile
 case $PROFILE in
-    mountain)
-        echo "Using Mountain workbench"
-        export Mountain=true
-        ;;
-    wind)
-        echo "Using Wind workbench"
-        export Wind=true
-        ;;
-    electron)
+mountain)
+ echo "Using Mountain workbench"
+ export Mountain=true
+ ;;
+electron)
         echo "Using Electron workbench"
         export Electron=true
         ;;
@@ -96,10 +90,10 @@ case $PROFILE in
         export Browser=true
         ;;
     *)
-        echo "Unknown profile: $PROFILE"
-        echo "Available profiles: mountain, wind, electron, browser"
-        exit 1
-        ;;
+     echo "Unknown profile: $PROFILE"
+     echo "Available profiles: mountain, electron, browser"
+     exit 1
+     ;;
 esac
 
 # Set common development environment variables

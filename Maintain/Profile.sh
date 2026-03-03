@@ -57,10 +57,9 @@ list_profiles() {
     
     echo ""
     echo "Debug Profiles:"
-    echo "  debug            - Browser workbench (70-80% features)"
-    echo "  debug-wind       - Wind workbench (60-70% features)"
-    echo "  debug-mountain   - Mountain workbench (80-90% features) [RECOMMENDED]"
-    echo "  debug-electron   - Electron workbench (95%+ features)"
+    echo " debug - Browser workbench (70-80% features)"
+    echo " debug-mountain - Mountain workbench (80-90% features) [RECOMMENDED]"
+    echo " debug-electron - Electron workbench (95%+ features)"
     echo ""
     echo "Release Profiles:"
     echo "  production       - Production build with Mountain workbench"
@@ -101,22 +100,7 @@ show_profile() {
             echo "  wind_services: false"
             echo "  mountain_providers: false"
             ;;
-        debug-wind)
-            echo "Description: Debug build with Wind workbench"
-            echo "Workbench: Wind"
-            echo "Coverage: 60-70%"
-            echo "Complexity: High"
-            echo ""
-            echo "Environment Variables:"
-            echo "  Debug=true, Wind=true, Bundle=true"
-            echo "  NODE_ENV=development"
-            echo ""
-            echo "Features:"
-            echo "  tauri_ipc: true"
-            echo "  wind_services: true"
-            echo "  mountain_providers: false"
-            ;;
-        debug-mountain)
+           debug-mountain)
             echo "Description: Debug build with Mountain workbench (RECOMMENDED)"
             echo "Workbench: Mountain"
             echo "Coverage: 80-90%"
@@ -183,7 +167,7 @@ validate_profile() {
     print_header "Validating Profile: $profile_name"
     
     # Check if profile is known
-    local known_profiles="debug debug-wind debug-mountain debug-electron production release web-browser bundler-preparation swc-bundle oxc-bundle"
+    local known_profiles="debug debug-mountain debug-electron production release web-browser bundler-preparation swc-bundle oxc-bundle"
     
     if [[ " $known_profiles " =~ " $profile_name " ]]; then
         echo -e "${GREEN}✓ Profile '$profile_name' is valid${NC}"

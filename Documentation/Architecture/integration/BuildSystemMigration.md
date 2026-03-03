@@ -319,9 +319,8 @@ bash Maintain/Debug.sh [--profile <name>]
     ├── Parse --profile argument (default: "debug")
     │
     ├── Set environment variables based on profile:
-    │   ├── debug: Browser=true, Bundle=true, Clean=true
-    │   ├── debug-wind: Wind=true, Bundle=true, Clean=true
-    │   ├── debug-mountain: Mountain=true, Bundle=true, Clean=true
+    │ ├── debug: Browser=true, Bundle=true, Clean=true
+    │ ├── debug-mountain: Mountain=true, Bundle=true, Clean=true
     │   └── debug-electron: Electron=true, Bundle=true, Clean=true
     │
     └── Execute: ./Target/release/Maintain -- pnpm tauri build --debug
@@ -656,8 +655,7 @@ Debug Profiles:
 
   debug                - Debug build profile with full logging and development features
   debug-electron       - Debug build with Electron workbench for full API testing
-  debug-mountain       - Debug build with Mountain workbench (RECOMMENDED for Tauri) [RECOMMENDED]
-  debug-wind           - Debug build with Wind workbench for native UI development
+  debug-mountain - Debug build with Mountain workbench (RECOMMENDED for Tauri) [RECOMMENDED]
 
 Release Profiles:
   production           - Production build profile optimized for release deployment
@@ -670,8 +668,7 @@ Bundler Profiles:
   swc-bundle           - SWC bundler for ultra-fast compilation and bundling
 
 Profile Aliases:
-  dw         -> debug-wind
-  d          -> debug
+ d -> debug
   dm         -> debug-mountain
   p          -> production
   r          -> release
@@ -892,9 +889,8 @@ fn test_full_build_dry_run() {
 | Profile        | Platform | Workbench | Expected Result |
 | -------------- | -------- | --------- | --------------- |
 | debug          | macOS    | Browser   | Build succeeds  |
-| debug-mountain | macOS    | Mountain  | Build succeeds  |
-| debug-wind     | macOS    | Wind      | Build succeeds  |
-| production     | macOS    | Mountain  | Build succeeds  |
+| debug-mountain | macOS | Mountain | Build succeeds |
+| production | macOS | Mountain | Build succeeds |
 | release        | macOS    | Mountain  | Build succeeds  |
 | debug          | Windows  | Browser   | Build succeeds  |
 | production     | Windows  | Mountain  | Build succeeds  |
@@ -1113,9 +1109,8 @@ Short aliases are available for quick access:
 | Alias | Profile        |
 | ----- | -------------- |
 | `d`   | debug          |
-| `dm`  | debug-mountain |
-| `dw`  | debug-wind     |
-| `de`  | debug-electron |
+| `dm` | debug-mountain |
+| `de` | debug-electron |
 | `p`   | production     |
 | `r`   | release        |
 | `w`   | web-browser    |

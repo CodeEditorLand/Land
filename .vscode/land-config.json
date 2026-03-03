@@ -34,7 +34,6 @@
 		"default": "Browser",
 		"available": [
 			"Browser",
-			"Wind",
 			"Mountain",
 			"Electron",
 			"BrowserProxy"
@@ -81,16 +80,6 @@
 					"Maximum compatibility"
 				],
 				"recommended": true
-			},
-			"Wind": {
-				"description": "Native Wind-based workbench with custom UI",
-				"coverage": "60-70%",
-				"complexity": "High",
-				"polyfills": true,
-				"mountain_providers": false,
-				"wind_services": true,
-				"electron_apis": false,
-				"recommended_for": ["Custom UI", "Experimental features"]
 			},
 			"Electron": {
 				"description": "Full Electron workbench with complete polyfills",
@@ -250,35 +239,6 @@
 				"mountain_providers": false
 			},
 			"rhai_script": "scripts/profiles/debug-profile.rhai"
-		},
-
-		/**
-		 * Debug Wind Profile
-		 * Debug build with Wind workbench
-		 */
-		"debug-wind": {
-			"description": "Debug build with Wind workbench for native UI development",
-			"workbench": "Wind",
-			"env": {
-				"Debug": "true",
-				"Wind": "true",
-				"Bundle": "true",
-				"Clean": "true",
-				"Compile": "false",
-				"NODE_ENV": "development",
-				"NODE_VERSION": "22",
-				"NODE_OPTIONS": "--max-old-space-size=16384",
-				"RUST_LOG": "debug",
-				"Level": "silent",
-				"Dependency": "Microsoft/VSCode"
-			},
-			"features": {
-				"tauri_ipc": true,
-				"electron_polyfills": true,
-				"wind_services": true,
-				"mountain_providers": false
-			},
-			"rhai_script": "scripts/profiles/debug-wind-profile.rhai"
 		},
 
 		/**
@@ -1091,13 +1051,12 @@
 		"progress": true,
 		"dry_run_default": false,
 		"profile_aliases": {
-			"d": "debug",
-			"dm": "debug-mountain",
-			"dw": "debug-wind",
-			"de": "debug-electron",
-			"p": "production",
-			"r": "release",
-			"w": "web-browser"
+		 "d": "debug",
+		 "dm": "debug-mountain",
+		 "de": "debug-electron",
+		 "p": "production",
+		 "r": "release",
+		 "w": "web-browser"
 		}
 	}
 }
