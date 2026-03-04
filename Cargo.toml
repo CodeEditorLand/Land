@@ -98,7 +98,7 @@ metrics = { version = "0.24.3" }
 notify = { version = "8.2.0" }
 num_cpus = { version = "1.17.0" }
 once_cell = { version = "1.21.3" }
-opentelemetry = { version = "0.31.0" }
+opentelemetry = { version = "0.31.0", default-features = false }
 parking_lot = { version = "0.12.5" }
 portable-pty = { version = "0.9.0" }
 portpicker = { version = "0.1.1" }
@@ -177,3 +177,26 @@ rust-version = "1.95.0"
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+[profile.test]
+inherits = "dev"
+opt-level = 0
+
+[profile.bench]
+inherits = "release"
+debug = true
+
+[profile.wasm-release]
+inherits = "release"
+opt-level = "s"
+lto = true
