@@ -2,7 +2,6 @@
 exclude = [
 	"Dependency/Microsoft/Dependency/Editor/cli",
 	"Element/Document",
-	"Element/Rest",
 ]
 members = [
 	"Element/Common",
@@ -12,6 +11,7 @@ members = [
 	"Element/Air",
 	"Element/Grove",
 	"Element/Mist",
+	"Element/Rest",
 	"Element/SideCar",
 ]
 resolver = "2"
@@ -66,6 +66,9 @@ bytes = { version = "1.11.1" }
 chrono = { version = "0.4.44" }
 clap = { version = "4.5.60", features = ["derive", "env"] }
 colored = { version = "3.1.1" }
+git2 = { version = "0.20.4" }
+itertools = { version = "0.14.0" }
+par-core = { version = "2.0.0", features = ["rayon"] }
 config = { version = "0.15.19" }
 crc32fast = { version = "1.5.0" }
 crossbeam-deque = { version = "0.8.6" }
@@ -140,6 +143,15 @@ url = { version = "2.5.8" }
 uuid = { version = "1.21.0" }
 walkdir = { version = "2.5.0" }
 zeroize = { version = "1.8.2" }
+# SWC dependencies for Element/Rest
+swc_common = { version = "19.0.0" }
+swc_ecma_ast = { version = "21.0.0" }
+swc_ecma_codegen = { version = "24.0.0" }
+swc_ecma_parser = { version = "35.0.0" }
+swc_ecma_transforms_base = { version = "38.0.0", features = ["concurrent"] }
+swc_ecma_transforms_proposal = { version = "38.0.0" }
+swc_ecma_transforms_typescript = { version = "42.0.0" }
+swc_ecma_visit = { version = "21.0.0" }
 zip = { version = "8.1.0" }
 p256 = { version = "0.13.2" }
 pem = { version = "3.0.6" }
