@@ -63,7 +63,7 @@ case $PROFILE in
   production)
     echo "Using Mountain workbench (production)"
     export Mountain=true
-    export Bundle=true
+    export Bundle=false
     export Clean=true
     export Compile=true
     export Debug=false
@@ -77,7 +77,7 @@ case $PROFILE in
   release)
     echo "Using Mountain workbench (full release)"
     export Mountain=true
-    export Bundle=true
+    export Bundle=false
     export Clean=true
     export Compile=true
     export Debug=false
@@ -91,7 +91,7 @@ case $PROFILE in
   web-browser)
     echo "Using Browser workbench (web-only)"
     export Browser=true
-    export Bundle=true
+    export Bundle=false
     export Clean=true
     export Compile=true
     export Debug=false
