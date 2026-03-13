@@ -222,6 +222,24 @@ development and versioning.
 
 ---
 
+## Development Tools 🔧
+
+### Depth-Aware Skill System
+
+The project includes a **Depth-Aware Skill System** that adapts development tool behavior based on usage frequency. Skills start with quick, focused scans (Level 1) and progressively enable more comprehensive analysis (Levels 2-4) as they're used repeatedly.
+
+**Learn More:**
+- [`Documentation/SkillSystem.md`](Documentation/SkillSystem.md) - Complete system overview and usage guide
+- [`.roo/skills/DEPTH-MANAGEMENT.md`](.roo/skills/DEPTH-MANAGEMENT.md) - Technical management reference
+
+### Naming Conventions
+
+All components use **PascalCase** for binary names, CLI commands, and documentation text. See the migration guide for details:
+
+- [`docs/REST-NAMING-MIGRATION.md`](docs/REST-NAMING-MIGRATION.md) - "Rest" naming migration guide
+
+---
+
 ## System Architecture Diagram
 
 This diagram illustrates the build-time and runtime interactions between the

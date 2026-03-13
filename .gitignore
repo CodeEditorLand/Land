@@ -50,3 +50,10 @@ Documentation/Rust/.rustdoc_fingerprint.json
 Documentation/Rust/CACHEDIR.TAG
 
 context_portal/
+
+# Temporary build directories
+/Temp/
+
+# VSCode build output
+Dependency/Microsoft/Dependency/Editor/out/
+Dependency/Microsoft/Dependency/Editor/build/

@@ -240,7 +240,9 @@
 
 		"VSCODE_PID",
 
-		"npm_package_version"
+		"npm_package_version",
+
+		"Compiler"
 	],
 
 	"tasks": {

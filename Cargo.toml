@@ -95,6 +95,7 @@ lazy_static = { version = "1.5.0" }
 log = { version = "0.4.29" }
 md5 = { version = "0.8.0" }
 metrics = { version = "0.24.3" }
+prometheus = { version = "0.13.4" }
 notify = { version = "8.2.0" }
 num_cpus = { version = "1.17.0" }
 once_cell = { version = "1.21.3" }
@@ -143,15 +144,15 @@ url = { version = "2.5.8" }
 uuid = { version = "1.21.0" }
 walkdir = { version = "2.5.0" }
 zeroize = { version = "1.8.2" }
-# SWC dependencies for Element/Rest
-swc_common = { version = "19.0.0" }
-swc_ecma_ast = { version = "21.0.0" }
-swc_ecma_codegen = { version = "24.0.0" }
-swc_ecma_parser = { version = "35.0.0" }
-swc_ecma_transforms_base = { version = "38.0.0", features = ["concurrent"] }
-swc_ecma_transforms_proposal = { version = "38.0.0" }
-swc_ecma_transforms_typescript = { version = "42.0.0" }
-swc_ecma_visit = { version = "21.0.0" }
+# OXC dependencies for Element/Rest
+oxc_allocator = { version = "0.48.0" }
+oxc_parser = { version = "0.48.0" }
+oxc_transformer = { version = "0.48.0" }
+oxc_minifier = { version = "0.48.0" }
+oxc_codegen = { version = "0.48.0" }
+oxc_semantic = { version = "0.48.0" }
+oxc_span = { version = "0.48.0" }
+oxc_ast = { version = "0.48.0" }
 zip = { version = "8.1.0" }
 p256 = { version = "0.13.2" }
 pem = { version = "3.0.6" }

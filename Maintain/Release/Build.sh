@@ -73,6 +73,64 @@ case $PROFILE in
     export NODE_VERSION=22
     export NODE_OPTIONS="--max-old-space-size=8192"
     export RUST_LOG=info
+    
+    # Default compiler is esbuild unless explicitly set
+    export Compiler="${Compiler:-esbuild}"
+    if [[ "$Compiler" == "Rest" ]]; then
+      echo "Using Rest compiler"
+      export Compiler=Rest
+    else
+      echo "Using esbuild compiler"
+      export Compiler=esbuild
+    fi
+    
+    # Rest build stage: Compile VSCode output with Rest if enabled
+    if [[ "$Compiler" == "Rest" ]]; then
+      echo ""
+      echo "Stage 3: Rest compilation of VSCode output"
+      echo "=========================================="
+      
+      # Determine source directory based on NODE_ENV
+      if [[ "$NODE_ENV" == "development" ]]; then
+        VSCodeSourceDir="Dependency/Microsoft/Dependency/Editor/out"
+      else
+        VSCodeSourceDir="Dependency/Microsoft/Dependency/Editor/out-build"
+      fi
+      
+      # Create Rest output directory
+      RestOutputDir="Target/Rest/Microsoft/VSCode"
+      mkdir -p "$RestOutputDir"
+      
+      # Check if VSCode source exists
+      if [[ ! -d "$VSCodeSourceDir" ]]; then
+        echo "[Rest] Warning: VSCode source directory not found: $VSCodeSourceDir"
+        echo "[Rest] Skipping Rest compilation - ensure VSCode is built first"
+      else
+        echo "[Rest] Compiling from: $VSCodeSourceDir"
+        echo "[Rest] Output directory: $RestOutputDir"
+        
+        # Run Rest compiler
+        if command -v Rest &> /dev/null; then
+        Rest compile \
+            --input "$VSCodeSourceDir" \
+            --output "$RestOutputDir" \
+            --target es2024 \
+            --module commonjs \
+            ${REST_OPTIONS:+ $REST_OPTIONS}
+          
+          if [[ $? -eq 0 ]]; then
+            echo "[Rest] Compilation successful"
+          else
+            echo "[Rest] Compilation failed - falling back to esbuild"
+            export Compiler=esbuild
+          fi
+        else
+          echo "[Rest] 'Rest' command not found - falling back to esbuild"
+          echo "[Rest] Install @codeeditorland/rest or set REST_BINARY_PATH"
+          export Compiler=esbuild
+        fi
+      fi
+    fi
     ;;
   release)
     echo "Using Mountain workbench (full release)"
@@ -87,6 +145,16 @@ case $PROFILE in
     export NODE_VERSION=22
     export NODE_OPTIONS="--max-old-space-size=8192"
     export RUST_LOG=warn
+    
+    # Default compiler is esbuild unless explicitly set
+    export Compiler="${Compiler:-esbuild}"
+    if [[ "$Compiler" == "Rest" ]]; then
+    echo "Using Rest compiler"
+    export Compiler=Rest
+    else
+    echo "Using esbuild compiler"
+    export Compiler=esbuild
+    fi
     ;;
   web-browser)
     echo "Using Browser workbench (web-only)"
@@ -101,6 +169,16 @@ case $PROFILE in
     export NODE_VERSION=22
     export NODE_OPTIONS="--max-old-space-size=8192"
     export RUST_LOG=warn
+    
+    # Default compiler is esbuild unless explicitly set
+    export Compiler="${Compiler:-esbuild}"
+    if [[ "$Compiler" == "Rest" ]]; then
+    echo "Using Rest compiler"
+    export Compiler=Rest
+    else
+    echo "Using esbuild compiler"
+    export Compiler=esbuild
+    fi
     ;;
   *)
     echo "Unknown profile: $PROFILE"
