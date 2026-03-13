@@ -25,12 +25,12 @@ panic = "abort"
 opt-level = 3
 
 [profile.release]
-opt-level = 3
+opt-level = 2  # Use level 2 to avoid optimizer bugs with OXC
 codegen-units = 1
-debug = false
-lto = true
+debug = false  # Can disable debug symbols for final release
+lto = false   # Disable LTO to avoid linking issues
 panic = "abort"
-strip = true
+strip = false
 
 [target.aarch64-apple-darwin]
 # rustflags removed: -Zshare-generics=y is nightly-only and not compatible with stable Rust
