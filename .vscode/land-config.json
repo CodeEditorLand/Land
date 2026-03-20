@@ -32,12 +32,7 @@
 	 */
 	"workbench": {
 		"default": "Browser",
-		"available": [
-			"Browser",
-			"Mountain",
-			"Electron",
-			"BrowserProxy"
-		],
+		"available": ["Browser", "Mountain", "Electron", "BrowserProxy"],
 		"features": {
 			"Browser": {
 				"description": "Standard web-based VSCode workbench",
@@ -1051,12 +1046,12 @@
 		"progress": true,
 		"dry_run_default": false,
 		"profile_aliases": {
-		 "d": "debug",
-		 "dm": "debug-mountain",
-		 "de": "debug-electron",
-		 "p": "production",
-		 "r": "release",
-		 "w": "web-browser"
+			"d": "debug",
+			"dm": "debug-mountain",
+			"de": "debug-electron",
+			"p": "production",
+			"r": "release",
+			"w": "web-browser"
 		}
 	}
 }

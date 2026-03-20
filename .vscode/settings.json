@@ -9,7 +9,7 @@
 		"editor.defaultFormatter": "redhat.vscode-xml"
 	},
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
-	"explorer.excludeGitIgnore": true,
+	"explorer.excludeGitIgnore": false,
 	"files.exclude": {
 		"**/.DS_Store": true,
 		"**/.git": true,
