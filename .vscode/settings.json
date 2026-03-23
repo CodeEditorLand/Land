@@ -87,5 +87,6 @@
 		"Target",
 		"target"
 	],
-	"formatFiles.excludePattern": "**/node_modules/**/*,**/Dependency/*/Dependency/**/*,**/Generated/**/*,**/Documentation/Rust/**/*,**/Documentation/Module/**/*,**/Element/SideCar/*/NODE/**/*"
+	"formatFiles.excludePattern": "**/node_modules/**/*,**/Dependency/*/Dependency/**/*,**/Generated/**/*,**/Documentation/Rust/**/*,**/Documentation/Module/**/*,**/Element/SideCar/*/NODE/**/*",
+	"vsicons.presets.angular": true
 }
