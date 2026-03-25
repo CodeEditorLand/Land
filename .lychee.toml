@@ -28,7 +28,7 @@ exclude = [
 	"Documentation/Module/effect/",
 	"effect-ts.github.io",
 
-	# VSCode internal links
+	# VS Code internal links
 	"vscode-workbench",
 	"workbench/contrib/chat",
 

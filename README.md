@@ -88,7 +88,7 @@ concert to deliver a modern editing experience.
 
 | Component                       | Role & Key Responsibilities                                                                                                                                                                                                                       | Primary Technologies                 |
 | :------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------- |
-| **`Common` (Rust)**             | **The Abstract Core Library.** Defines the application's "language". It contains all abstract `trait` definitions, the `ActionEffect` system, and Data Transfer Objects (DTOs). It has no knowledge of the final implementation.                  | Rust                                 |
+| **`Common` 👨🏻‍🏭**                 | **The Abstract Core Library.** Defines the application's "language". It contains all abstract `trait` definitions, the `ActionEffect` system, and Data Transfer Objects (DTOs). It has no knowledge of the final implementation.                  | Rust                                 |
 | **`Mountain` (Rust)**           | **The Native Backend.** A Tauri application that **implements** the traits from `Common`. It manages native OS operations, hosts the gRPC server, manages the `Cocoon` and `Air` processes, and communicates with the `Wind` UI via Tauri events. | Rust, Tauri, Tokio, `tonic` (gRPC)   |
 | **`Air` (Rust)**                | **The Background Daemon.** A persistent sidecar process that handles resource-intensive operations like updates, downloads, and cryptographic signing. It runs independently of the main window to keep the UI responsive.                        | Rust, Tokio, `tonic` (gRPC)          |
 | **`Cocoon` (TypeScript)**       | **The Extension Host.** A Node.js process that provides a high-fidelity `vscode` API to extensions. It's built entirely with Effect-TS and communicates with `Mountain` via gRPC for all privileged operations.                                   | TypeScript, Node.js, Effect-TS, gRPC |
@@ -303,18 +303,39 @@ Follow these steps to get **Land** up and running on your system.
 
 ### **1. Clone the Repository:**
 
-This command downloads the **Land** project files. The `--recurse-submodules`
-flag is crucial as it fetches all "Element" submodules and the VS Code source
-code dependency.
-
 ```sh
-git clone ssh://git@github.com/CodeEditorLand/Land.git --recurse-submodules
+# Clone the main repository in a directory of your choice with:
+git clone --depth 2 ssh://git@github.com/CodeEditorLand/Land.git
+
+# 1. In ./Land/ run:
+git submodule update --init Element
+# To initialize the Element submodule.
+
+# 2. In ./Land/Element run:
+git submodule update --init
+# To update and initialize all Element submodules.
+
+# 3. In ./Land/ run:
+git submodule update --init Dependency
+# To update and initialize the ./Land/Dependency submodule from the root.
+
+# 4. In ./Land/Dependency/ run:
+git submodule update --init Microsoft
+# To update and initialize the ./Land/Dependency/Microsoft dependencies repository.
+
+# 5. In ./Land/Dependency/Microsoft run:
+git submodule update --init Dependency
+# To initialize the direct ./Land/Dependency/Microsoft/Dependency holding all Microsoft repositories.
+
+# 6. In ./Land/Dependency/Microsoft/Dependency run:
+git submodule update --init --depth=2 Editor
+# To initialize the VS Code source repository.
 ```
 
 ### **2. Install Dependencies:**
 
-This command uses `pnpm` (a **Node.js** package manager) to install all
-**JavaScript** dependencies required for building the `Sky` frontend, the
+The repository uses `pnpm` (a **Node.js** package manager) to install all
+**JavaScript** dependencies necessary for building the `Sky` frontend, the
 `Cocoon` sidecar, and various development tools.
 
 ```sh

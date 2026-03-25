@@ -54,6 +54,6 @@ context_portal/
 # Temporary build directories
 /Temp/
 
-# VSCode build output
+# VS Code build output
 Dependency/Microsoft/Dependency/Editor/out/
 Dependency/Microsoft/Dependency/Editor/build/

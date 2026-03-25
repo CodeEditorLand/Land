@@ -207,7 +207,7 @@ export default {
 			},
 		},
 
-		// 2. Other JSONs (VSCode settings, tsconfig, etc.): LOOSE JSON.
+		// 2. Other JSONs (VS Code settings, tsconfig, etc.): LOOSE JSON.
 		// Allows comments and trailing commas (JSONC).
 		{
 			files: "*.json",
