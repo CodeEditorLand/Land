@@ -4,19 +4,19 @@ Welcome to the Land project! This document provides a high-level overview of the
 architecture and the core workflows that drive the application. Our system is
 composed of three primary components:
 
-- **`Common` (Rust Crate):** The abstract core library. It defines the
+- **`Common` 👨🏻‍🏭 (Rust Crate):** The abstract core library. It defines the
   architectural "language" of the application through traits, data structures
   (DTOs), and a declarative Effect system. It has no knowledge of the final
   implementation.
-- **`Mountain` (Rust Application):** The native backend. It is a Tauri
+- **`Mountain` ⛰️ (Rust Application):** The native backend. It is a Tauri
   application that implements the abstract traits from `Common`, manages the
   native OS interactions, runs a gRPC server, and orchestrates the `Cocoon`
   sidecar process.
-- **`Wind` & `Sky` (TypeScript UI):** The frontend. `Wind` is a
+- **`Wind` 🍃 & `Sky` 🌌 (TypeScript UI):** The frontend. `Wind` is a
   re-implementation of the VS Code workbench services using `Effect-TS`,
   providing the application logic for the UI. `Sky` is the declarative UI
   component layer (e.g., React, Vue) that renders the state managed by `Wind`.
-- **`Cocoon` (TypeScript Application):** A Node.js sidecar process managed by
+- **`Cocoon` 🦋 (TypeScript Application):** A Node.js sidecar process managed by
   `Mountain`. It is responsible for running extensions in a sandboxed
   environment and providing them with a high-fidelity `vscode` API.
 
@@ -26,9 +26,9 @@ and Commands**.
 
 ---
 
-## Table of Contents
+## Table of Contents 📑
 
-### Core Workflows
+### Core Workflows 🔄
 
 1.  [**Application Startup & Handshake**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/ApplicationStartupAndHandshake.md)
     - _Describes the complete end-to-end process of launching `Mountain`,
@@ -81,7 +81,7 @@ and Commands**.
       instance of the application is launched to run tests, with the test
       `Cocoon` instance remote-controlling the main UI._
 
-### Work in Progress (Documentation)
+### Work in Progress (Documentation) 🚧
 
 The following workflows are implemented in the codebase but are pending detailed
 documentation.

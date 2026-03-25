@@ -1,4 +1,4 @@
-### **Workflow Example #5: Executing a Command from the Command Palette**
+### **Workflow Example #5: Executing a Command from the Command Palette** ⌨️
 
 **Goal:** The user opens the Command Palette (`Ctrl+Shift+P`), types the name of
 a command (e.g., "Format Document"), and selects it. The corresponding action is
