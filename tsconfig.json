@@ -1,12 +1,19 @@
 {
-  "files": [],
-  "references": [
-    { "path": "Element/Sky" },
-    { "path": "Element/Worker" },
-    { "path": "Element/Output" },
-    { "path": "Element/Wind" }
-  ],
-  "watchOptions": {
-    "excludeDirectories": ["**/node_modules/**", "**/Target/**"]
-  }
+	"exclude": ["**/node_modules/**"],
+
+	"files": [],
+
+	"references": [
+		{ "path": "Element/Sky" },
+
+		{ "path": "Element/Worker" },
+
+		{ "path": "Element/Output" },
+
+		{ "path": "Element/Wind" }
+	],
+
+	"watchOptions": {
+		"excludeDirectories": ["**/node_modules/**", "**/Target/**"]
+	}
 }
