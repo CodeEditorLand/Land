@@ -72,12 +72,6 @@
 			"protobufjs",
 			"sharp",
 			"workerd"
-		],
-		"overrides": {
-			"@effect/cluster": "*",
-			"@effect/rpc": "*",
-			"@effect/sql": "*",
-			"effect": "*"
-		}
+		]
 	}
 }
