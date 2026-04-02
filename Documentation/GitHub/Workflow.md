@@ -12,7 +12,7 @@ composed of three primary components:
   application that implements the abstract traits from `Common`, manages the
   native OS interactions, runs a gRPC server, and orchestrates the `Cocoon`
   sidecar process.
-- **`Wind` 🍃 & `Sky` 🌌 (TypeScript UI):** The frontend. `Wind` is a
+- **`Wind` 🍃 & `Sky` 🌌 (TypeScript UI):** The frontend. `Wind` is a
   re-implementation of the VS Code workbench services using `Effect-TS`,
   providing the application logic for the UI. `Sky` is the declarative UI
   component layer (e.g., React, Vue) that renders the state managed by `Wind`.
