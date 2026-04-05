@@ -88,5 +88,8 @@
 		"target"
 	],
 	"formatFiles.excludePattern": "**/node_modules/**/*,**/Dependency/*/Dependency/**/*,**/Generated/**/*,**/Documentation/Rust/**/*,**/Documentation/Module/**/*,**/Element/SideCar/*/NODE/**/*",
-	"vsicons.presets.angular": true
+	"vsicons.presets.angular": true,
+	"[toml]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	}
 }

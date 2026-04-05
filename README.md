@@ -200,22 +200,22 @@ graph LR
 Detailed Mermaid-diagrammed workflows live in
 [`Documentation/GitHub/Workflow.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow.md):
 
-1. **Application Startup & Handshake** — Mountain launches, spawns Cocoon,
+1. **Application Startup & Handshake** - Mountain launches, spawns Cocoon,
    establishes gRPC connection
-2. **Opening a File** — UI click through Wind to Mountain to disk and back
-3. **Language Features** — Bidirectional: Cocoon registers provider, Mountain
+2. **Opening a File** - UI click through Wind to Mountain to disk and back
+3. **Language Features** - Bidirectional: Cocoon registers provider, Mountain
    proxies requests
-4. **Save Participants** — Extensions modify files via gRPC before Mountain
+4. **Save Participants** - Extensions modify files via gRPC before Mountain
    writes to disk
-5. **Command Palette** — Unified dispatch to native Rust handlers or proxied
+5. **Command Palette** - Unified dispatch to native Rust handlers or proxied
    extension commands
-6. **Webview Panels** — Full lifecycle of extension-contributed UI
-7. **Integrated Terminal** — Native PTY via `portable-pty`, streamed to UI and
+6. **Webview Panels** - Full lifecycle of extension-contributed UI
+7. **Integrated Terminal** - Native PTY via `portable-pty`, streamed to UI and
    Cocoon
-8. **SCM / Git** — Cocoon's Git extension uses Mountain to spawn native `git`
+8. **SCM / Git** - Cocoon's Git extension uses Mountain to spawn native `git`
    processes
-9. **User Data Sync** — Auth, fetch, three-way merge, apply, notify
-10. **Extension Tests** — Isolated "Extension Development Host" for test
+9. **User Data Sync** - Auth, fetch, three-way merge, apply, notify
+10. **Extension Tests** - Isolated "Extension Development Host" for test
     execution
 
 ---
@@ -226,22 +226,22 @@ Detailed Mermaid-diagrammed workflows live in
 # Clone with submodules
 git clone --depth 2 ssh://git@github.com/CodeEditorLand/Land.git
 
-# 1. In ./Land/ — initialize Element submodule
+# 1. In ./Land/ - initialize Element submodule
 git submodule update --init Element
 
-# 2. In ./Land/Element — initialize all Element submodules
+# 2. In ./Land/Element - initialize all Element submodules
 git submodule update --init
 
-# 3. In ./Land/ — initialize Dependency submodule
+# 3. In ./Land/ - initialize Dependency submodule
 git submodule update --init Dependency
 
-# 4. In ./Land/Dependency/ — initialize Microsoft dependencies
+# 4. In ./Land/Dependency/ - initialize Microsoft dependencies
 git submodule update --init Microsoft
 
-# 5. In ./Land/Dependency/Microsoft — initialize Dependency
+# 5. In ./Land/Dependency/Microsoft - initialize Dependency
 git submodule update --init Dependency
 
-# 6. In ./Land/Dependency/Microsoft/Dependency — initialize VS Code source
+# 6. In ./Land/Dependency/Microsoft/Dependency - initialize VS Code source
 git submodule update --init --depth 2 Editor
 ```
 
@@ -268,16 +268,16 @@ pnpm run Run
 | Service             | URL                                                                                                    |
 | :------------------ | :----------------------------------------------------------------------------------------------------- |
 | Website             | [editor.land](https://editor.land)                                                                     |
-| Status              | [Status.Editor.Land](https://Status.Editor.Land)                                   |
-| Rust API: Mountain  | [Rust.Documentation.Mountain.Editor.Land](https://Rust.Documentation.Mountain.Editor.Land)       |
-| Rust API: Common    | [Rust.Documentation.Common.Editor.Land](https://Rust.Documentation.Common.Editor.Land)           |
-| Rust API: Echo      | [Rust.Documentation.Echo.Editor.Land](https://Rust.Documentation.Echo.Editor.Land)               |
-| Rust API: Air       | [Rust.Documentation.Air.Editor.Land](https://Rust.Documentation.Air.Editor.Land)                 |
-| Rust API: SideCar   | [Rust.Documentation.SideCar.Editor.Land](https://Rust.Documentation.SideCar.Editor.Land)         |
-| Rust API: Rest      | [Rust.Documentation.Rest.Editor.Land](https://Rust.Documentation.Rest.Editor.Land)               |
-| Rust API: Maintain  | [Rust.Documentation.Maintain.Editor.Land](https://Rust.Documentation.Maintain.Editor.Land)       |
-| Rust API: Workspace | [Rust.Documentation.Land.Editor.Land](https://Rust.Documentation.Land.Editor.Land)                         |
-| Knowledge Base      | [Knowledge.Editor.Land](https://Knowledge.Editor.Land)   |
+| Status              | [Status.Editor.Land](https://Status.Editor.Land)                                                       |
+| Rust API: Mountain  | [Rust.Documentation.Mountain.Editor.Land](https://Rust.Documentation.Mountain.Editor.Land)             |
+| Rust API: Common    | [Rust.Documentation.Common.Editor.Land](https://Rust.Documentation.Common.Editor.Land)                 |
+| Rust API: Echo      | [Rust.Documentation.Echo.Editor.Land](https://Rust.Documentation.Echo.Editor.Land)                     |
+| Rust API: Air       | [Rust.Documentation.Air.Editor.Land](https://Rust.Documentation.Air.Editor.Land)                       |
+| Rust API: SideCar   | [Rust.Documentation.SideCar.Editor.Land](https://Rust.Documentation.SideCar.Editor.Land)               |
+| Rust API: Rest      | [Rust.Documentation.Rest.Editor.Land](https://Rust.Documentation.Rest.Editor.Land)                     |
+| Rust API: Maintain  | [Rust.Documentation.Maintain.Editor.Land](https://Rust.Documentation.Maintain.Editor.Land)             |
+| Rust API: Workspace | [Rust.Documentation.Land.Editor.Land](https://Rust.Documentation.Land.Editor.Land)                     |
+| Knowledge Base      | [Knowledge.Editor.Land](https://Knowledge.Editor.Land)                                                 |
 | Auth Worker         | [codeeditorland-auth.playform.workers.dev](https://codeeditorland-auth.playform.workers.dev)           |
 | Download Worker     | [codeeditorland-download.playform.workers.dev](https://codeeditorland-download.playform.workers.dev)   |
 | Status Worker       | [codeeditorland-status.playform.workers.dev](https://codeeditorland-status.playform.workers.dev)       |
