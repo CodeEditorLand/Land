@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 echo "--- NODE_ENV=development --- (Command: pnpm tauri build)"
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 #===============================================================================
 # Format.sh - Format TypeScript and Rust source code
@@ -9,9 +9,9 @@
 # rustfmt (nightly) handles Rust.
 #
 # Usage:
-#   bash Maintain/Format.sh             # Format both TypeScript and Rust
-#   bash Maintain/Format.sh typescript  # Format TypeScript only
-#   bash Maintain/Format.sh rust        # Format Rust only
+#   sh Maintain/Format.sh             # Format both TypeScript and Rust
+#   sh Maintain/Format.sh typescript  # Format TypeScript only
+#   sh Maintain/Format.sh rust        # Format Rust only
 #
 # Configuration:
 #   prettier.config.js  - Prettier options and plugins (incl. tailwindcss)
@@ -22,7 +22,7 @@
 
 set -e
 
-Current=$(\cd -- "$(\dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && \pwd)
+Current=$(cd -- "$(dirname -- "$0")" > /dev/null 2>&1 && pwd)
 
 Root="$Current/.."
 
@@ -39,7 +39,7 @@ FormatTypeScript() {
 	echo "========================================"
 	echo ""
 
-	\cd "$Root"
+	cd "$Root"
 
 	"$Root/node_modules/.bin/prettier" --write \
 		"Element/**/*.{ts,tsx,js,jsx,mjs,astro,svelte,vue,css,html,json,md,toml}"
@@ -58,7 +58,7 @@ FormatRust() {
 	echo "========================================"
 	echo ""
 
-	\cd "$Root"
+	cd "$Root"
 
 	cargo +nightly fmt
 

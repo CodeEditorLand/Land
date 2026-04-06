@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 #===============================================================================
 # Dev-Mountain.sh - Mountain Tauri Dev Mode with Sky Hot-Reload
@@ -8,9 +8,9 @@
 # is automatically started via Tauri's beforeDevCommand configuration.
 #
 # Usage:
-# bash Maintain/Dev-Mountain.sh # Default: Mountain workbench
-# bash Maintain/Dev-Mountain.sh --profile browser # Browser workbench
-# bash Maintain/Dev-Mountain.sh --profile electron # Electron workbench
+#   sh Maintain/Dev-Mountain.sh                    # Default: Mountain workbench
+#   sh Maintain/Dev-Mountain.sh --profile browser  # Browser workbench
+#   sh Maintain/Dev-Mountain.sh --profile electron # Electron workbench
 #
 # Workflow:
 #   1. Sets environment variables (Mountain=true, NODE_ENV=development)
@@ -27,45 +27,43 @@
 
 set -e
 
-# Default configuration
 PROFILE="mountain"
 
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --profile|-p)
-            PROFILE="$2"
-            shift 2
-            ;;
-        --help|-h)
-            echo "Usage: $0 [OPTIONS]"
-            echo ""
-            echo "Options:"
-            echo "  --profile, -p <name>  Workbench profile to use"
-            echo "  --help, -h            Show this help message"
-            echo ""
-            echo "Available profiles:"
-            echo " mountain - Mountain workbench (80-90% features) [DEFAULT]"
-            echo " electron - Electron workbench (95%+ features)"
-            echo " browser - Browser workbench (70-80% features)"
-            echo ""
-            echo "Environment Variables:"
-            echo " Mountain=true Enable Mountain workbench"
-            echo " Electron=true Enable Electron workbench"
-            echo " Browser=true Enable Browser workbench"
-            echo ""
-            echo "Examples:"
-            echo " $0 # Default Mountain dev"
-            echo " $0 --profile browser # Browser workbench dev"
-            echo " $0 --profile electron # Electron workbench dev"
-            exit 0
-            ;;
-        *)
-            echo "Unknown option: $1"
-            echo "Use --help for usage information"
-            exit 1
-            ;;
-    esac
+while [ $# -gt 0 ]; do
+	case $1 in
+		--profile | -p)
+			PROFILE="$2"
+			shift 2
+			;;
+		--help | -h)
+			echo "Usage: $0 [OPTIONS]"
+			echo ""
+			echo "Options:"
+			echo "  --profile, -p <name>  Workbench profile to use"
+			echo "  --help, -h            Show this help message"
+			echo ""
+			echo "Available profiles:"
+			echo "  mountain - Mountain workbench (80-90% features) [DEFAULT]"
+			echo "  electron - Electron workbench (95%+ features)"
+			echo "  browser  - Browser workbench (70-80% features)"
+			echo ""
+			echo "Environment Variables:"
+			echo "  Mountain=true  Enable Mountain workbench"
+			echo "  Electron=true  Enable Electron workbench"
+			echo "  Browser=true   Enable Browser workbench"
+			echo ""
+			echo "Examples:"
+			echo "  $0                    # Default Mountain dev"
+			echo "  $0 --profile browser  # Browser workbench dev"
+			echo "  $0 --profile electron # Electron workbench dev"
+			exit 0
+			;;
+		*)
+			echo "Unknown option: $1"
+			echo "Use --help for usage information"
+			exit 1
+			;;
+	esac
 done
 
 echo "========================================"
@@ -75,28 +73,26 @@ echo "Profile: $PROFILE"
 echo "========================================"
 echo ""
 
-# Set environment variables based on profile
 case $PROFILE in
-mountain)
- echo "Using Mountain workbench"
- export Mountain=true
- ;;
-electron)
-        echo "Using Electron workbench"
-        export Electron=true
-        ;;
-    browser)
-        echo "Using Browser workbench"
-        export Browser=true
-        ;;
-    *)
-     echo "Unknown profile: $PROFILE"
-     echo "Available profiles: mountain, electron, browser"
-     exit 1
-     ;;
+	mountain)
+		echo "Using Mountain workbench"
+		export Mountain=true
+		;;
+	electron)
+		echo "Using Electron workbench"
+		export Electron=true
+		;;
+	browser)
+		echo "Using Browser workbench"
+		export Browser=true
+		;;
+	*)
+		echo "Unknown profile: $PROFILE"
+		echo "Available profiles: mountain, electron, browser"
+		exit 1
+		;;
 esac
 
-# Set common development environment variables
 export NODE_ENV=development
 export Bundle=false
 export Debug=true
@@ -114,10 +110,6 @@ echo "To stop: Press Ctrl+C"
 echo "========================================"
 echo ""
 
-# Change to Mountain directory and run Tauri dev
 cd Element/Mountain
 
-# Run Tauri dev - beforeDevCommand will automatically start Sky
-# The TAURI_DEV_HOST is not needed since Sky runs on localhost:9999 by default
-# and Tauri loads from the Sky dev server automatically
 pnpm tauri dev

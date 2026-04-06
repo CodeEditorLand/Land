@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 #===============================================================================
 # Debug.sh - Backward-Compatible Wrapper for Debug/Build.sh
@@ -8,8 +8,8 @@
 # Maintain/Debug/Build.sh for legacy compatibility.
 #
 # Usage:
-# bash Maintain/Debug.sh # Default debug profile
-# bash Maintain/Debug.sh --profile mountain # Debug with Mountain workbench
+#   sh Maintain/Debug.sh                    # Default debug profile
+#   sh Maintain/Debug.sh --profile mountain # Debug with Mountain workbench
 #
 # For new development, consider using:
 #   - Maintain/Debug/Build.sh - For debug builds
@@ -17,8 +17,6 @@
 #
 #===============================================================================
 
-# Get the directory of this script
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Delegate to Debug/Build.sh
 exec "${SCRIPT_DIR}/Debug/Build.sh" "$@"

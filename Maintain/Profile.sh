@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 #===============================================================================
 # Profile.sh - Profile Selection and Management Script
@@ -8,11 +8,11 @@
 # It can list available profiles, show profile details, and validate profiles.
 #
 # Usage:
-#   bash Maintain/Profile.sh list              # List all available profiles
-#   bash Maintain/Profile.sh show <name>       # Show profile details
-#   bash Maintain/Profile.sh validate <name>   # Validate a profile
-#   bash Maintain/Profile.sh workbenches       # List available workbenches
-#   bash Maintain/Profile.sh features          # List available features
+#   sh Maintain/Profile.sh list              # List all available profiles
+#   sh Maintain/Profile.sh show <name>       # Show profile details
+#   sh Maintain/Profile.sh validate <name>   # Validate a profile
+#   sh Maintain/Profile.sh workbenches       # List available workbenches
+#   sh Maintain/Profile.sh features          # List available features
 #
 #===============================================================================
 
@@ -20,26 +20,19 @@ set -e
 
 CONFIG_FILE=".vscode/land-config.json"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
-
 #===============================================================================
 # Helper Functions
 #===============================================================================
 
 print_header() {
-	echo -e "${CYAN}========================================${NC}"
-	echo -e "${CYAN}$1${NC}"
-	echo -e "${CYAN}========================================${NC}"
+	echo "========================================"
+	echo "$1"
+	echo "========================================"
 }
 
 print_section() {
-	echo -e "\n${BLUE}$1${NC}"
+	echo ""
+	echo "$1"
 	echo "----------------------------------------"
 }
 
@@ -50,21 +43,21 @@ print_section() {
 list_profiles() {
 	print_header "Available Build Profiles"
 
-	if [[ ! -f "$CONFIG_FILE" ]]; then
-		echo -e "${RED}Error: Configuration file not found: $CONFIG_FILE${NC}"
+	if [ ! -f "$CONFIG_FILE" ]; then
+		echo "Error: Configuration file not found: $CONFIG_FILE"
 		exit 1
 	fi
 
 	echo ""
 	echo "Debug Profiles:"
-	echo " debug - Browser workbench (70-80% features)"
-	echo " debug-mountain - Mountain workbench (80-90% features) [RECOMMENDED]"
-	echo " debug-electron - Electron workbench (95%+ features)"
+	echo "  debug          - Browser workbench (70-80% features)"
+	echo "  debug-mountain - Mountain workbench (80-90% features) [RECOMMENDED]"
+	echo "  debug-electron - Electron workbench (95%+ features)"
 	echo ""
 	echo "Release Profiles:"
-	echo "  production       - Production build with Mountain workbench"
-	echo "  release          - Full release with packaging and signing"
-	echo "  web-browser      - Web browser deployment (no Tauri)"
+	echo "  production  - Production build with Mountain workbench"
+	echo "  release     - Full release with packaging and signing"
+	echo "  web-browser - Web browser deployment (no Tauri)"
 	echo ""
 	echo "Bundler Profiles:"
 	echo "  bundler-preparation - Prepare for SWC/OXC bundler"
@@ -73,18 +66,17 @@ list_profiles() {
 }
 
 show_profile() {
-	local profile_name="$1"
+	ProfileName="$1"
 
-	if [[ -z "$profile_name" ]]; then
-		echo -e "${RED}Error: Profile name required${NC}"
+	if [ -z "$ProfileName" ]; then
+		echo "Error: Profile name required"
 		echo "Usage: $0 show <profile-name>"
 		exit 1
 	fi
 
-	print_header "Profile: $profile_name"
+	print_header "Profile: $ProfileName"
 
-	# Define profile details
-	case $profile_name in
+	case $ProfileName in
 		debug)
 			echo "Description: Debug build with Browser workbench"
 			echo "Workbench: Browser"
@@ -149,71 +141,71 @@ show_profile() {
 			echo "  RUST_LOG=warn"
 			;;
 		*)
-			echo -e "${YELLOW}Profile '$profile_name' not found in predefined list${NC}"
+			echo "Profile '$ProfileName' not found in predefined list"
 			echo "Check $CONFIG_FILE for custom profiles"
 			;;
 	esac
 }
 
 validate_profile() {
-	local profile_name="$1"
+	ProfileName="$1"
 
-	if [[ -z "$profile_name" ]]; then
-		echo -e "${RED}Error: Profile name required${NC}"
+	if [ -z "$ProfileName" ]; then
+		echo "Error: Profile name required"
 		echo "Usage: $0 validate <profile-name>"
 		exit 1
 	fi
 
-	print_header "Validating Profile: $profile_name"
+	print_header "Validating Profile: $ProfileName"
 
-	# Check if profile is known
-	local known_profiles="debug debug-mountain debug-electron production release web-browser bundler-preparation swc-bundle oxc-bundle"
-
-	if [[ " $known_profiles " =~ " $profile_name " ]]; then
-		echo -e "${GREEN}✓ Profile '$profile_name' is valid${NC}"
-		echo ""
-		show_profile "$profile_name"
-	else
-		echo -e "${RED}✗ Profile '$profile_name' is not recognized${NC}"
-		echo ""
-		echo "Known profiles: $known_profiles"
-		exit 1
-	fi
+	case $ProfileName in
+		debug | debug-mountain | debug-electron | production | release | web-browser | bundler-preparation | swc-bundle | oxc-bundle)
+			echo "Profile '$ProfileName' is valid"
+			echo ""
+			show_profile "$ProfileName"
+			;;
+		*)
+			echo "Profile '$ProfileName' is not recognized"
+			echo ""
+			echo "Known profiles: debug debug-mountain debug-electron production release web-browser bundler-preparation swc-bundle oxc-bundle"
+			exit 1
+			;;
+	esac
 }
 
 list_workbenches() {
 	print_header "Available Workbenches"
 
 	echo ""
-	echo -e "${GREEN}Mountain${NC} (RECOMMENDED)"
+	echo "Mountain (RECOMMENDED)"
 	echo "  Route: /Mountain"
 	echo "  Coverage: 80-90%"
 	echo "  Complexity: Medium"
 	echo "  Features: Direct Mountain IPC, Wind services, Effect-TS bootstrap"
 	echo "  Use for: Tauri desktop, Production use, Maximum compatibility"
 	echo ""
-	echo -e "${BLUE}Browser${NC}"
+	echo "Browser"
 	echo "  Route: /Browser"
 	echo "  Coverage: 70-80%"
 	echo "  Complexity: Low"
 	echo "  Features: No polyfills, Web-optimized, Fastest startup"
 	echo "  Use for: Web deployment, Quick testing, Minimal setup"
 	echo ""
-	echo -e "${YELLOW}Wind${NC}"
+	echo "Wind"
 	echo "  Route: /Wind"
 	echo "  Coverage: 60-70%"
 	echo "  Complexity: High"
 	echo "  Features: Native components, Custom workbench, Wind services"
 	echo "  Use for: Custom UI, Experimental features"
 	echo ""
-	echo -e "${RED}Electron${NC}"
+	echo "Electron"
 	echo "  Route: /Electron"
 	echo "  Coverage: 95%+"
 	echo "  Complexity: High"
 	echo "  Features: Full Electron APIs, Comprehensive polyfills"
 	echo "  Use for: Maximum VSCode compatibility, Extension support"
 	echo ""
-	echo -e "${CYAN}BrowserProxy${NC}"
+	echo "BrowserProxy"
 	echo "  Route: /BrowserProxy"
 	echo "  Coverage: 70-80%"
 	echo "  Complexity: Medium"
@@ -235,13 +227,13 @@ list_features() {
 	echo "  vscode_protocols   - Enable VSCode protocol handlers"
 	echo ""
 	echo "Development Features:"
-	echo "  webview_panels     - Enable webview panel support"
-	echo "  integrated_terminal- Enable integrated terminal"
-	echo "  language_servers   - Enable language server support"
+	echo "  webview_panels       - Enable webview panel support"
+	echo "  integrated_terminal  - Enable integrated terminal"
+	echo "  language_servers     - Enable language server support"
 	echo "  debugger_integration - Enable debugger integration"
-	echo "  source_control     - Enable source control integration"
-	echo "  extension_host     - Enable extension host support"
-	echo "  remote_development - Enable remote development support"
+	echo "  source_control       - Enable source control integration"
+	echo "  extension_host       - Enable extension host support"
+	echo "  remote_development   - Enable remote development support"
 }
 
 #===============================================================================
