@@ -6,7 +6,7 @@
 		"editor.defaultFormatter": "rust-lang.rust-analyzer"
 	},
 	"[shellscript]": {
-		"editor.defaultFormatter": "mkhl.shfmt"
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
 	},
 	"[xml]": {
 		"editor.defaultFormatter": "redhat.vscode-xml"
