@@ -19,6 +19,7 @@
 	},
 	"type": "module",
 	"scripts": {
+		"Format": "bash Maintain/Format.sh",
 		"Run": "turbo run Run --framework-inference=false --no-daemon",
 		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon"
 	},
