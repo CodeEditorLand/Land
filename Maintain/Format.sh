@@ -1,22 +1,27 @@
 #!/usr/bin/env sh
 
 #===============================================================================
-# Format.sh - Format TypeScript and Rust source code
+# Format.sh - Format shell, Prettier, and Rust source code
 #===============================================================================
 #
-# This script formats all Element source code using the configured tooling.
-# Prettier handles TypeScript/JS/Astro (with Tailwind class ordering).
+# This script formats all source code using the configured tooling.
+# shfmt handles shell scripts (.sh).
+# Prettier handles TS/JS/Astro/CSS/JSON/MD (with Tailwind class ordering).
 # rustfmt (nightly) handles Rust.
 #
 # Usage:
-#   sh Maintain/Format.sh             # Format both TypeScript and Rust
-#   sh Maintain/Format.sh typescript  # Format TypeScript only
+#   sh Maintain/Format.sh             # Format shell + Prettier + Rust
+#   sh Maintain/Format.sh shell       # Format shell scripts only
+#   sh Maintain/Format.sh prettier    # Format Prettier only
 #   sh Maintain/Format.sh rust        # Format Rust only
 #
 # Configuration:
+#   .editorconfig       - Shared indent/newline rules (shfmt reads this)
 #   prettier.config.js  - Prettier options and plugins (incl. tailwindcss)
 #   tailwind.config.js  - Tailwind class ordering reference
+#   .prettierignore     - Paths excluded from Prettier formatting
 #   rustfmt.toml        - rustfmt options (nightly, edition 2024)
+#                         includes `ignore = [...]` for per-path exclusions
 #
 #===============================================================================
 
@@ -30,22 +35,50 @@ Root="$Current/.."
 # Format Functions
 #===============================================================================
 
-FormatTypeScript() {
+FormatShell() {
 	echo "========================================"
-	echo "Format TypeScript"
+	echo "Format Shell"
 	echo "========================================"
-	echo "Tooling: Prettier + prettier-plugin-tailwindcss"
-	echo "Config:  prettier.config.js, tailwind.config.js"
+	echo "Tooling: shfmt"
+	echo "Config:  .editorconfig (tabs, indent=4)"
 	echo "========================================"
 	echo ""
 
 	cd "$Root"
 
-	"$Root/node_modules/.bin/prettier" --write \
-		"Element/**/*.{ts,tsx,js,jsx,mjs,astro,svelte,vue,css,html,json,md,toml}"
+	# shfmt reads .editorconfig for indent style/size automatically.
+	# Exclude Dependency/ and SideCar NODE trees; find all project .sh files.
+	find . -name "*.sh" \
+		-not -path "*/Dependency/*" \
+		-not -path "*/node_modules/*" \
+		-not -path "*/Target/*" \
+		-not -path "*/target/*" \
+		-not -path "*/SideCar/*/NODE/*" \
+		-not -path "*/.git/*" \
+		| xargs shfmt -w
 
 	echo ""
-	echo "TypeScript formatting complete."
+	echo "Shell formatting complete."
+	echo ""
+}
+
+FormatTypeScript() {
+	echo "========================================"
+	echo "Format Prettier"
+	echo "========================================"
+	echo "Tooling: Prettier + prettier-plugin-tailwindcss"
+	echo "Config:  prettier.config.js, tailwind.config.js"
+	echo "Ignore:  .prettierignore"
+	echo "========================================"
+	echo ""
+
+	cd "$Root"
+
+	"$Root/node_modules/.bin/prettier" --write . \
+		--ignore-path "$Root/.prettierignore"
+
+	echo ""
+	echo "Prettier formatting complete."
 	echo ""
 }
 
@@ -54,7 +87,7 @@ FormatRust() {
 	echo "Format Rust"
 	echo "========================================"
 	echo "Tooling: cargo +nightly fmt"
-	echo "Config:  rustfmt.toml"
+	echo "Config:  rustfmt.toml (incl. ignore = [...])"
 	echo "========================================"
 	echo ""
 
@@ -72,22 +105,27 @@ FormatRust() {
 #===============================================================================
 
 case "${1:-}" in
-	typescript)
+	shell)
+		FormatShell
+		;;
+	prettier)
 		FormatTypeScript
 		;;
 	rust)
 		FormatRust
 		;;
 	"")
+		FormatShell
 		FormatTypeScript
 		FormatRust
 		;;
 	--help | -h)
-		echo "Usage: $0 [typescript|rust]"
+		echo "Usage: $0 [shell|prettier|rust]"
 		echo ""
-		echo "  typescript  Format TypeScript/JS/Astro files with Prettier"
-		echo "  rust        Format Rust files with rustfmt (nightly)"
-		echo "  (no arg)    Format both"
+		echo "  shell     Format shell scripts with shfmt"
+		echo "  prettier  Format TS/JS/Astro/CSS/JSON/MD with Prettier"
+		echo "  rust      Format Rust files with rustfmt (nightly)"
+		echo "  (no arg)  Format all three"
 		;;
 	*)
 		echo "Unknown target: $1"

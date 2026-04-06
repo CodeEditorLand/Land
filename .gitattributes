@@ -11,7 +11,6 @@ Target/release/bundle/nsis/*.exe filter=lfs diff=lfs merge=lfs -text
 Target/debug/Mountain filter=lfs diff=lfs merge=lfs -text
 Target/release/Mountain filter=lfs diff=lfs merge=lfs -text
 
-
 # --- Rules Automatically Added by Vendor Script ---
 **/NODE/**/bin/node filter=lfs diff=lfs merge=lfs -text
 **/NODE/**/node.exe filter=lfs diff=lfs merge=lfs -text

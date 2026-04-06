@@ -63,3 +63,14 @@ use_try_shorthand = true
 where_single_line = false
 wrap_comments = true
 style_edition = "2024"
+
+# Paths relative to workspace root to exclude from rustfmt.
+# - Documentation/ contains generated cargo-doc HTML (no .rs source).
+# - Generated/ dirs contain prost-build output; rustfmt corrupts `: ::`
+#   qualifiers in prost macros, producing invalid `:::` token sequences.
+ignore = [
+	"Documentation/",
+	"Element/Mountain/Source/Vine/Generated",
+	"Element/Air/Source/Vine/Generated",
+	"Element/Grove/Source/Protocol/Generated",
+]

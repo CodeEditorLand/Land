@@ -69,9 +69,7 @@
 				"useFilenamingConvention": {
 					"level": "error",
 					"options": {
-						"filenameCases": [
-							"PascalCase"
-						],
+						"filenameCases": ["PascalCase"],
 						"requireAscii": true,
 						"strictCase": true
 					}

@@ -1,9 +1,6 @@
 [build]
 target-dir = "Target"
-rustdocflags = [
-	"-Zunstable-options",
-	"--enable-index-page",
-]
+rustdocflags = ["-Zunstable-options", "--enable-index-page"]
 
 [net]
 git-fetch-with-cli = true
@@ -25,10 +22,10 @@ panic = "abort"
 opt-level = 3
 
 [profile.release]
-opt-level = 2  # Use level 2 to avoid optimizer bugs with OXC
+opt-level = 2     # Use level 2 to avoid optimizer bugs with OXC
 codegen-units = 1
-debug = false  # Can disable debug symbols for final release
-lto = false   # Disable LTO to avoid linking issues
+debug = false     # Can disable debug symbols for final release
+lto = false       # Disable LTO to avoid linking issues
 panic = "abort"
 strip = false
 

@@ -1,8 +1,5 @@
 [workspace]
-exclude = [
-	"Dependency/Microsoft/Dependency/Editor/cli",
-	"Element/Document",
-]
+exclude = ["Dependency/Microsoft/Dependency/Editor/cli", "Element/Document"]
 members = [
 	"Element/Common",
 	"Element/Echo",

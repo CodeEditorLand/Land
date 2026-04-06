@@ -5,9 +5,13 @@
 	"[rust]": {
 		"editor.defaultFormatter": "rust-lang.rust-analyzer"
 	},
+	"[shellscript]": {
+		"editor.defaultFormatter": "mkhl.shfmt"
+	},
 	"[xml]": {
 		"editor.defaultFormatter": "redhat.vscode-xml"
 	},
+	"shellformat.path": "/opt/homebrew/bin/shfmt",
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
 	"explorer.excludeGitIgnore": false,
 	"files.exclude": {
@@ -87,6 +91,9 @@
 		"Target",
 		"target"
 	],
+	"files.readonlyInclude": {
+		"**/Source/**/Generated/**": true
+	},
 	"formatFiles.excludePattern": "**/node_modules/**/*,**/Dependency/*/Dependency/**/*,**/Generated/**/*,**/Documentation/Rust/**/*,**/Documentation/Module/**/*,**/Element/SideCar/*/NODE/**/*",
 	"vsicons.presets.angular": true,
 	"[toml]": {
