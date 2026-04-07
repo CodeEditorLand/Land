@@ -38,6 +38,12 @@
 
 		"Browser",
 
+		"BrowserProxy",
+
+		"Electron",
+
+		"Mountain",
+
 		"Bundle",
 
 		"Compile",
