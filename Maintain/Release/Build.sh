@@ -25,28 +25,28 @@ PROFILE="production"
 
 while [ $# -gt 0 ]; do
 	case $1 in
-		--profile | -p)
-			PROFILE="$2"
-			shift 2
-			;;
-		--help | -h)
-			echo "Usage: $0 [OPTIONS]"
-			echo ""
-			echo "Options:"
-			echo "  --profile, -p <name>  Build profile to use (default: production)"
-			echo "  --help, -h            Show this help message"
-			echo ""
-			echo "Available profiles:"
-			echo "  production  - Production build with Mountain workbench (default)"
-			echo "  release     - Full release with packaging and signing"
-			echo "  web-browser - Web browser deployment (no Tauri)"
-			exit 0
-			;;
-		*)
-			echo "Unknown option: $1"
-			echo "Use --help for usage information"
-			exit 1
-			;;
+	--profile | -p)
+		PROFILE="$2"
+		shift 2
+		;;
+	--help | -h)
+		echo "Usage: $0 [OPTIONS]"
+		echo ""
+		echo "Options:"
+		echo "  --profile, -p <name>  Build profile to use (default: production)"
+		echo "  --help, -h            Show this help message"
+		echo ""
+		echo "Available profiles:"
+		echo "  production  - Production build with Mountain workbench (default)"
+		echo "  release     - Full release with packaging and signing"
+		echo "  web-browser - Web browser deployment (no Tauri)"
+		exit 0
+		;;
+	*)
+		echo "Unknown option: $1"
+		echo "Use --help for usage information"
+		exit 1
+		;;
 	esac
 done
 
@@ -57,123 +57,123 @@ echo "Profile: $PROFILE"
 echo "========================================"
 
 case $PROFILE in
-	production)
-		echo "Using Mountain workbench (production)"
-		export Mountain=true
-		export Bundle=false
-		export Clean=true
-		export Compile=true
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=22
-		export NODE_OPTIONS="--max-old-space-size=8192"
-		export RUST_LOG=info
+production)
+	echo "Using Mountain workbench (production)"
+	export Mountain=true
+	export Bundle=false
+	export Clean=true
+	export Compile=true
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=8192"
+	export RUST_LOG=info
 
-		export Compiler="${Compiler:-esbuild}"
-		if [ "$Compiler" = "Rest" ]; then
-			echo "Using Rest compiler"
-			export Compiler=Rest
+	export Compiler="${Compiler:-esbuild}"
+	if [ "$Compiler" = "Rest" ]; then
+		echo "Using Rest compiler"
+		export Compiler=Rest
+	else
+		echo "Using esbuild compiler"
+		export Compiler=esbuild
+	fi
+
+	if [ "$Compiler" = "Rest" ]; then
+		echo ""
+		echo "Stage 3: Rest compilation of VSCode output"
+		echo "=========================================="
+
+		if [ "$NODE_ENV" = "development" ]; then
+			VSCodeSourceDir="Dependency/Microsoft/Dependency/Editor/out"
 		else
-			echo "Using esbuild compiler"
-			export Compiler=esbuild
+			VSCodeSourceDir="Dependency/Microsoft/Dependency/Editor/out-build"
 		fi
 
-		if [ "$Compiler" = "Rest" ]; then
-			echo ""
-			echo "Stage 3: Rest compilation of VSCode output"
-			echo "=========================================="
+		RestOutputDir="Target/Rest/Microsoft/VSCode"
+		mkdir -p "$RestOutputDir"
 
-			if [ "$NODE_ENV" = "development" ]; then
-				VSCodeSourceDir="Dependency/Microsoft/Dependency/Editor/out"
-			else
-				VSCodeSourceDir="Dependency/Microsoft/Dependency/Editor/out-build"
-			fi
+		if [ ! -d "$VSCodeSourceDir" ]; then
+			echo "[Rest] Warning: VSCode source directory not found: $VSCodeSourceDir"
+			echo "[Rest] Skipping Rest compilation - ensure VSCode is built first"
+		else
+			echo "[Rest] Compiling from: $VSCodeSourceDir"
+			echo "[Rest] Output directory: $RestOutputDir"
 
-			RestOutputDir="Target/Rest/Microsoft/VSCode"
-			mkdir -p "$RestOutputDir"
+			if command -v Rest >/dev/null 2>&1; then
+				Rest compile \
+					--input "$VSCodeSourceDir" \
+					--output "$RestOutputDir" \
+					--target es2024 \
+					--module commonjs \
+					${REST_OPTIONS:+ $REST_OPTIONS}
 
-			if [ ! -d "$VSCodeSourceDir" ]; then
-				echo "[Rest] Warning: VSCode source directory not found: $VSCodeSourceDir"
-				echo "[Rest] Skipping Rest compilation - ensure VSCode is built first"
-			else
-				echo "[Rest] Compiling from: $VSCodeSourceDir"
-				echo "[Rest] Output directory: $RestOutputDir"
-
-				if command -v Rest > /dev/null 2>&1; then
-					Rest compile \
-						--input "$VSCodeSourceDir" \
-						--output "$RestOutputDir" \
-						--target es2024 \
-						--module commonjs \
-						${REST_OPTIONS:+ $REST_OPTIONS}
-
-					if [ $? -eq 0 ]; then
-						echo "[Rest] Compilation successful"
-					else
-						echo "[Rest] Compilation failed - falling back to esbuild"
-						export Compiler=esbuild
-					fi
+				if [ $? -eq 0 ]; then
+					echo "[Rest] Compilation successful"
 				else
-					echo "[Rest] 'Rest' command not found - falling back to esbuild"
-					echo "[Rest] Install @codeeditorland/rest or set REST_BINARY_PATH"
+					echo "[Rest] Compilation failed - falling back to esbuild"
 					export Compiler=esbuild
 				fi
+			else
+				echo "[Rest] 'Rest' command not found - falling back to esbuild"
+				echo "[Rest] Install @codeeditorland/rest or set REST_BINARY_PATH"
+				export Compiler=esbuild
 			fi
 		fi
-		;;
-	release)
-		echo "Using Mountain workbench (full release)"
-		export Mountain=true
-		export Bundle=false
-		export Clean=true
-		export Compile=true
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=22
-		export NODE_OPTIONS="--max-old-space-size=8192"
-		export RUST_LOG=warn
+	fi
+	;;
+release)
+	echo "Using Mountain workbench (full release)"
+	export Mountain=true
+	export Bundle=false
+	export Clean=true
+	export Compile=true
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=8192"
+	export RUST_LOG=warn
 
-		export Compiler="${Compiler:-esbuild}"
-		if [ "$Compiler" = "Rest" ]; then
-			echo "Using Rest compiler"
-			export Compiler=Rest
-		else
-			echo "Using esbuild compiler"
-			export Compiler=esbuild
-		fi
-		;;
-	web-browser)
-		echo "Using Browser workbench (web-only)"
-		export Browser=true
-		export Bundle=false
-		export Clean=true
-		export Compile=true
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=22
-		export NODE_OPTIONS="--max-old-space-size=8192"
-		export RUST_LOG=warn
+	export Compiler="${Compiler:-esbuild}"
+	if [ "$Compiler" = "Rest" ]; then
+		echo "Using Rest compiler"
+		export Compiler=Rest
+	else
+		echo "Using esbuild compiler"
+		export Compiler=esbuild
+	fi
+	;;
+web-browser)
+	echo "Using Browser workbench (web-only)"
+	export Browser=true
+	export Bundle=false
+	export Clean=true
+	export Compile=true
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=8192"
+	export RUST_LOG=warn
 
-		export Compiler="${Compiler:-esbuild}"
-		if [ "$Compiler" = "Rest" ]; then
-			echo "Using Rest compiler"
-			export Compiler=Rest
-		else
-			echo "Using esbuild compiler"
-			export Compiler=esbuild
-		fi
-		;;
-	*)
-		echo "Unknown profile: $PROFILE"
-		echo "Available profiles: production, release, web-browser"
-		exit 1
-		;;
+	export Compiler="${Compiler:-esbuild}"
+	if [ "$Compiler" = "Rest" ]; then
+		echo "Using Rest compiler"
+		export Compiler=Rest
+	else
+		echo "Using esbuild compiler"
+		export Compiler=esbuild
+	fi
+	;;
+*)
+	echo "Unknown profile: $PROFILE"
+	echo "Available profiles: production, release, web-browser"
+	exit 1
+	;;
 esac
 
 echo ""

@@ -20,8 +20,8 @@
 	"type": "module",
 	"scripts": {
 		"Format": "bash Maintain/Format.sh",
-		"Run": "turbo run Run --framework-inference=false --no-daemon",
-		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon"
+		"Run": "turbo run Run --framework-inference=false",
+		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.10",
