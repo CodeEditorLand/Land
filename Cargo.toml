@@ -98,6 +98,7 @@ notify = { version = "8.2.0" }
 num_cpus = { version = "1.17.0" }
 once_cell = { version = "1.21.3" }
 opentelemetry = { version = "0.31.0", default-features = false }
+posthog-rs = { version = "0.3.5" }
 parking_lot = { version = "0.12.5" }
 portable-pty = { version = "0.9.0" }
 portpicker = { version = "0.1.1" }

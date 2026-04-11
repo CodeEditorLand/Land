@@ -250,7 +250,57 @@
 
 		"Compiler",
 
-		"LAND_DEV_LOG"
+		"LAND_DEV_LOG",
+
+		"COCOON_GRPC_PORT",
+
+		"CONFIG_FILE",
+
+		"Debug",
+
+		"ELECTRON_RUN_AS_NODE",
+
+		"GIT_HASH",
+
+		"HOST",
+
+		"HOT_RELOAD",
+
+		"KDE_COLOR_SCHEME",
+
+		"LIVE_RELOAD_PORT",
+
+		"LOCALAPPDATA",
+
+		"Meta",
+
+		"MOUNTAIN_AUTH_TOKEN",
+
+		"PATH",
+
+		"PROFILE",
+
+		"ProgramFiles",
+
+		"REST_BINARY_PATH",
+
+		"REST_OPTIONS",
+
+		"REST_VERBOSE",
+
+		"RestSourcemap",
+
+		"SystemRoot",
+
+		"VERSION_PACKAGE",
+
+		"VSC",
+
+		"VSCODE_HANDLES_UNCAUGHT_ERRORS",
+
+		"VSCODE_PIPE_LOGGING",
+
+		"WATCH"
 	],
 
 	"tasks": {

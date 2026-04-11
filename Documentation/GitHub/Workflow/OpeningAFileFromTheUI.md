@@ -145,7 +145,7 @@ flowchart TB
       [`ReadFile`](https://github.com/CodeEditorLand/Wind/tree/Current/Integration/Tauri/Wrap/ReadFile.ts#L1)
       effect executes.
     - It calls
-      [`TauriInvoke('plugin:fs|read_file', { path: fileUri.fsPath })`](https://github.com/CodeEditorLand/Wind/tree/Current/Integration/Tauri/Wrap/ReadFile.ts#L1).
+      [`TauriInvoke('plugin:fs|ReadFile', { path: fileUri.fsPath })`](https://github.com/CodeEditorLand/Wind/tree/Current/Integration/Tauri/Wrap/ReadFile.ts#L1).
       This sends the request from the webview to the `Mountain` backend.
 
 #### **Phase 3: Native File I/O and Response ([`Mountain`](https://github.com/CodeEditorLand/Mountain/tree/Current))**
@@ -153,7 +153,7 @@ flowchart TB
 8.  **[`Mountain/src/main.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/src/main.rs#L1)
     -> Tauri `fs` Plugin**
     - **Action:** Tauri receives the
-      [`plugin:fs|read_file`](https://github.com/CodeEditorLand/Wind/tree/Current/Integration/Tauri/Wrap/ReadFile.ts#L1)
+      [`plugin:fs|ReadFile`](https://github.com/CodeEditorLand/Wind/tree/Current/Integration/Tauri/Wrap/ReadFile.ts#L1)
       command.
     - It routes this to the `tauri-plugin-fs`'s internal Rust handler.
     - The plugin performs the native filesystem operation:
