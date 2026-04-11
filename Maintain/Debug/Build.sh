@@ -13,9 +13,10 @@
 #   sh Maintain/Debug/Build.sh --profile electron # Debug with Electron workbench
 #
 # Available profiles:
-#   debug          - Default Browser workbench (70-80% features)
-#   debug-mountain - Mountain workbench (80-90% features) [RECOMMENDED]
-#   debug-electron - Electron workbench (95%+ features)
+#   debug               - Default Browser workbench (70-80% features)
+#   debug-mountain      - Mountain workbench (80-90% features) [RECOMMENDED]
+#   debug-electron      - Electron workbench (95%+ features)
+#   debug-electron-rest - Electron workbench + Rest OXC compiler (fastest TS)
 #
 #===============================================================================
 
@@ -37,9 +38,10 @@ while [ $# -gt 0 ]; do
 		echo "  --help, -h            Show this help message"
 		echo ""
 		echo "Available profiles:"
-		echo "  debug          - Browser workbench (70-80% features)"
-		echo "  debug-mountain - Mountain workbench (80-90% features) [RECOMMENDED]"
-		echo "  debug-electron - Electron workbench (95%+ features)"
+		echo "  debug               - Browser workbench (70-80% features)"
+		echo "  debug-mountain      - Mountain workbench (80-90% features) [RECOMMENDED]"
+		echo "  debug-electron      - Electron workbench (95%+ features)"
+		echo "  debug-electron-rest - Electron + Rest OXC compiler (fastest TS)"
 		exit 0
 		;;
 	*)
@@ -96,12 +98,44 @@ debug-electron)
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
 	;;
+debug-electron-rest)
+	echo "Using Electron workbench + Rest OXC compiler"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=false
+	export Compiler=Rest
+	export Debug=true
+	export Level=debug
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=development
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+
+	# Build Rest compiler if binary is missing
+	if [ ! -f "Element/Rest/Target/release/Rest" ]; then
+		echo ""
+		echo "Building Rest OXC compiler (first time only)..."
+		cargo build -p Rest --release 2>&1 | tail -5
+		echo ""
+	fi
+	;;
 *)
 	echo "Unknown profile: $PROFILE"
-	echo "Available profiles: debug, debug-mountain, debug-electron"
+	echo "Available profiles: debug, debug-mountain, debug-electron, debug-electron-rest"
 	exit 1
 	;;
 esac
+
+# When Electron flag changes, Output must rebuild to include/exclude
+# workbench.desktop.main.js and electron-browser paths.
+# Clean Output's compiled config + target to force fresh entry discovery.
+if [ "$Electron" = "true" ]; then
+	if [ ! -f "Element/Output/Target/Microsoft/VSCode/vs/workbench/workbench.desktop.main.js" ]; then
+		echo "Cleaning Output cache (Electron=true, desktop workbench missing)..."
+		rm -rf Element/Output/Configuration Element/Output/Target/Microsoft
+	fi
+fi
 
 echo ""
 echo "Starting build..."

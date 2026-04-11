@@ -10,6 +10,7 @@ members = [
 	"Element/Mist",
 	"Element/Rest",
 	"Element/SideCar",
+	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/localhost",
 ]
 resolver = "2"
 
@@ -25,7 +26,7 @@ tauri = { version = "2.10.2", features = [
 
 tauri-plugin-dialog = { version = "2.6.0" }
 tauri-plugin-fs = { version = "2.4.5" }
-tauri-plugin-localhost = { version = "2.3.2" }
+tauri-plugin-localhost = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/localhost" }
 tauri-plugin-log = { version = "2.8.0" }
 
 # tauri = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri" }

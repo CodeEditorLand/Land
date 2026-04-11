@@ -152,10 +152,10 @@ Dependency/Microsoft/Dependency/Editor
 
 vendor
 
-# Generated Rust documentation (cargo doc output — all Elements)
+# Generated Rust documentation (cargo doc output - all Elements)
 **/Documentation/Rust/**
 
-# Cargo build artifacts — all Elements (PascalCase Target/)
+# Cargo build artifacts - all Elements (PascalCase Target/)
 **/Target/**
 
 # SideCar downloaded Node.js runtimes (per-arch, per-version trees)

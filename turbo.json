@@ -248,7 +248,9 @@
 
 		"npm_package_version",
 
-		"Compiler"
+		"Compiler",
+
+		"LAND_DEV_LOG"
 	],
 
 	"tasks": {

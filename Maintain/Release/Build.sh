@@ -13,9 +13,10 @@
 #   sh Maintain/Release/Build.sh --profile web      # Web-only release
 #
 # Available profiles:
-#   production  - Production build with Mountain workbench (default)
-#   release     - Full release with packaging and signing
-#   web-browser - Web browser deployment (no Tauri)
+#   production       - Production build with Mountain workbench (default)
+#   release          - Full release with packaging and signing
+#   release-electron - Electron workbench + Rest OXC (full desktop, gRPC proxy)
+#   web-browser      - Web browser deployment (no Tauri)
 #
 #===============================================================================
 
@@ -37,9 +38,10 @@ while [ $# -gt 0 ]; do
 		echo "  --help, -h            Show this help message"
 		echo ""
 		echo "Available profiles:"
-		echo "  production  - Production build with Mountain workbench (default)"
-		echo "  release     - Full release with packaging and signing"
-		echo "  web-browser - Web browser deployment (no Tauri)"
+		echo "  production       - Production build with Mountain workbench (default)"
+		echo "  release          - Full release with packaging and signing"
+		echo "  release-electron - Electron workbench + Rest OXC (full desktop)"
+		echo "  web-browser      - Web browser deployment (no Tauri)"
 		exit 0
 		;;
 	*)
@@ -146,6 +148,29 @@ release)
 		export Compiler=esbuild
 	fi
 	;;
+release-electron)
+	echo "Using Electron workbench + Rest OXC (full desktop, gRPC proxy)"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=Rest
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=development
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=8192"
+	export RUST_LOG=info
+
+	# Build Rest compiler if binary is missing
+	if [ ! -f "Element/Rest/Target/release/Rest" ]; then
+		echo ""
+		echo "Building Rest OXC compiler (first time only)..."
+		cargo build -p Rest --release 2>&1 | tail -5
+		echo ""
+	fi
+	;;
 web-browser)
 	echo "Using Browser workbench (web-only)"
 	export Browser=true
@@ -171,10 +196,19 @@ web-browser)
 	;;
 *)
 	echo "Unknown profile: $PROFILE"
-	echo "Available profiles: production, release, web-browser"
+	echo "Available profiles: production, release, release-electron, web-browser"
 	exit 1
 	;;
 esac
+
+# When Electron flag changes, Output must rebuild to include
+# workbench.desktop.main.js and electron-browser paths.
+if [ "$Electron" = "true" ]; then
+	if [ ! -f "Element/Output/Target/Microsoft/VSCode/vs/workbench/workbench.desktop.main.js" ]; then
+		echo "Cleaning Output cache (Electron=true, desktop workbench missing)..."
+		rm -rf Element/Output/Configuration Element/Output/Target/Microsoft
+	fi
+fi
 
 echo ""
 echo "Starting release build..."

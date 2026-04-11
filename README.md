@@ -37,7 +37,7 @@
 
 # **Land**&#x2001;🏞️
 
-The Code Editor built on `Tauri` + `Rust` + `Effect-TS` — replacing Electron piece by piece.
+The Code Editor built on `Tauri` + `Rust` + `Effect-TS` - replacing Electron piece by piece.
 
 > **`VS Code` runs on `Electron`.** That means a bundled `Chromium` browser, a `Node.js`
 > runtime, and a single-threaded extension host. Open a medium project: 500 MB
@@ -49,7 +49,7 @@ The Code Editor built on `Tauri` + `Rust` + `Effect-TS` — replacing Electron p
 `Land` replaces `VS Code`'s `Electron` stack piece by piece with fifteen independent
 elements. `Rust` and `Tauri` replace `Chromium` and `Node.js`. `Effect-TS` fibers replace
 `Promise` chains. Typed `Tauri` IPC replaces `Node`'s untyped JSON pipe. The result:
-the same `VS Code` extension API surface on a leaner native substrate — less RAM,
+the same `VS Code` extension API surface on a leaner native substrate - less RAM,
 faster cold start, and structured concurrency that `VS Code`'s single-threaded
 extension host cannot offer.
 
@@ -61,14 +61,14 @@ extension host cannot offer.
 
 | Pain                  | `VS Code` (Electron)               | `Land` (Tauri + Effect-TS)                                        |
 | :-------------------- | :--------------------------------- | :---------------------------------------------------------------- |
-| RAM per window        | 300–400 MB idle                    | Substantially less — no bundled `Chromium`, uses OS `WebView`     |
-| Cold start            | 2–4 s                              | Faster — no `Chromium` init; target <200 ms, not yet benchmarked  |
+| RAM per window        | 300–400 MB idle                    | Substantially less - no bundled `Chromium`, uses OS `WebView`     |
+| Cold start            | 2–4 s                              | Faster - no `Chromium` init; target <200 ms, not yet benchmarked  |
 | Extension blocking    | One hung `Promise` freezes all     | Each fiber is independently interruptible                         |
 | IPC                   | Untyped JSON pipe                  | Typed `Tauri` IPC → `Rust` handlers; `gRPC` (`Vine`) for `Cocoon` |
 | Extension isolation   | Shared process, no boundary        | Supervised fiber scopes (`Grove`: WASM sandbox, in progress)      |
 | Updates               | Full restart, kills terminals      | Pre-staged by `Air` between sessions                              |
 | Telemetry             | Config toggle, code paths remain   | Compile flag: code paths do not exist when off                    |
-| Distributable size    | 90–150 MB                          | ~3–8 MB — no bundled browser                                      |
+| Distributable size    | 90–150 MB                          | ~3–8 MB - no bundled browser                                      |
 | License               | MIT (with restrictions)            | CC0 public domain, no restrictions                                |
 
 ---
@@ -85,7 +85,7 @@ extension host cannot offer.
   interrupted, raced, and supervised. Extensions that block in `VS Code` can run
   concurrently in `Land`.
 - **Typed at the wire.** `Wind` uses `Tauri` IPC to communicate with `Mountain`'s `Rust`
-  handlers. `Vine` starts every `gRPC` interface as a `.proto` file — change a
+  handlers. `Vine` starts every `gRPC` interface as a `.proto` file - change a
   message field and every consumer breaks at compile time, not in production.
 - **Always up to date, never interrupted.** `Air` pre-downloads and PGP-verifies
   the next version between sessions. No "Restart to Update" prompt.
@@ -131,7 +131,7 @@ graph LR
     subgraph "🔨 Build Time"
         direction LR
         VSCodeSource["📦 VS Code Source"]:::build
-        RestBuild["⚡ Rest — JS Bundler"]:::build
+        RestBuild["⚡ Rest - JS Bundler"]:::build
         CocoonBundleJS("📄 Cocoon Runtime JS"):::data
         SkyBuildProcess["🌌 Sky Build"]:::build
         SkyAssets("🖼️ Sky Frontend Assets"):::data
@@ -142,12 +142,12 @@ graph LR
         SkyBuildProcess --> SkyAssets
     end
 
-    subgraph "🚀 Runtime — Land Application"
-        subgraph "🦀 Native Backend — Rust"
-            Mountain["⛰️ Mountain — Tauri App"]:::mountain
+    subgraph "🚀 Runtime - Land Application"
+        subgraph "🦀 Native Backend - Rust"
+            Mountain["⛰️ Mountain - Tauri App"]:::mountain
             CommonCrate["📐 Common Crate"]:::common
             TrackDispatcher["🔀 Track Dispatcher"]:::mountain
-            VineGRPCServer["🌿 Vine — gRPC Server"]:::ipc
+            VineGRPCServer["🌿 Vine - gRPC Server"]:::ipc
             NativeHandlers["⚙️ Native Handlers"]:::mountain
             ProcessMgmt["🔧 Process Management"]:::mountain
 
@@ -158,15 +158,15 @@ graph LR
             Mountain --> ProcessMgmt
         end
 
-        subgraph "🖥️ UI Frontend — Tauri WebView"
-            WindServices["🍃 Wind — Effect-TS Services"]:::wind
-            SkyUI["🌌 Sky — UI Components"]:::wind
+        subgraph "🖥️ UI Frontend - Tauri WebView"
+            WindServices["🍃 Wind - Effect-TS Services"]:::wind
+            SkyUI["🌌 Sky - UI Components"]:::wind
             WindServices -- drives --> SkyUI
         end
 
-        subgraph "🧩 Extension Host — Node.js Sidecar"
+        subgraph "🧩 Extension Host - Node.js Sidecar"
             Cocoon["🦋 Cocoon Process"]:::cocoon
-            VineGRPCClient["🌿 Vine — gRPC Client"]:::ipc
+            VineGRPCClient["🌿 Vine - gRPC Client"]:::ipc
             VSCodeAPI["🔌 vscode API Shim"]:::cocoon
             Extension["📦 Extension Code"]:::cocoon
 
@@ -191,16 +191,16 @@ graph LR
 Detailed `Mermaid`-diagrammed workflows live in
 [`Documentation/GitHub/Workflow.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow.md):
 
-1. **Application Startup & Handshake** — `Mountain` launches, spawns `Cocoon`, establishes `gRPC` connection
-2. **Opening a File** — UI click through `Wind` → `Mountain` → disk and back
-3. **Language Features** — Bidirectional: `Cocoon` registers provider, `Mountain` proxies requests
-4. **Save Participants** — Extensions modify files via `gRPC` before `Mountain` writes to disk
-5. **Command Palette** — Unified dispatch to native `Rust` handlers or proxied extension commands
-6. **Webview Panels** — Full lifecycle of extension-contributed UI
-7. **Integrated Terminal** — Native PTY via `portable-pty`, `xterm.js` wired and working
-8. **SCM / Git** — `Cocoon`'s Git extension uses `Mountain` to spawn native `git` processes
-9. **User Data Sync** — Auth, fetch, three-way merge, apply, notify
-10. **Extension Tests** — Isolated "Extension Development Host" for test execution
+1. **Application Startup & Handshake** - `Mountain` launches, spawns `Cocoon`, establishes `gRPC` connection
+2. **Opening a File** - UI click through `Wind` → `Mountain` → disk and back
+3. **Language Features** - Bidirectional: `Cocoon` registers provider, `Mountain` proxies requests
+4. **Save Participants** - Extensions modify files via `gRPC` before `Mountain` writes to disk
+5. **Command Palette** - Unified dispatch to native `Rust` handlers or proxied extension commands
+6. **Webview Panels** - Full lifecycle of extension-contributed UI
+7. **Integrated Terminal** - Native PTY via `portable-pty`, `xterm.js` wired and working
+8. **SCM / Git** - `Cocoon`'s Git extension uses `Mountain` to spawn native `git` processes
+9. **User Data Sync** - Auth, fetch, three-way merge, apply, notify
+10. **Extension Tests** - Isolated "Extension Development Host" for test execution
 
 ---
 
@@ -210,22 +210,22 @@ Detailed `Mermaid`-diagrammed workflows live in
 # Clone with submodules
 git clone --depth 2 ssh://git@github.com/CodeEditorLand/Land.git
 
-# 1. In ./Land/ — initialize Element submodule
+# 1. In ./Land/ - initialize Element submodule
 git submodule update --init Element
 
-# 2. In ./Land/Element — initialize all Element submodules
+# 2. In ./Land/Element - initialize all Element submodules
 git submodule update --init
 
-# 3. In ./Land/ — initialize Dependency submodule
+# 3. In ./Land/ - initialize Dependency submodule
 git submodule update --init Dependency
 
-# 4. In ./Land/Dependency/ — initialize Microsoft dependencies
+# 4. In ./Land/Dependency/ - initialize Microsoft dependencies
 git submodule update --init Microsoft
 
-# 5. In ./Land/Dependency/Microsoft — initialize Dependency
+# 5. In ./Land/Dependency/Microsoft - initialize Dependency
 git submodule update --init Dependency
 
-# 6. In ./Land/Dependency/Microsoft/Dependency — initialize VS Code source
+# 6. In ./Land/Dependency/Microsoft/Dependency - initialize VS Code source
 git submodule update --init --depth 2 Editor
 ```
 
@@ -351,15 +351,15 @@ This project is funded through
 This project would not be possible without the incredible work of the
 open-source community. We are especially grateful for:
 
-- [**Tauri**](https://tauri.app/) — secure, performant, resource-efficient framework for native desktop apps with a web frontend.
-- [**Microsoft Visual Studio Code**](https://github.com/microsoft/vscode) — open-sourced workbench UI and platform code that provides the foundation for our UI and extension host compatibility.
-- [**Effect-TS**](https://www.effect.website/) — robust, type-safe structured concurrency and dependency management in `TypeScript`.
-- [**Rust**](https://www.rust-lang.org/) — performance, safety, and modern tooling powering the entire native backend.
-- [**Tokio**](https://tokio.rs/) & [**Tonic**](https://github.com/hyperium/tonic) — async runtime and `gRPC` framework backbone of high-performance IPC.
-- [**Astro**](https://astro.build/) — content-driven approach for the fast, modern `Sky` UI.
-- [**xterm.js**](https://xtermjs.org/) — terminal emulator powering the integrated terminal, with fixes contributed upstream from `Land`.
-- [**portable-pty**](https://github.com/wez/wezterm/tree/main/pty) — cross-platform PTY backend driving the integrated terminal in `Mountain`.
-- [**PNPM**](https://pnpm.io/) — efficient, reliable `JavaScript` dependency management.
+- [**Tauri**](https://tauri.app/) - secure, performant, resource-efficient framework for native desktop apps with a web frontend.
+- [**Microsoft Visual Studio Code**](https://github.com/microsoft/vscode) - open-sourced workbench UI and platform code that provides the foundation for our UI and extension host compatibility.
+- [**Effect-TS**](https://www.effect.website/) - robust, type-safe structured concurrency and dependency management in `TypeScript`.
+- [**Rust**](https://www.rust-lang.org/) - performance, safety, and modern tooling powering the entire native backend.
+- [**Tokio**](https://tokio.rs/) & [**Tonic**](https://github.com/hyperium/tonic) - async runtime and `gRPC` framework backbone of high-performance IPC.
+- [**Astro**](https://astro.build/) - content-driven approach for the fast, modern `Sky` UI.
+- [**xterm.js**](https://xtermjs.org/) - terminal emulator powering the integrated terminal, with fixes contributed upstream from `Land`.
+- [**portable-pty**](https://github.com/wez/wezterm/tree/main/pty) - cross-platform PTY backend driving the integrated terminal in `Mountain`.
+- [**PNPM**](https://pnpm.io/) - efficient, reliable `JavaScript` dependency management.
 - and many more… <!-- TODO: full list -->
 
 We extend our sincere gratitude to all maintainers and contributors. ❤️
