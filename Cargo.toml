@@ -54,6 +54,7 @@ Echo = { path = "Element/Echo" }
 Mist = { path = "Element/Mist" }
 
 anyhow = { version = "1.0.102" }
+arboard = { version = "3.4" }
 async-trait = { version = "0.1.89" }
 base64 = { version = "0.22.1" }
 bincode = { version = "=2.0.1", features = [
@@ -97,6 +98,7 @@ prometheus = { version = "0.13.4" }
 notify = { version = "8.2.0" }
 num_cpus = { version = "1.17.0" }
 once_cell = { version = "1.21.3" }
+open = { version = "5" }
 opentelemetry = { version = "0.31.0", default-features = false }
 posthog-rs = { version = "0.3.5" }
 parking_lot = { version = "0.12.5" }

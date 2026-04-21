@@ -81,6 +81,14 @@ and Commands**.
       instance of the application is launched to run tests, with the test
       `Cocoon` instance remote-controlling the main UI._
 
+11. [**Tier-Gated Implementation Selection**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/TierGatedImplementationSelection.md)
+    - _Describes how the `.env.Land` file propagates through Maintain's build
+      script into `Mountain`'s `build.rs`, Cocoon's esbuild define map, and
+      Sky's Vite define map — allowing each capability with more than one viable
+      implementation (gRPC vs native, JS glob vs `globset`, etc.) to live in the
+      codebase simultaneously and be selected at build time without duplicating
+      call sites._
+
 ### Work in Progress (Documentation) 🚧
 
 The following workflows are implemented in the codebase but are pending detailed

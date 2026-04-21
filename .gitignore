@@ -57,3 +57,4 @@ context_portal/
 # VS Code build output
 Dependency/Microsoft/Dependency/Editor/out/
 Dependency/Microsoft/Dependency/Editor/build/
+.env.Land

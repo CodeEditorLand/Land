@@ -16,6 +16,8 @@
 #   production       - Production build with Mountain workbench (default)
 #   release          - Full release with packaging and signing
 #   release-electron - Electron workbench + Rest OXC (full desktop, gRPC proxy)
+#   release-electron-minimal - release-electron without built-in extensions (Atom J4)
+#   release-mountain-only - Mountain without Cocoon subprocess (Atom N3 mirror)
 #   web-browser      - Web browser deployment (no Tauri)
 #
 #===============================================================================
@@ -40,8 +42,12 @@ while [ $# -gt 0 ]; do
 		echo "Available profiles:"
 		echo "  production       - Production build with Mountain workbench (default)"
 		echo "  release          - Full release with packaging and signing"
-		echo "  release-electron - Electron workbench + Rest OXC (full desktop)"
-		echo "  web-browser      - Web browser deployment (no Tauri)"
+		echo "  release-electron         - Electron workbench + Rest OXC (full desktop)"
+		echo "  release-electron-minimal - Electron without built-in extensions (Atom J4)"
+		echo "  release-mountain-only    - Mountain without Cocoon subprocess (Atom N mirror)"
+		echo "  release-cocoon-headless  - Electron + Cocoon, no Wind preload (Atom N3b)"
+		echo "  release-kernel           - Pure Mountain: no built-ins, no Cocoon, no Wind (Atom N3c)"
+		echo "  web-browser              - Web browser deployment (no Tauri)"
 		exit 0
 		;;
 	*)
@@ -57,6 +63,22 @@ echo "Land Release Build"
 echo "========================================"
 echo "Profile: $PROFILE"
 echo "========================================"
+
+# Tier-gating fan-out (Plan A Wave 1.5) — shared helper.
+# shellcheck disable=SC1091
+. Maintain/Script/TierEnvironment.sh
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# TEMP: Rest compiler disabled for every profile — we're testing the Output
+# Element consuming VS Code's `out/` (dev) and `out-build/` (prod) directly,
+# without the OXC transform layer. `unset` wipes any inherited `Compiler=Rest`
+# from the caller's shell; the `release-electron` profile's hardcoded
+# `Compiler=Rest` is swapped to `Compiler=esbuild` below with a matching
+# TEMP marker, and the `production` branch's optional Stage 3 Rest block
+# now skips because `$Compiler` is never "Rest". Restore by deleting this
+# block and reverting the per-profile change.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+unset Compiler
 
 case $PROFILE in
 production)
@@ -154,22 +176,104 @@ release-electron)
 	export Bundle=true
 	export Clean=true
 	export Compile=true
-	export Compiler=Rest
+	# TEMP: Rest compiler disabled (see kill-switch above). Restore with
+	# `export Compiler=Rest` to re-enable the OXC transform.
+	export Compiler=esbuild
 	export Debug=false
 	export Level=silent
 	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
+	export NODE_ENV=production
 	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=8192"
+	export NODE_OPTIONS="--max-old-space-size=16384"
 	export RUST_LOG=info
 
-	# Build Rest compiler if binary is missing
-	if [ ! -f "Element/Rest/Target/release/Rest" ]; then
+	# Build Rest compiler if binary is missing — only needed when the
+	# Rest path is actually active. With `Compiler=esbuild` this is a
+	# no-op; gate the cargo build so the temporary kill-switch doesn't
+	# pay for an unused compiler.
+	if [ "$Compiler" = "Rest" ] && [ ! -f "Element/Rest/Target/release/Rest" ]; then
 		echo ""
 		echo "Building Rest OXC compiler (first time only)..."
 		cargo build -p Rest --release 2>&1 | tail -5
 		echo ""
 	fi
+	;;
+release-electron-minimal)
+	# Atom J4: release-electron with zero bundled built-in extensions.
+	# Sky Step 13 + Mountain Scanner observe `LAND_SKIP_BUILTIN_EXTENSIONS`
+	# and skip the copy + scan. Kernel distribution surface.
+	echo "Using Electron workbench (minimal — no built-in extensions)"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export LAND_SKIP_BUILTIN_EXTENSIONS=true
+	;;
+release-mountain-only)
+	# Atom N mirror: release Mountain without the Cocoon subprocess.
+	# Extension-related IPC returns the empty-state envelope; binary
+	# footprint is the smallest shippable shape.
+	echo "Using Mountain workbench without Cocoon (release)"
+	export Mountain=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export LAND_SPAWN_COCOON=false
+	;;
+release-cocoon-headless)
+	# Atom N3b release mirror: Mountain + Cocoon, no Wind preload.
+	# Useful for headless server deployments that want the extension
+	# host online but do not render the Effect-TS service layer.
+	echo "Using Electron + Cocoon, Wind preload disabled (release)"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export LAND_ENABLE_WIND=false
+	;;
+release-kernel)
+	# Atom J4b / N3c release mirror: smallest shippable binary.
+	# No built-in extensions, no Cocoon, no Wind. Pure Mountain.
+	echo "Using Mountain kernel (release — no built-ins, no Cocoon, no Wind)"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export LAND_SKIP_BUILTIN_EXTENSIONS=true
+	export LAND_SPAWN_COCOON=false
+	export LAND_ENABLE_WIND=false
 	;;
 web-browser)
 	echo "Using Browser workbench (web-only)"
@@ -196,19 +300,14 @@ web-browser)
 	;;
 *)
 	echo "Unknown profile: $PROFILE"
-	echo "Available profiles: production, release, release-electron, web-browser"
+	echo "Available profiles: production, release, release-electron, release-electron-minimal, release-mountain-only, release-cocoon-headless, release-kernel, web-browser"
 	exit 1
 	;;
 esac
 
-# When Electron flag changes, Output must rebuild to include
-# workbench.desktop.main.js and electron-browser paths.
-if [ "$Electron" = "true" ]; then
-	if [ ! -f "Element/Output/Target/Microsoft/VSCode/vs/workbench/workbench.desktop.main.js" ]; then
-		echo "Cleaning Output cache (Electron=true, desktop workbench missing)..."
-		rm -rf Element/Output/Configuration Element/Output/Target/Microsoft
-	fi
-fi
+# Profile-flip Output-cache cleanup — shared helper.
+# shellcheck disable=SC1091
+. Maintain/Script/ProfileMarker.sh
 
 echo ""
 echo "Starting release build..."

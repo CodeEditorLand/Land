@@ -48,6 +48,7 @@ FormatShell() {
 
 	# shfmt reads .editorconfig for indent style/size automatically.
 	# Exclude Dependency/ and SideCar NODE trees; find all project .sh files.
+	# shellcheck disable=SC2038
 	find . -name "*.sh" \
 		-not -path "*/Dependency/*" \
 		-not -path "*/node_modules/*" \
