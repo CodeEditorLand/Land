@@ -61,14 +61,14 @@ extension host cannot offer.
 
 | Pain                  | `VS Code` (Electron)               | `Land` (Tauri + Effect-TS)                                        |
 | :-------------------- | :--------------------------------- | :---------------------------------------------------------------- |
-| RAM per window        | 300–400 MB idle                    | Substantially less - no bundled `Chromium`, uses OS `WebView`     |
-| Cold start            | 2–4 s                              | Faster - no `Chromium` init; target <200 ms, not yet benchmarked  |
+| RAM per window        | 300-400 MB idle                    | Substantially less - no bundled `Chromium`, uses OS `WebView`     |
+| Cold start            | 2-4 s                              | Faster - no `Chromium` init; target <200 ms, not yet benchmarked  |
 | Extension blocking    | One hung `Promise` freezes all     | Each fiber is independently interruptible                         |
 | IPC                   | Untyped JSON pipe                  | Typed `Tauri` IPC → `Rust` handlers; `gRPC` (`Vine`) for `Cocoon` |
 | Extension isolation   | Shared process, no boundary        | Supervised fiber scopes (`Grove`: WASM sandbox, in progress)      |
 | Updates               | Full restart, kills terminals      | Pre-staged by `Air` between sessions                              |
 | Telemetry             | Config toggle, code paths remain   | Compile flag: code paths do not exist when off                    |
-| Distributable size    | 90–150 MB                          | ~3–8 MB - no bundled browser                                      |
+| Distributable size    | 90-150 MB                          | ~3-8 MB - no bundled browser                                      |
 | License               | MIT (with restrictions)            | CC0 public domain, no restrictions                                |
 
 ---
@@ -108,7 +108,7 @@ extension host cannot offer.
 | [`Vine`][Vine]           | `gRPC` protocol: typed contracts from `.proto` files         | `Protobuf`, `Rust`           |
 | [`Grove`][Grove]         | WASM sandbox: capability-based extension isolation           | `Rust`, `WASMtime`           |
 | [`Mist`][Mist]           | DNS sandbox: local `*.editor.land` resolution                | `Rust`                       |
-| [`Rest`][Rest]           | OXC-powered `TypeScript` compiler, 2–3× faster than `esbuild`| `Rust`, `OXC`                |
+| [`Rest`][Rest]           | OXC-powered `TypeScript` compiler, 2-3× faster than `esbuild`| `Rust`, `OXC`                |
 | [`Output`][Output]       | Deterministic build artifacts with checksum verification     | `JavaScript`                 |
 | [`SideCar`][SideCar]     | `Node.js` binary distribution per target triple              | `Rust`                       |
 | [`Worker`][Worker]       | Service Worker: auth encryption, offline support             | `TypeScript`                 |

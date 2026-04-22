@@ -50,19 +50,19 @@ PostHogCapture() {
 		DistinctId="land-dev-${USER:-unknown}-$(uname -n 2>/dev/null || echo host)"
 	fi
 
-	# ISO8601 timestamp — `date -Iseconds` on GNU, `date +%FT%T%z` on BSD.
+	# ISO8601 timestamp - `date -Iseconds` on GNU, `date +%FT%T%z` on BSD.
 	Timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%FT%T%z)"
 
 	ExtraProperty=""
 	if [ -n "$PropertyName" ]; then
-		# Build one "key":"value" pair. Shell-escape rudimentary — events
+		# Build one "key":"value" pair. Shell-escape rudimentary - events
 		# come from our own build scripts, not arbitrary input.
 		ExtraProperty=", \"$PropertyName\": \"$PropertyValue\""
 	fi
 
 	Payload="{\"api_key\":\"$Key\",\"event\":\"$Event\",\"timestamp\":\"$Timestamp\",\"distinct_id\":\"$DistinctId\",\"properties\":{\"\$app\":\"land-editor\",\"\$component\":\"build\",\"\$tier\":\"build\",\"\$lib\":\"maintain-posthog-capture\"$ExtraProperty}}"
 
-	# Silent curl with a 3s cap — telemetry must never stall a build.
+	# Silent curl with a 3s cap - telemetry must never stall a build.
 	curl --silent --show-error --max-time 3 \
 		-H "Content-Type: application/json" \
 		-d "$Payload" \
@@ -73,7 +73,7 @@ PostHogCapture() {
 # Export so sourcing scripts inherit the function.
 # shellcheck disable=SC3045
 if [ -n "${ZSH_VERSION:-}" ]; then
-	# zsh doesn't export functions — re-aliased below when sourced.
+	# zsh doesn't export functions - re-aliased below when sourced.
 	:
 elif [ -n "${BASH_VERSION:-}" ]; then
 	export -f PostHogCapture 2>/dev/null || true
