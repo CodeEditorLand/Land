@@ -57,6 +57,10 @@ context_portal/
 # VS Code build output
 Dependency/Microsoft/Dependency/Editor/out/
 Dependency/Microsoft/Dependency/Editor/build/
-.env.Land
 
 Maintain/Integration/MemoryAudit.sh
+
+.env.Land
+.env.Land.Extensions
+.env.Land.Node
+.env.Land.PostHog

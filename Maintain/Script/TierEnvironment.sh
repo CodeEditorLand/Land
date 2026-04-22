@@ -32,10 +32,10 @@ if [ -z "$TierEnvFile" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Domain-specific overlays — sourced AFTER the root `.env.Land` so they
+# Domain-specific overlays - sourced AFTER the root `.env.Land` so they
 # compose cleanly. Each overlay owns one concern:
-#   .env.Land.Node       — LAND_NODE_BINARY, LAND_NODE_MIN_MAJOR
-#   .env.Land.Extensions — LAND_{USER,EXTRA,DEV}_EXTENSIONS_DIR, auto-install
+#   .env.Land.Node       - LAND_NODE_BINARY, LAND_NODE_MIN_MAJOR
+#   .env.Land.Extensions - LAND_{USER,EXTRA,DEV}_EXTENSIONS_DIR, auto-install
 # Overlays cascade: real > .Sample > absent. Absent files are silently
 # skipped so a fresh clone still builds with just the root `.env.Land`.
 # ---------------------------------------------------------------------------
@@ -81,8 +81,9 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 
 	SourceOverlayIfPresent ".env.Land.Node"
 	SourceOverlayIfPresent ".env.Land.Extensions"
+	SourceOverlayIfPresent ".env.Land.PostHog"
 
-	LandRuntimeVars=$(env | grep -E '^LAND_(NODE|USER|EXTRA|DEV|BUILTIN|AUTO|DISABLE)_' | sort)
+	LandRuntimeVars=$(env | grep -E '^LAND_(NODE|USER|EXTRA|DEV|BUILTIN|AUTO|DISABLE|POSTHOG)_' | sort)
 	if [ -n "$LandRuntimeVars" ]; then
 		echo "LAND runtime set:"
 		printf '%s\n' "$LandRuntimeVars"

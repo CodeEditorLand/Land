@@ -68,7 +68,7 @@ echo "========================================"
 # shellcheck disable=SC1091
 . Maintain/Script/TierEnvironment.sh
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ===========================================================================
 # TEMP: Rest compiler disabled for every profile - we're testing the Output
 # Element consuming VS Code's `out/` (dev) and `out-build/` (prod) directly,
 # without the OXC transform layer. `unset` wipes any inherited `Compiler=Rest`
@@ -77,7 +77,7 @@ echo "========================================"
 # TEMP marker, and the `production` branch's optional Stage 3 Rest block
 # now skips because `$Compiler` is never "Rest". Restore by deleting this
 # block and reverting the per-profile change.
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ===========================================================================
 unset Compiler
 
 case $PROFILE in
