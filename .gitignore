@@ -58,3 +58,5 @@ context_portal/
 Dependency/Microsoft/Dependency/Editor/out/
 Dependency/Microsoft/Dependency/Editor/build/
 .env.Land
+
+Maintain/Integration/MemoryAudit.sh

@@ -175,4 +175,56 @@ else
 fi
 echo "================================================================"
 
+# -----------------------------------------------------------------------------
+# Shippable-surface footprint report (Atom J1-J4 visible output)
+#
+# Profiles only differ in env flags, but the resulting `.app` bundle size
+# changes with `LAND_SKIP_BUILTIN_EXTENSIONS` (Sky Step 13 skips ~93
+# extensions, ~200 MB), and Mountain's extension scan observable total
+# changes independently. Print both so a pasted report lets reviewers
+# gauge the cost of each build.
+# -----------------------------------------------------------------------------
+echo ""
+echo "================================================================"
+echo "[SmokeProfiles] Shippable-surface footprint"
+echo "================================================================"
+
+APP_BUNDLE="Element/Mountain/Target/debug/bundle/macos/DevelopmentNodeEnvironment_MicrosoftVSCodeDependency_22NodeVersion_Bundle_Clean_Debug_Mountain.app"
+SKY_EXTENSIONS="Element/Sky/Target/Static/Application/extensions"
+
+if [ -d "$APP_BUNDLE" ]; then
+	BundleSize=$(du -sh "$APP_BUNDLE" 2>/dev/null | awk '{print $1}')
+	BundleBytes=$(du -sk "$APP_BUNDLE" 2>/dev/null | awk '{print $1 * 1024}')
+	echo "  .app bundle:           $BundleSize (${BundleBytes} bytes)"
+else
+	echo "  .app bundle:           (not present; run build first)"
+fi
+
+if [ -f "$BINARY" ]; then
+	BinarySize=$(du -sh "$BINARY" 2>/dev/null | awk '{print $1}')
+	echo "  Mountain binary:       $BinarySize"
+fi
+
+if [ -d "$SKY_EXTENSIONS" ]; then
+	ExtensionCount=$(ls "$SKY_EXTENSIONS" 2>/dev/null | wc -l | tr -d ' ')
+	ExtensionBytes=$(du -sh "$SKY_EXTENSIONS" 2>/dev/null | awk '{print $1}')
+	echo "  Bundled extensions:    $ExtensionCount dirs ($ExtensionBytes)"
+else
+	echo "  Bundled extensions:    (none — minimal or kernel profile)"
+fi
+
+CocoonBundle="Element/Cocoon/Target/Bootstrap/Implementation/CocoonMain.js"
+if [ -f "$CocoonBundle" ]; then
+	CocoonSize=$(du -sh "$CocoonBundle" 2>/dev/null | awk '{print $1}')
+	echo "  CocoonMain.js:         $CocoonSize"
+fi
+
+WindBundle="Element/Wind/Target"
+if [ -d "$WindBundle" ]; then
+	WindBytes=$(du -sh "$WindBundle" 2>/dev/null | awk '{print $1}')
+	echo "  Wind compiled:         $WindBytes"
+fi
+
+echo "================================================================"
+
 exit "$OverallStatus"
