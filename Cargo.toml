@@ -15,7 +15,7 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
-tauri = { version = "2.10.2", features = [
+tauri = { version = "2.10.3", features = [
 	"wry",
 	"tray-icon",
 	"devtools",
@@ -24,8 +24,8 @@ tauri = { version = "2.10.2", features = [
 	"dynamic-acl",
 ], default-features = false }
 
-tauri-plugin-dialog = { version = "2.6.0" }
-tauri-plugin-fs = { version = "2.4.5" }
+tauri-plugin-dialog = { version = "2.7.0" }
+tauri-plugin-fs = { version = "2.5.0" }
 tauri-plugin-localhost = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/localhost" }
 tauri-plugin-log = { version = "2.8.0" }
 
@@ -54,7 +54,7 @@ Echo = { path = "Element/Echo" }
 Mist = { path = "Element/Mist" }
 
 anyhow = { version = "1.0.102" }
-arboard = { version = "3.4" }
+arboard = { version = "3.6" }
 async-trait = { version = "0.1.89" }
 base64 = { version = "0.22.1" }
 bincode = { version = "=2.0.1", features = [
@@ -63,17 +63,17 @@ bincode = { version = "=2.0.1", features = [
 brotli = { version = "8.0.2" }
 bytes = { version = "1.11.1" }
 chrono = { version = "0.4.44" }
-clap = { version = "4.5.60", features = ["derive", "env"] }
+clap = { version = "4.6.1", features = ["derive", "env"] }
 colored = { version = "3.1.1" }
 git2 = { version = "0.20.4" }
 itertools = { version = "0.14.0" }
 par-core = { version = "2.0.0", features = ["rayon"] }
-config = { version = "0.15.19" }
+config = { version = "0.15.22" }
 crc32fast = { version = "1.5.0" }
 crossbeam-deque = { version = "0.8.6" }
 dashmap = { version = "6.1.0" }
 dirs = { version = "6.0.0" }
-env_logger = { version = "0.11.9" }
+env_logger = { version = "0.11.10" }
 flate2 = { version = "1.1.9" }
 fs_extra = { version = "1.3.0" }
 futures = { version = "0.3.32" }
@@ -83,8 +83,8 @@ grep-regex = { version = "0.1.14" }
 grep-searcher = { version = "0.1.16" }
 hex = { version = "0.4.3" }
 hickory-client = { version = "0.25" }
-hickory-proto = { version = "0.25" }
-hickory-server = { version = "0.25" }
+hickory-proto = { version = "0.26" }
+hickory-server = { version = "0.26" }
 hostname = { version = "0.4.2" }
 http = { version = "1.4.0" }
 ignore = { version = "0.4.25" }
@@ -94,20 +94,20 @@ lazy_static = { version = "1.5.0" }
 log = { version = "0.4.29" }
 md5 = { version = "0.8.0" }
 metrics = { version = "0.24.3" }
-prometheus = { version = "0.13.4" }
+prometheus = { version = "0.14.0" }
 notify = { version = "8.2.0" }
 num_cpus = { version = "1.17.0" }
-once_cell = { version = "1.21.3" }
+once_cell = { version = "1.21.4" }
 open = { version = "5" }
 opentelemetry = { version = "0.31.0", default-features = false }
-posthog-rs = { version = "0.3.5" }
+posthog-rs = { version = "0.5.3" }
 parking_lot = { version = "0.12.5" }
 portable-pty = { version = "0.9.0" }
 portpicker = { version = "0.1.1" }
 prost = { version = "0.14.3" }
 prost-build = { version = "0.14.3" }
 prun = { version = "0.1.9" }
-rand = { version = "0.10.0" }
+rand = { version = "0.10.1" }
 regex = { version = "1.12.3" }
 reqwest = { version = "0.13.2", features = ["json", "stream", "hickory-dns"] }
 rhai = { version = "1.24.0", features = ["metadata", "serde"] }
@@ -116,45 +116,45 @@ rustls = { version = "0.23" }
 rustls-pemfile = { version = "2.2" }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.149" }
-sha2 = { version = "0.10.9" }
+sha2 = { version = "0.11.0" }
 subtle = { version = "2.6.1" }
-sysinfo = { version = "0.38.2" }
+sysinfo = { version = "0.38.4" }
 systemstat = { version = "0.2.6" }
-tar = { version = "0.4.44" }
-tauri-build = { version = "2.5.5" }
-tempfile = { version = "3.26.0" }
+tar = { version = "0.4.45" }
+tauri-build = { version = "2.5.6" }
+tempfile = { version = "3.27.0" }
 thiserror = { version = "2.0.18" }
-tokio = { version = "1.49.0", features = ["full"] }
+tokio = { version = "1.52.1", features = ["full"] }
 tokio-console = { version = "0.1.14" }
 tokio-rustls = { version = "0.26" }
 tokio-stream = { version = "0.1.18" }
 tokio-test = { version = "0.4.5" }
-tokio-tungstenite = { version = "0.28.0" }
+tokio-tungstenite = { version = "0.29.0" }
 tokio-util = { version = "0.7.18", features = ["full"] }
-toml = { version = "1.0.3" }
-toml_edit = { version = "0.25.3" }
+toml = { version = "1.1.2" }
+toml_edit = { version = "0.25.11" }
 tonic = { version = "0.14.5", features = ["transport", "codegen", "_tls-any"] }
 tonic-build = { version = "0.14.5", features = ["transport"] }
 tonic-prost = { version = "0.14.5" }
 tonic-prost-build = { version = "0.14.5" }
 tracing = { version = "0.1.44" }
-tracing-appender = { version = "0.2.4" }
-tracing-subscriber = { version = "0.3.22" }
+tracing-appender = { version = "0.2.5" }
+tracing-subscriber = { version = "0.3.23" }
 unbug = { version = "0.4.0" }
 url = { version = "2.5.8" }
-uuid = { version = "1.21.0" }
+uuid = { version = "1.23.1" }
 walkdir = { version = "2.5.0" }
 zeroize = { version = "1.8.2" }
 # OXC dependencies for Element/Rest
-oxc_allocator = { version = "0.48.0" }
-oxc_parser = { version = "0.48.0" }
-oxc_transformer = { version = "0.48.0" }
-oxc_minifier = { version = "0.48.0" }
-oxc_codegen = { version = "0.48.0" }
-oxc_semantic = { version = "0.48.0" }
-oxc_span = { version = "0.48.0" }
-oxc_ast = { version = "0.48.0" }
-zip = { version = "8.1.0" }
+oxc_allocator = { version = "0.127.0" }
+oxc_parser = { version = "0.127.0" }
+oxc_transformer = { version = "0.127.0" }
+oxc_minifier = { version = "0.127.0" }
+oxc_codegen = { version = "0.127.0" }
+oxc_semantic = { version = "0.127.0" }
+oxc_span = { version = "0.127.0" }
+oxc_ast = { version = "0.127.0" }
+zip = { version = "8.5.1" }
 p256 = { version = "0.13.2" }
 pem = { version = "3.0.6" }
 rcgen = { version = "0.14.7" }
