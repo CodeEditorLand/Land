@@ -6,7 +6,7 @@ All notable changes to Land (Monorepo) are documented here. Format:
 Land is the top-level monorepo containing Element/ (application components) and
 Dependency/ (external dependencies) as git submodules.
 
-## [v2.1] — Q2 2026: Full Workbench Lift
+## [v2.1] - Q2 2026: Full Workbench Lift
 
 ### Status
 
@@ -29,7 +29,7 @@ VS Code workbench rendering in Tauri webview.
 
 - 12 Critical, 36 High, 51 Medium, 6 Low across Mountain/Cocoon/Wind/Sky
 
-## [v2.0] — Q1 2026: Editor Launch Sprint
+## [v2.0] - Q1 2026: Editor Launch Sprint
 
 ### Added
 
@@ -47,7 +47,7 @@ VS Code workbench rendering in Tauri webview.
 - Air: 73 Rust modules, DNS resolver, 35 TODOs closed
 - Maintain: Build.rs split (5,008 lines across 55 files), Rhai scripting
 
-## [v1.3] — Q4 2025: Dependency Maintenance
+## [v1.3] - Q4 2025: Dependency Maintenance
 
 ### Changed
 
@@ -55,7 +55,7 @@ VS Code workbench rendering in Tauri webview.
 - Cloudflare Workers types, Wrangler 4.x maintained
 - All components in stabilization mode
 
-## [v1.2] — Q3 2025: Full Stack Integration
+## [v1.2] - Q3 2025: Full Stack Integration
 
 ### Added
 
@@ -66,7 +66,7 @@ VS Code workbench rendering in Tauri webview.
 - Common: 7,418 lines of Rust in June
 - Echo: work-stealing scheduler API refinement
 
-## [v1.1] — Q2 2025: Architecture Buildout
+## [v1.1] - Q2 2025: Architecture Buildout
 
 ### Added
 
@@ -77,7 +77,7 @@ VS Code workbench rendering in Tauri webview.
 - Grove, Mist: architecture planning
 - NLnet NGI0 Commons Fund announced
 
-## [v1.0] — Q1 2025: Integration Phase
+## [v1.0] - Q1 2025: Integration Phase
 
 ### Changed
 
@@ -86,7 +86,7 @@ VS Code workbench rendering in Tauri webview.
   DTOs, Knowledge.dot graph
 - Turborepo + pnpm workspace stabilized
 
-## [v0.2] — Q4 2024: Architecture Solidification
+## [v0.2] - Q4 2024: Architecture Solidification
 
 ### Added
 
@@ -95,7 +95,7 @@ VS Code workbench rendering in Tauri webview.
   Cargo.toml feature flags (AirIntegration, ExtensionHostCocoon, etc.)
 - VS Code module tree fully imported via submodules
 
-## [v0.1] — Q3 2024: Rapid Development
+## [v0.1] - Q3 2024: Rapid Development
 
 ### Added
 
@@ -109,7 +109,7 @@ VS Code workbench rendering in Tauri webview.
 
 - Mountain schema reduction: 8,467 → ~1,000 lines (78%)
 
-## [v0.0] — Q2 2024: Project Inception
+## [v0.0] - Q2 2024: Project Inception
 
 ### Added
 

@@ -31,6 +31,42 @@ if [ -z "$TierEnvFile" ]; then
 	fi
 fi
 
+# ---------------------------------------------------------------------------
+# Domain-specific overlays — sourced AFTER the root `.env.Land` so they
+# compose cleanly. Each overlay owns one concern:
+#   .env.Land.Node       — LAND_NODE_BINARY, LAND_NODE_MIN_MAJOR
+#   .env.Land.Extensions — LAND_{USER,EXTRA,DEV}_EXTENSIONS_DIR, auto-install
+# Overlays cascade: real > .Sample > absent. Absent files are silently
+# skipped so a fresh clone still builds with just the root `.env.Land`.
+# ---------------------------------------------------------------------------
+TierEnvDirectory=""
+if [ -n "$TierEnvFile" ]; then
+	TierEnvDirectory="$(dirname "$TierEnvFile")"
+fi
+
+SourceOverlayIfPresent() {
+	OverlayBase="$1"
+	OverlayCandidate=""
+	for Dir in "$TierEnvDirectory" "." ".."; do
+		[ -z "$Dir" ] && continue
+		if [ -f "$Dir/$OverlayBase" ]; then
+			OverlayCandidate="$Dir/$OverlayBase"
+			break
+		fi
+		if [ -f "$Dir/${OverlayBase}.Sample" ]; then
+			OverlayCandidate="$Dir/${OverlayBase}.Sample"
+			break
+		fi
+	done
+	if [ -n "$OverlayCandidate" ]; then
+		set -a
+		# shellcheck disable=SC1090
+		. "$OverlayCandidate"
+		set +a
+		echo "Overlay sourced: $OverlayCandidate"
+	fi
+}
+
 if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	set -a
 	# shellcheck disable=SC1090
@@ -42,6 +78,15 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	env | grep '^Product' | sort
 	echo "Network set:"
 	env | grep '^Network' | sort
+
+	SourceOverlayIfPresent ".env.Land.Node"
+	SourceOverlayIfPresent ".env.Land.Extensions"
+
+	LandRuntimeVars=$(env | grep -E '^LAND_(NODE|USER|EXTRA|DEV|BUILTIN|AUTO|DISABLE)_' | sort)
+	if [ -n "$LandRuntimeVars" ]; then
+		echo "LAND runtime set:"
+		printf '%s\n' "$LandRuntimeVars"
+	fi
 	echo "----------------------------------------"
 
 	CargoFeatures=""
@@ -90,7 +135,7 @@ process.stdout.write(JSON.stringify(e));
 	# Generate Sky/Public/product.json from the resolved product env vars
 	# so Wind's IWorkbenchConstructionOptions, the workbench's productService,
 	# and every runtime fetch of /product.json agree on one source of truth.
-	# The script is idempotent — safe to invoke from any Build.sh.
+	# The script is idempotent - safe to invoke from any Build.sh.
 	ResolveScript="$(dirname "$0")/ResolveProductConfig.sh"
 	if [ -f "$ResolveScript" ] && [ -x "$ResolveScript" ]; then
 		"$ResolveScript"
@@ -98,5 +143,5 @@ process.stdout.write(JSON.stringify(e));
 		sh "$ResolveScript"
 	fi
 else
-	echo "No .env.Land or .env.Land.Sample found — using compiled defaults."
+	echo "No .env.Land or .env.Land.Sample found - using compiled defaults."
 fi

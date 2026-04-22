@@ -39,7 +39,7 @@ export Target
 mkdir -p "$(dirname "$Target")"
 
 if ! command -v node >/dev/null 2>&1; then
-	echo "[ResolveProductConfig] node unavailable — skipping." >&2
+	echo "[ResolveProductConfig] node unavailable - skipping." >&2
 	exit 0
 fi
 
@@ -50,7 +50,7 @@ let Existing = {};
 try {
 	Existing = JSON.parse(fs.readFileSync(Target, "utf8"));
 } catch {
-	// Missing or malformed — overlay becomes the whole file.
+	// Missing or malformed - overlay becomes the whole file.
 }
 const Overlay = {
 	nameShort: process.env.ProductNameShort,

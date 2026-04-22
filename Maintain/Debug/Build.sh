@@ -64,12 +64,12 @@ echo "========================================"
 echo "Profile: $PROFILE"
 echo "========================================"
 
-# Tier-gating fan-out (Plan A Wave 1.5) — shared helper.
+# Tier-gating fan-out (Plan A Wave 1.5) - shared helper.
 # shellcheck disable=SC1091
 . Maintain/Script/TierEnvironment.sh
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# TEMP: Rest compiler disabled for every profile — we're testing the Output
+# TEMP: Rest compiler disabled for every profile - we're testing the Output
 # Element consuming VS Code's `out/` (dev) and `out-build/` (prod) directly,
 # without the OXC transform layer. `unset` wipes any inherited `Compiler=Rest`
 # from the caller's shell; the per-profile `Compiler=Rest` lines below are
@@ -134,7 +134,7 @@ debug-electron-rest)
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
 
-	# Build Rest compiler if binary is missing — only needed when the
+	# Build Rest compiler if binary is missing - only needed when the
 	# Rest path is actually active. With `Compiler=esbuild` this is a
 	# no-op; gate the cargo build so the temporary kill-switch doesn't
 	# pay for an unused compiler.
@@ -151,7 +151,7 @@ debug-electron-minimal)
 	# paths both observe `LAND_SKIP_BUILTIN_EXTENSIONS=true` and skip
 	# the copy + scan. Useful when embedding Land inside a host app
 	# that wants a kernel editor.
-	echo "Using Electron workbench (minimal — no built-in extensions)"
+	echo "Using Electron workbench (minimal - no built-in extensions)"
 	export Electron=true
 	export Bundle=true
 	export Clean=true
@@ -184,7 +184,7 @@ debug-mountain-only)
 	;;
 debug-cocoon-headless)
 	# Atom N3b: Mountain + Cocoon, but the webview's Wind preload
-	# is disabled — the workbench loads native VS Code services only.
+	# is disabled - the workbench loads native VS Code services only.
 	# Verifies Mountain↔Cocoon works without a Wind consumer; useful
 	# for isolating regressions in the Effect-TS service layer.
 	echo "Using Mountain + Cocoon, Wind preload disabled"
@@ -226,7 +226,7 @@ debug-kernel)
 	;;
 esac
 
-# Profile-flip Output-cache cleanup — shared helper.
+# Profile-flip Output-cache cleanup - shared helper.
 # shellcheck disable=SC1091
 . Maintain/Script/ProfileMarker.sh
 

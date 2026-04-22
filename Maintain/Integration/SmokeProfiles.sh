@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 #===============================================================================
-# Maintain/Integration/SmokeProfiles.sh — Atom N4
+# Maintain/Integration/SmokeProfiles.sh - Atom N4
 #===============================================================================
 #
 # Boots each shippable profile variant in sequence, captures `Mountain.dev.log`
@@ -73,7 +73,7 @@ RunProfile() {
 
 	echo ""
 	echo "================================================================"
-	echo "[SmokeProfiles] $ProfileName — env: $EnvLine"
+	echo "[SmokeProfiles] $ProfileName - env: $EnvLine"
 	echo "================================================================"
 
 	# Launch + tail window, then SIGTERM.
@@ -94,7 +94,7 @@ RunProfile() {
 	# Find the just-written log session.
 	LogSession=$(ls -t "$LOG_ROOT" 2>/dev/null | head -1)
 	if [ -z "$LogSession" ]; then
-		echo "[SmokeProfiles] $ProfileName: FAIL — no log session produced"
+		echo "[SmokeProfiles] $ProfileName: FAIL - no log session produced"
 		return 1
 	fi
 	LogFile="$LOG_ROOT/$LogSession/Mountain.dev.log"
@@ -131,35 +131,35 @@ RunProfile() {
 
 OverallStatus=0
 
-# Full profile — everything on
+# Full profile - everything on
 RunProfile "full" \
 	"" \
 	"Extension scan complete. Found|Cocoon handshake complete|vscode API shim critical symbols OK" \
 	"LAND_SKIP_BUILTIN_EXTENSIONS=true|Skipping spawn (LAND_SPAWN_COCOON=false)" ||
 	OverallStatus=1
 
-# Minimal — no built-in extensions
+# Minimal - no built-in extensions
 RunProfile "minimal" \
 	"LAND_SKIP_BUILTIN_EXTENSIONS=true" \
 	"LAND_SKIP_BUILTIN_EXTENSIONS=true|Found 0 extensions|Cocoon handshake complete" \
 	"Step 13: Copied [0-9]+ built-in" ||
 	OverallStatus=1
 
-# Mountain-only — no Cocoon
+# Mountain-only - no Cocoon
 RunProfile "mountain-only" \
 	"LAND_SPAWN_COCOON=false" \
 	"Skipping spawn (LAND_SPAWN_COCOON=false)|Extension scan complete" \
 	"Cocoon handshake complete|vscode API shim critical symbols OK" ||
 	OverallStatus=1
 
-# Cocoon-headless — Wind preload off (logged via performance mark, not in Mountain.dev.log)
+# Cocoon-headless - Wind preload off (logged via performance mark, not in Mountain.dev.log)
 RunProfile "cocoon-headless" \
 	"LAND_ENABLE_WIND=false" \
 	"Cocoon handshake complete|Extension scan complete" \
 	"" ||
 	OverallStatus=1
 
-# Kernel — all three off
+# Kernel - all three off
 RunProfile "kernel" \
 	"LAND_SKIP_BUILTIN_EXTENSIONS=true LAND_SPAWN_COCOON=false LAND_ENABLE_WIND=false" \
 	"Skipping spawn (LAND_SPAWN_COCOON=false)|Found 0 extensions" \
@@ -210,7 +210,7 @@ if [ -d "$SKY_EXTENSIONS" ]; then
 	ExtensionBytes=$(du -sh "$SKY_EXTENSIONS" 2>/dev/null | awk '{print $1}')
 	echo "  Bundled extensions:    $ExtensionCount dirs ($ExtensionBytes)"
 else
-	echo "  Bundled extensions:    (none — minimal or kernel profile)"
+	echo "  Bundled extensions:    (none - minimal or kernel profile)"
 fi
 
 CocoonBundle="Element/Cocoon/Target/Bootstrap/Implementation/CocoonMain.js"

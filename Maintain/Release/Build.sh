@@ -64,12 +64,12 @@ echo "========================================"
 echo "Profile: $PROFILE"
 echo "========================================"
 
-# Tier-gating fan-out (Plan A Wave 1.5) — shared helper.
+# Tier-gating fan-out (Plan A Wave 1.5) - shared helper.
 # shellcheck disable=SC1091
 . Maintain/Script/TierEnvironment.sh
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# TEMP: Rest compiler disabled for every profile — we're testing the Output
+# TEMP: Rest compiler disabled for every profile - we're testing the Output
 # Element consuming VS Code's `out/` (dev) and `out-build/` (prod) directly,
 # without the OXC transform layer. `unset` wipes any inherited `Compiler=Rest`
 # from the caller's shell; the `release-electron` profile's hardcoded
@@ -187,7 +187,7 @@ release-electron)
 	export NODE_OPTIONS="--max-old-space-size=16384"
 	export RUST_LOG=info
 
-	# Build Rest compiler if binary is missing — only needed when the
+	# Build Rest compiler if binary is missing - only needed when the
 	# Rest path is actually active. With `Compiler=esbuild` this is a
 	# no-op; gate the cargo build so the temporary kill-switch doesn't
 	# pay for an unused compiler.
@@ -202,7 +202,7 @@ release-electron-minimal)
 	# Atom J4: release-electron with zero bundled built-in extensions.
 	# Sky Step 13 + Mountain Scanner observe `LAND_SKIP_BUILTIN_EXTENSIONS`
 	# and skip the copy + scan. Kernel distribution surface.
-	echo "Using Electron workbench (minimal — no built-in extensions)"
+	echo "Using Electron workbench (minimal - no built-in extensions)"
 	export Electron=true
 	export Bundle=true
 	export Clean=true
@@ -258,7 +258,7 @@ release-cocoon-headless)
 release-kernel)
 	# Atom J4b / N3c release mirror: smallest shippable binary.
 	# No built-in extensions, no Cocoon, no Wind. Pure Mountain.
-	echo "Using Mountain kernel (release — no built-ins, no Cocoon, no Wind)"
+	echo "Using Mountain kernel (release - no built-ins, no Cocoon, no Wind)"
 	export Electron=true
 	export Bundle=true
 	export Clean=true
@@ -305,7 +305,7 @@ web-browser)
 	;;
 esac
 
-# Profile-flip Output-cache cleanup — shared helper.
+# Profile-flip Output-cache cleanup - shared helper.
 # shellcheck disable=SC1091
 . Maintain/Script/ProfileMarker.sh
 
