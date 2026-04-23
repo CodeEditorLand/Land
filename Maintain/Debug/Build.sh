@@ -13,12 +13,24 @@
 #   sh Maintain/Debug/Build.sh --profile electron # Debug with Electron workbench
 #
 # Available profiles:
-#   debug               - Default Browser workbench (70-80% features)
-#   debug-mountain      - Mountain workbench (80-90% features) [RECOMMENDED]
-#   debug-electron      - Electron workbench (95%+ features)
-#   debug-electron-rest - Electron workbench + Rest OXC compiler (fastest TS)
-#   debug-electron-minimal - Electron without built-in extensions (Atom J1)
-#   debug-mountain-only - Mountain without Cocoon subprocess (Atom N3)
+#   debug                    - Default Browser workbench (70-80% features)
+#   debug-mountain           - Mountain workbench (80-90% features) [RECOMMENDED]
+#   debug-electron           - Electron workbench (95%+ features)
+#   debug-electron-rest      - Electron workbench + Rest OXC compiler (fastest TS)
+#   debug-electron-minimal   - Electron without built-in extensions (Atom J1)
+#   debug-mountain-only      - Mountain without Cocoon subprocess (Atom N3)
+#   debug-electron-compiled  - Electron + resources embedded in single binary
+#                              (Compile=true on a debug build). Use when you want
+#                              one-file-deploy parity with production while
+#                              keeping debug asserts, dev-log tags and symbols.
+#                              Removes the Mountain `set_static_application_root`
+#                              dev-only fallback: Sky assets are shipped inside
+#                              the binary bundle, so `file:read` on
+#                              `/Static/Application/**` lands on the embedded
+#                              resource table rather than a host file path.
+#   debug-mountain-compiled  - Same embedded-resources layout on the Mountain
+#                              workbench. Chosen when you want the slim
+#                              Mountain workbench plus single-binary deploy.
 #
 #===============================================================================
 
@@ -48,6 +60,8 @@ while [ $# -gt 0 ]; do
 		echo "  debug-mountain-only     - Mountain without Cocoon subprocess (Atom N3)"
 		echo "  debug-cocoon-headless   - Mountain + Cocoon, Wind preload disabled (Atom N3b)"
 		echo "  debug-kernel            - Pure Mountain: no built-ins, no Cocoon, no Wind (Atom N3c)"
+		echo "  debug-electron-compiled - Electron + single-binary embedded resources (debug symbols + Compile=true)"
+		echo "  debug-mountain-compiled - Mountain + single-binary embedded resources (debug symbols + Compile=true)"
 		exit 0
 		;;
 	*)
@@ -219,9 +233,56 @@ debug-kernel)
 	export LAND_SPAWN_COCOON=false
 	export LAND_ENABLE_WIND=false
 	;;
+debug-electron-compiled)
+	# Debug-symbols-and-tags binary with every Sky/Output asset embedded
+	# via Tauri's resource table. `Compile=true` flips the three
+	# downstream pipelines (Wind ESBuild target, Output plugin set,
+	# Mountain Scheme fallback) into their production-parity layout so
+	# the running binary serves `/Static/Application/**` from the bundled
+	# resource map. No `set_static_application_root` fallback is taken.
+	#
+	# Matches `release-electron` output shape but preserves:
+	#   Debug=true  → debug_assertions on, dev-log sinks wired,
+	#   Level=debug → verbose LandFix + DEV:* tag emission,
+	#   NODE_ENV=development on the JS side for readable source maps.
+	#
+	# Use when you need one-file-deploy validation (e.g. verifying
+	# resource-path resolution outside a dev workspace) without losing
+	# the debug diagnostic surface.
+	echo "Using Electron workbench + single-binary embedded resources (debug)"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=true
+	export Level=debug
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=development
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	;;
+debug-mountain-compiled)
+	# Mountain-workbench variant of `debug-electron-compiled`. Same
+	# embedded-resource layout, lighter workbench surface (~80-90%
+	# features instead of 95%+). Use for the smallest single-binary
+	# debug artifact that still ships the full Sky asset tree.
+	echo "Using Mountain workbench + single-binary embedded resources (debug)"
+	export Mountain=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=true
+	export Level=debug
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=development
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	;;
 *)
 	echo "Unknown profile: $PROFILE"
-	echo "Available profiles: debug, debug-mountain, debug-electron, debug-electron-rest, debug-electron-minimal, debug-mountain-only, debug-cocoon-headless, debug-kernel"
+	echo "Available profiles: debug, debug-mountain, debug-electron, debug-electron-rest, debug-electron-minimal, debug-mountain-only, debug-cocoon-headless, debug-kernel, debug-electron-compiled, debug-mountain-compiled"
 	exit 1
 	;;
 esac

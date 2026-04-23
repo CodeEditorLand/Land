@@ -1,7 +1,133 @@
 {
 	"$schema": "https://v2-9-6.turborepo.dev/schema.json",
 
+	"globalDependencies": [
+		".env",
+
+		".env.Land",
+
+		".env.Land.Node",
+
+		".env.Land.Extensions",
+
+		".env.Land.PostHog"
+	],
+
 	"globalEnv": [
+		"LAND_POSTHOG_KEY",
+
+		"LAND_POSTHOG_HOST",
+
+		"LAND_POSTHOG_MOUNTAIN_ENABLED",
+
+		"LAND_POSTHOG_COCOON_ENABLED",
+
+		"LAND_POSTHOG_WIND_ENABLED",
+
+		"LAND_POSTHOG_SKY_ENABLED",
+
+		"LAND_POSTHOG_BUILD_ENABLED",
+
+		"LAND_POSTHOG_SKY_MAX_EVENTS_PER_SECOND",
+
+		"LAND_POSTHOG_SKY_BATCH_WINDOW_MS",
+
+		"LAND_POSTHOG_SKY_BATCH_MAX",
+
+		"LAND_POSTHOG_SESSION_RECORDING",
+
+		"LAND_POSTHOG_SURVEYS",
+
+		"LAND_POSTHOG_DISTINCT_ID",
+
+		"ProductVersion",
+
+		"ProductCommit",
+
+		"ProductQuality",
+
+		"ProductNameShort",
+
+		"ProductNameLong",
+
+		"ProductApplicationName",
+
+		"ProductDataFolderName",
+
+		"ProductUrlProtocol",
+
+		"ProductServerApplicationName",
+
+		"ProductEmbedderIdentifier",
+
+		"NetworkMountainPort",
+
+		"NetworkCocoonPort",
+
+		"TierRemoteProcedureCall",
+
+		"TierHTTPProxy",
+
+		"TierLogger",
+
+		"TierFileSystem",
+
+		"TierFindFiles",
+
+		"TierGlob",
+
+		"TierFileWatcher",
+
+		"TierSchemeAssets",
+
+		"TierConfiguration",
+
+		"TierDiagnostics",
+
+		"TierClipboard",
+
+		"TierOpenExternal",
+
+		"TierDocumentMirror",
+
+		"TierExtensionActivation",
+
+		"TierExtensionScan",
+
+		"TierModuleCache",
+
+		"TierTelemetry",
+
+		"LAND_NODE_BINARY",
+
+		"LAND_NODE_MIN_MAJOR",
+
+		"LAND_USER_EXTENSIONS_DIR",
+
+		"LAND_EXTRA_EXTENSIONS_DIR",
+
+		"LAND_DEV_EXTENSIONS_DIR",
+
+		"LAND_BUILTIN_EXTENSIONS_DIR",
+
+		"LAND_AUTO_INSTALL_BUILTIN_EXTENSIONS",
+
+		"LAND_DISABLE_EXTENSIONS",
+
+		"LAND_SKIP_BUILTIN_EXTENSIONS",
+
+		"LAND_SPAWN_COCOON",
+
+		"LAND_ENABLE_WIND",
+
+		"LAND_ENV_FILE",
+
+		"LAND_RUNTIME_DIAGNOSTIC",
+
+		"CocoonEsbuildDefine",
+
+		"CargoFeatures",
+
 		"ANDROID_HOME",
 
 		"JAEGER_VERSION",

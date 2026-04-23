@@ -50,9 +50,11 @@ list_profiles() {
 
 	echo ""
 	echo "Debug Profiles:"
-	echo "  debug          - Browser workbench (70-80% features)"
-	echo "  debug-mountain - Mountain workbench (80-90% features) [RECOMMENDED]"
-	echo "  debug-electron - Electron workbench (95%+ features)"
+	echo "  debug                   - Browser workbench (70-80% features)"
+	echo "  debug-mountain          - Mountain workbench (80-90% features) [RECOMMENDED]"
+	echo "  debug-electron          - Electron workbench (95%+ features)"
+	echo "  debug-electron-compiled - Electron + embedded-resource single binary (debug symbols)"
+	echo "  debug-mountain-compiled - Mountain + embedded-resource single binary (debug symbols)"
 	echo ""
 	echo "Release Profiles:"
 	echo "  production  - Production build with Mountain workbench"
@@ -122,6 +124,41 @@ show_profile() {
 		echo "  electron_polyfills: true"
 		echo "  wind_services: true"
 		;;
+	debug-electron-compiled)
+		echo "Description: Electron workbench + embedded-resource single binary (debug)"
+		echo "Workbench: Electron"
+		echo "Coverage: 95%+"
+		echo "Complexity: High"
+		echo ""
+		echo "Environment Variables:"
+		echo "  Debug=true, Electron=true, Bundle=true, Compile=true"
+		echo "  Compiler=esbuild, Level=debug"
+		echo "  NODE_ENV=development"
+		echo ""
+		echo "Output shape:"
+		echo "  Every Sky/Output asset embedded in the Tauri resource table."
+		echo "  Binary runs without the Mountain set_static_application_root"
+		echo "  fallback - /Static/Application/** resolves from the embedded"
+		echo "  resource map. debug_assertions + dev-log tags stay on, so the"
+		echo "  binary behaves like release-electron but with the full debug"
+		echo "  diagnostic surface."
+		;;
+	debug-mountain-compiled)
+		echo "Description: Mountain workbench + embedded-resource single binary (debug)"
+		echo "Workbench: Mountain"
+		echo "Coverage: 80-90%"
+		echo "Complexity: Medium"
+		echo ""
+		echo "Environment Variables:"
+		echo "  Debug=true, Mountain=true, Bundle=true, Compile=true"
+		echo "  Compiler=esbuild, Level=debug"
+		echo "  NODE_ENV=development"
+		echo ""
+		echo "Output shape:"
+		echo "  Same single-binary embedded layout as debug-electron-compiled"
+		echo "  but on the lighter Mountain workbench. Use for the smallest"
+		echo "  debug artifact that still ships the full Sky tree."
+		;;
 	production)
 		echo "Description: Production build with Mountain workbench"
 		echo "Workbench: Mountain"
@@ -159,7 +196,7 @@ validate_profile() {
 	print_header "Validating Profile: $ProfileName"
 
 	case $ProfileName in
-	debug | debug-mountain | debug-electron | production | release | web-browser | bundler-preparation | swc-bundle | oxc-bundle)
+	debug | debug-mountain | debug-electron | debug-electron-compiled | debug-mountain-compiled | production | release | web-browser | bundler-preparation | swc-bundle | oxc-bundle)
 		echo "Profile '$ProfileName' is valid"
 		echo ""
 		show_profile "$ProfileName"
@@ -167,7 +204,7 @@ validate_profile() {
 	*)
 		echo "Profile '$ProfileName' is not recognized"
 		echo ""
-		echo "Known profiles: debug debug-mountain debug-electron production release web-browser bundler-preparation swc-bundle oxc-bundle"
+		echo "Known profiles: debug debug-mountain debug-electron debug-electron-compiled debug-mountain-compiled production release web-browser bundler-preparation swc-bundle oxc-bundle"
 		exit 1
 		;;
 	esac
