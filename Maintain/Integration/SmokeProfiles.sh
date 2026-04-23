@@ -14,9 +14,6 @@
 # CocoonManagement → Sky Bootstrap.ts) and that the expected log signatures
 # emit.
 #
-# Requires: a successful build of the corresponding profile. See Batch B in
-# `.claude/plans/Consolidation-20260422.md` for the profile matrix.
-#
 # Usage:
 #   sh Maintain/Integration/SmokeProfiles.sh                    # all profiles
 #   sh Maintain/Integration/SmokeProfiles.sh --profile kernel   # one only

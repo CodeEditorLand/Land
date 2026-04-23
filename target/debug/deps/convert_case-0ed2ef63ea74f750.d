@@ -1,0 +1,9 @@
+/Volumes/CORSAIR/Developer/macOS/Application/NikolaRHristov/Canine_Run_Point/backend/rust/target/debug/deps/convert_case-0ed2ef63ea74f750.d: /Volumes/CORSAIR/Tool/macOS/rust/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.4.0/src/lib.rs /Volumes/CORSAIR/Tool/macOS/rust/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.4.0/src/case.rs /Volumes/CORSAIR/Tool/macOS/rust/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.4.0/src/words.rs
+
+/Volumes/CORSAIR/Developer/macOS/Application/NikolaRHristov/Canine_Run_Point/backend/rust/target/debug/deps/libconvert_case-0ed2ef63ea74f750.rlib: /Volumes/CORSAIR/Tool/macOS/rust/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.4.0/src/lib.rs /Volumes/CORSAIR/Tool/macOS/rust/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.4.0/src/case.rs /Volumes/CORSAIR/Tool/macOS/rust/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.4.0/src/words.rs
+
+/Volumes/CORSAIR/Developer/macOS/Application/NikolaRHristov/Canine_Run_Point/backend/rust/target/debug/deps/libconvert_case-0ed2ef63ea74f750.rmeta: /Volumes/CORSAIR/Tool/macOS/rust/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.4.0/src/lib.rs /Volumes/CORSAIR/Tool/macOS/rust/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.4.0/src/case.rs /Volumes/CORSAIR/Tool/macOS/rust/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.4.0/src/words.rs
+
+/Volumes/CORSAIR/Tool/macOS/rust/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.4.0/src/lib.rs:
+/Volumes/CORSAIR/Tool/macOS/rust/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.4.0/src/case.rs:
+/Volumes/CORSAIR/Tool/macOS/rust/cargo/registry/src/index.crates.io-1949cf8c6b5b557f/convert_case-0.4.0/src/words.rs:

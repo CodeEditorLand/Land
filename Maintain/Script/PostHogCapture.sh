@@ -40,7 +40,7 @@ PostHogCapture() {
 
 	# Default shipped key matches the one the consumers fall back on
 	# when the env lookup is empty.
-	Key="${LAND_POSTHOG_KEY:-phc_mCwHy7LgvbnEqh6a2DyMiLUJcaZvmmj7JNmmpQzvr7mA}"
+	Key="${LAND_POSTHOG_KEY:-}"
 	Host="${LAND_POSTHOG_HOST:-https://eu.i.posthog.com}"
 
 	# Distinct-id: respect explicit seed, else user+host for CI correlation.
