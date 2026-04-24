@@ -72,13 +72,13 @@ echo ""
 MountainMethodsTmp="$(mktemp)"
 if [ -d "$MountainEffectDir" ]; then
 	# shellcheck disable=SC2016
-	grep -rhE '^\s*"[A-Za-z$\.:_]+"(\s*\|\s*"[A-Za-z$\.:_]+")*\s*=>' "$MountainEffectDir" 2>/dev/null \
-		| sed -E 's/^\s*//' \
-		| grep -oE '"[A-Za-z$\.:_]+"' \
-		| tr -d '"' \
-		| sort -u > "$MountainMethodsTmp" || true
+	grep -rhE '^\s*"[A-Za-z$\.:_]+"(\s*\|\s*"[A-Za-z$\.:_]+")*\s*=>' "$MountainEffectDir" 2>/dev/null |
+		sed -E 's/^\s*//' |
+		grep -oE '"[A-Za-z$\.:_]+"' |
+		tr -d '"' |
+		sort -u >"$MountainMethodsTmp" || true
 fi
-MountainCount=$(wc -l < "$MountainMethodsTmp" | tr -d ' ')
+MountainCount=$(wc -l <"$MountainMethodsTmp" | tr -d ' ')
 echo "[scan] Mountain: $MountainCount methods"
 
 # ---------------------------------------------------------------------------
@@ -90,15 +90,15 @@ if [ -f "$CocoonStockLiftFile" ]; then
 	# Matches `export function Name(`, `export const Name =`, and
 	# `export { X as Y }` (takes Y as the effective export name).
 	{
-		grep -oE '^export (function|const|class) [A-Z][A-Za-z0-9]+' "$CocoonStockLiftFile" 2>/dev/null \
-			| awk '{print $NF}'
-		grep -oE 'as [A-Z][A-Za-z0-9]+' "$CocoonStockLiftFile" 2>/dev/null \
-			| awk '{print $2}'
-		grep -oE 'export \{ [A-Z][A-Za-z0-9]+' "$CocoonStockLiftFile" 2>/dev/null \
-			| awk '{print $NF}'
-	} | sort -u > "$StockExportsTmp" || true
+		grep -oE '^export (function|const|class) [A-Z][A-Za-z0-9]+' "$CocoonStockLiftFile" 2>/dev/null |
+			awk '{print $NF}'
+		grep -oE 'as [A-Z][A-Za-z0-9]+' "$CocoonStockLiftFile" 2>/dev/null |
+			awk '{print $2}'
+		grep -oE 'export \{ [A-Z][A-Za-z0-9]+' "$CocoonStockLiftFile" 2>/dev/null |
+			awk '{print $NF}'
+	} | sort -u >"$StockExportsTmp" || true
 fi
-StockCount=$(wc -l < "$StockExportsTmp" | tr -d ' ')
+StockCount=$(wc -l <"$StockExportsTmp" | tr -d ' ')
 echo "[scan] StockLift: $StockCount exports"
 
 # ---------------------------------------------------------------------------
@@ -107,13 +107,13 @@ echo "[scan] StockLift: $StockCount exports"
 
 BespokeTmp="$(mktemp)"
 if [ -d "$CocoonFallbackGlob" ]; then
-	find "$CocoonFallbackGlob" -name '*Fallback.ts' 2>/dev/null \
-		| while read -r FallbackFile; do
-			grep -oE '^export (async function|function) [A-Za-z][A-Za-z0-9]+' "$FallbackFile" \
-				| awk '{print $NF}'
-		done | sort -u > "$BespokeTmp" || true
+	find "$CocoonFallbackGlob" -name '*Fallback.ts' 2>/dev/null |
+		while read -r FallbackFile; do
+			grep -oE '^export (async function|function) [A-Za-z][A-Za-z0-9]+' "$FallbackFile" |
+				awk '{print $NF}'
+		done | sort -u >"$BespokeTmp" || true
 fi
-BespokeCount=$(wc -l < "$BespokeTmp" | tr -d ' ')
+BespokeCount=$(wc -l <"$BespokeTmp" | tr -d ' ')
 echo "[scan] Cocoon bespoke: $BespokeCount Fallback exports"
 
 # ---------------------------------------------------------------------------
@@ -136,7 +136,7 @@ JsonSet() {
 
 Timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-cat > "$ManifestOutput" <<EOF
+cat >"$ManifestOutput" <<EOF
 // GENERATED FILE - do NOT edit by hand.
 //
 // Module:       Generated/RouteManifest
@@ -234,7 +234,7 @@ echo "[emit] manifest → $ManifestOutput"
 	echo "  each real dispatch took. Compare against this manifest to"
 	echo "  find mismatches (e.g. manifest says tier 1 but dispatch took"
 	echo "  tier 3 - manifest is stale, rerun this script)."
-} > "$ReportOutput"
+} >"$ReportOutput"
 
 echo "[emit] report   → $ReportOutput"
 echo ""
