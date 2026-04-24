@@ -68,8 +68,8 @@ Status symbols:
 | -------------------------------------------------------------------- | ---------- | -------------- | ----------------------------- | ------------------------------------------------------ | -------------------------------------------------- |
 | `createStatusBarItem`                                                | S (native) | ✅ just landed | `extHostStatusBar.ts`         | `sky://statusbar/{update,dispose,set-entry}`           | `__CEL_SERVICES__.Statusbar.addEntry`              |
 | `setStatusBarMessage`                                                | S          | ✅             | `extHostStatusBar.ts`         | `sky://statusbar/set-message`                          | CustomEvent fan-out                                |
-| `createTreeView`                                                     | A+S        | 🟡 F1.1        | `extHostTreeViews.ts`         | `tree.register` emit (53 active views in log)          | Sky listener `cel:tree-view:create` - renderer gap |
-| `registerTreeDataProvider`                                           | A+S        | 🟡             | `extHostTreeViews.ts`         | `$provideTreeChildren` gRPC                            | -                                                  |
+| `createTreeView`                                                     | A+S        | ✅ just landed | `extHostTreeViews.ts`         | `tree.register` + `tree:getChildren` + `sky://tree-view/{create,dispose,refresh}` | `__CEL_SERVICES__.TreeViewByViewId(id).dataProvider` attach from `cel:tree-view:create` |
+| `registerTreeDataProvider`                                           | A+S        | ✅ just landed | `extHostTreeViews.ts`         | `$provideTreeChildren` gRPC → Cocoon                   | dataProvider attached to native `ITreeView`        |
 | `createWebviewPanel`                                                 | A          | 🔴 F4          | `extHostWebviewPanels.ts`     | -                                                      | stub channel `webview`                             |
 | `registerWebviewViewProvider`                                        | A          | 🔴             | `extHostWebviewView.ts`       | -                                                      | -                                                  |
 | `registerCustomEditorProvider`                                       | A          | 🔴             | `extHostCustomEditors.ts`     | -                                                      | -                                                  |
@@ -414,6 +414,9 @@ After each namespace migrates:
   chat, markdown-preview internals.
 - 🟡 `vscode.scm` viewlet route into `ISCMService` - extensions register but UI
   stays empty (prior Investigation step 4 deferred).
-- 🟡 Tree-view renderer wiring (F1.1) - 53 views registered, renderer does not
-  display them.
-- 🟡 `localGit` channel - **fix landing this session**.
+- ✅ Tree-view renderer wiring (F1.1) - **landed**: extension-registered tree
+  views now render via `__CEL_SERVICES__.TreeViewByViewId(id).dataProvider`
+  attached on `cel:tree-view:create`. Supports `refresh` + `dispose` via the
+  matching `sky://tree-view/*` channels, and full `ITreeItem` field fidelity
+  (description / tooltip / resourceUri / contextValue / command).
+- ✅ `localGit` channel - landed.
