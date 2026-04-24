@@ -82,6 +82,14 @@ echo "========================================"
 # shellcheck disable=SC1091
 . Maintain/Script/TierEnvironment.sh
 
+# Route manifest: scan Mountain Rust tracks + Cocoon StockLift + Node
+# Fallbacks, emit a typed TypeScript set the runtime consults to skip
+# Mountain RTTs for methods no Rust handler exists for. Also writes a
+# human-readable coverage report under Element/Cocoon/Source/Generated/.
+# Idempotent - safe to run on every build, fast (<500 ms).
+# shellcheck disable=SC1091
+sh Maintain/Script/GenerateRouteManifest.sh
+
 # ===========================================================================
 # TEMP: Rest compiler disabled for every profile - we're testing the Output
 # Element consuming VS Code's `out/` (dev) and `out-build/` (prod) directly,
