@@ -1,5 +1,15 @@
 [workspace]
-exclude = ["Dependency/Microsoft/Dependency/Editor/cli", "Element/Document"]
+exclude = [
+	"Dependency/Microsoft/Dependency/Editor/cli",
+	"Element/Document",
+	# Tauri ecosystem repos are vendored under Dependency/Tauri/Dependency/
+	# but have their own workspaces and `{ workspace = true }` inheritance
+	# (license, authors, edition). Pulling them into Land's workspace
+	# breaks that inheritance because Land doesn't define `license` etc.
+	# Consumed via `[patch.crates-io]` below so every transitive tauri-* /
+	# wry / tao / muda / tray-icon / etc. lookup redirects to the local copy.
+	"Dependency/Tauri",
+]
 members = [
 	"Element/Common",
 	"Element/Echo",
@@ -10,7 +20,6 @@ members = [
 	"Element/Mist",
 	"Element/Rest",
 	"Element/SideCar",
-	"Dependency/Tauri/Dependency/PluginsWorkspace/plugins/localhost",
 ]
 resolver = "2"
 
@@ -26,7 +35,7 @@ tauri = { version = "2.10.3", features = [
 
 tauri-plugin-dialog = { version = "2.7.0" }
 tauri-plugin-fs = { version = "2.5.0" }
-tauri-plugin-localhost = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/localhost" }
+tauri-plugin-localhost = { version = "2.3.2" }
 tauri-plugin-log = { version = "2.8.0" }
 
 # tauri = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri" }
@@ -203,3 +212,73 @@ debug = true
 inherits = "release"
 opt-level = "s"
 lto = true
+
+# =============================================================================
+# Tauri ecosystem - vendored under Dependency/Tauri/Dependency/
+# =============================================================================
+# Every crate Land's transitive dependency graph asks for from crates.io
+# under the tauri-apps namespace gets redirected here to the local
+# vendored copy. Land patches local; once a patch is upstream-ready it
+# moves to a fork branch on the vendored repo and a PR upstream.
+#
+# Ordering: alphabetical within each group; groups follow the layout of
+# Dependency/Tauri/Dependency/.
+# =============================================================================
+
+[patch.crates-io]
+# --- Tauri/crates ---------------------------------------------------------
+tauri = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri" }
+tauri-build = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-build" }
+tauri-bundler = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-bundler" }
+tauri-cli = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-cli" }
+tauri-codegen = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-codegen" }
+tauri-driver = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-driver" }
+tauri-macos-sign = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-macos-sign" }
+tauri-macros = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-macros" }
+tauri-plugin = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-plugin" }
+tauri-runtime = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-runtime" }
+tauri-runtime-wry = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-runtime-wry" }
+tauri-schema-generator = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-schema-generator" }
+tauri-utils = { path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-utils" }
+
+# --- PluginsWorkspace/plugins -------------------------------------------
+tauri-plugin-autostart = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/autostart" }
+tauri-plugin-barcode-scanner = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/barcode-scanner" }
+tauri-plugin-biometric = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/biometric" }
+tauri-plugin-cli = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/cli" }
+tauri-plugin-clipboard-manager = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/clipboard-manager" }
+tauri-plugin-deep-link = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/deep-link" }
+tauri-plugin-dialog = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/dialog" }
+tauri-plugin-fs = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/fs" }
+tauri-plugin-geolocation = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/geolocation" }
+tauri-plugin-global-shortcut = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/global-shortcut" }
+tauri-plugin-haptics = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/haptics" }
+tauri-plugin-http = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/http" }
+tauri-plugin-localhost = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/localhost" }
+tauri-plugin-log = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/log" }
+tauri-plugin-nfc = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/nfc" }
+tauri-plugin-notification = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/notification" }
+tauri-plugin-opener = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/opener" }
+tauri-plugin-os = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/os" }
+tauri-plugin-persisted-scope = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/persisted-scope" }
+tauri-plugin-positioner = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/positioner" }
+tauri-plugin-process = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/process" }
+tauri-plugin-shell = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/shell" }
+tauri-plugin-single-instance = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/single-instance" }
+tauri-plugin-sql = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/sql" }
+tauri-plugin-store = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/store" }
+tauri-plugin-stronghold = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/stronghold" }
+tauri-plugin-updater = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/updater" }
+tauri-plugin-upload = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/upload" }
+tauri-plugin-websocket = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/websocket" }
+tauri-plugin-window-state = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/window-state" }
+
+# --- Standalone repos ----------------------------------------------------
+wry = { path = "Dependency/Tauri/Dependency/Wry" }
+tao = { path = "Dependency/Tauri/Dependency/Tao" }
+tao-macros = { path = "Dependency/Tauri/Dependency/Tao/tao-macros" }
+muda = { path = "Dependency/Tauri/Dependency/Muda" }
+tray-icon = { path = "Dependency/Tauri/Dependency/TrayIcon" }
+window-vibrancy = { path = "Dependency/Tauri/Dependency/WindowVibrancy" }
+window-shadows = { path = "Dependency/Tauri/Dependency/WindowShadows" }
+global-hotkey = { path = "Dependency/Tauri/Dependency/GlobalHotKey" }

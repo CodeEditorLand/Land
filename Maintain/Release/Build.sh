@@ -218,7 +218,7 @@ release-electron)
 	;;
 release-electron-minimal)
 	# Atom J4: release-electron with zero bundled built-in extensions.
-	# Sky Step 13 + Mountain Scanner observe `LAND_SKIP_BUILTIN_EXTENSIONS`
+	# Sky Step 13 + Mountain Scanner observe `Skip`
 	# and skip the copy + scan. Kernel distribution surface.
 	echo "Using Electron workbench (minimal - no built-in extensions)"
 	export Electron=true
@@ -233,7 +233,7 @@ release-electron-minimal)
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
 	export RUST_LOG=info
-	export LAND_SKIP_BUILTIN_EXTENSIONS=true
+	export Skip=true
 	;;
 release-mountain-only)
 	# Atom N mirror: release Mountain without the Cocoon subprocess.
@@ -252,7 +252,7 @@ release-mountain-only)
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
 	export RUST_LOG=info
-	export LAND_SPAWN_COCOON=false
+	export Spawn=false
 	;;
 release-cocoon-headless)
 	# Atom N3b release mirror: Mountain + Cocoon, no Wind preload.
@@ -271,7 +271,7 @@ release-cocoon-headless)
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
 	export RUST_LOG=info
-	export LAND_ENABLE_WIND=false
+	export Render=false
 	;;
 release-kernel)
 	# Atom J4b / N3c release mirror: smallest shippable binary.
@@ -289,13 +289,13 @@ release-kernel)
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
 	export RUST_LOG=info
-	export LAND_SKIP_BUILTIN_EXTENSIONS=true
-	export LAND_SPAWN_COCOON=false
-	export LAND_ENABLE_WIND=false
+	export Skip=true
+	export Spawn=false
+	export Render=false
 	;;
 release-electron-bundled)
 	# Vite/Astro-native bundle of vs/code/electron-browser/workbench/.
-	# Sky reads BUNDLED_WORKBENCHES, wires the workbench module as a
+	# Sky reads Pack, wires the workbench module as a
 	# Rollup input, and lets Vite handle CSS extraction + chunk dedup.
 	# Output lands under Sky/Target/Static/Bundled/Electron/. The
 	# existing /Static/Application/ tree is still produced unchanged.
@@ -312,8 +312,8 @@ release-electron-bundled)
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
 	export RUST_LOG=info
-	export BUNDLED_WORKBENCHES="electron"
-	export LAND_BUNDLED_BOOT=true
+	export Pack="electron"
+	export Boot=true
 	;;
 release-browser-bundled)
 	# Vite/Astro-native bundle of vs/code/browser/workbench/.
@@ -330,8 +330,8 @@ release-browser-bundled)
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
 	export RUST_LOG=warn
-	export BUNDLED_WORKBENCHES="browser"
-	export LAND_BUNDLED_BOOT=true
+	export Pack="browser"
+	export Boot=true
 	;;
 release-sessions-bundled)
 	# Vite/Astro-native bundle of vs/sessions/browser/.
@@ -348,8 +348,8 @@ release-sessions-bundled)
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
 	export RUST_LOG=info
-	export BUNDLED_WORKBENCHES="sessions"
-	export LAND_BUNDLED_BOOT=true
+	export Pack="sessions"
+	export Boot=true
 	;;
 release-workbench-bundled)
 	# Vite/Astro-native bundle of the base vs/workbench module.
@@ -366,8 +366,8 @@ release-workbench-bundled)
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
 	export RUST_LOG=info
-	export BUNDLED_WORKBENCHES="workbench"
-	export LAND_BUNDLED_BOOT=true
+	export Pack="workbench"
+	export Boot=true
 	;;
 release-bundled-all)
 	# Bundle all four workbench entry shapes in one Rollup pass.
@@ -387,8 +387,8 @@ release-bundled-all)
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
 	export RUST_LOG=info
-	export BUNDLED_WORKBENCHES="electron browser sessions workbench"
-	export LAND_BUNDLED_BOOT=true
+	export Pack="electron browser sessions workbench"
+	export Boot=true
 	;;
 web-browser)
 	echo "Using Browser workbench (web-only)"

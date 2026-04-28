@@ -34,7 +34,7 @@ fi
 # ---------------------------------------------------------------------------
 # Domain-specific overlays - sourced AFTER the root `.env.Land` so they
 # compose cleanly. Each overlay owns one concern:
-#   .env.Land.Node       - LAND_NODE_BINARY, LAND_NODE_MIN_MAJOR
+#   .env.Land.Node       - Pick, Require
 #   .env.Land.Extensions - LAND_{USER,EXTRA,DEV}_EXTENSIONS_DIR, auto-install
 # Overlays cascade: real > .Sample > absent. Absent files are silently
 # skipped so a fresh clone still builds with just the root `.env.Land`.

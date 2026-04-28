@@ -74,7 +74,7 @@ RunProfile() {
 	echo "================================================================"
 
 	# Launch + tail window, then SIGTERM.
-	env $EnvLine LAND_DEV_LOG=short NODE_ENV=development TAURI_ENV_DEBUG=true \
+	env $EnvLine Trace=short NODE_ENV=development TAURI_ENV_DEBUG=true \
 		"$BINARY" >/tmp/smoke_${ProfileName}.stdout 2>&1 &
 	PID=$!
 
@@ -132,34 +132,34 @@ OverallStatus=0
 RunProfile "full" \
 	"" \
 	"Extension scan complete. Found|Cocoon handshake complete|vscode API shim critical symbols OK" \
-	"LAND_SKIP_BUILTIN_EXTENSIONS=true|Skipping spawn (LAND_SPAWN_COCOON=false)" ||
+	"Skip=true|Skipping spawn (Spawn=false)" ||
 	OverallStatus=1
 
 # Minimal - no built-in extensions
 RunProfile "minimal" \
-	"LAND_SKIP_BUILTIN_EXTENSIONS=true" \
-	"LAND_SKIP_BUILTIN_EXTENSIONS=true|Found 0 extensions|Cocoon handshake complete" \
+	"Skip=true" \
+	"Skip=true|Found 0 extensions|Cocoon handshake complete" \
 	"Step 13: Copied [0-9]+ built-in" ||
 	OverallStatus=1
 
 # Mountain-only - no Cocoon
 RunProfile "mountain-only" \
-	"LAND_SPAWN_COCOON=false" \
-	"Skipping spawn (LAND_SPAWN_COCOON=false)|Extension scan complete" \
+	"Spawn=false" \
+	"Skipping spawn (Spawn=false)|Extension scan complete" \
 	"Cocoon handshake complete|vscode API shim critical symbols OK" ||
 	OverallStatus=1
 
 # Cocoon-headless - Wind preload off (logged via performance mark, not in Mountain.dev.log)
 RunProfile "cocoon-headless" \
-	"LAND_ENABLE_WIND=false" \
+	"Render=false" \
 	"Cocoon handshake complete|Extension scan complete" \
 	"" ||
 	OverallStatus=1
 
 # Kernel - all three off
 RunProfile "kernel" \
-	"LAND_SKIP_BUILTIN_EXTENSIONS=true LAND_SPAWN_COCOON=false LAND_ENABLE_WIND=false" \
-	"Skipping spawn (LAND_SPAWN_COCOON=false)|Found 0 extensions" \
+	"Skip=true Spawn=false Render=false" \
+	"Skipping spawn (Spawn=false)|Found 0 extensions" \
 	"Cocoon handshake complete" ||
 	OverallStatus=1
 
@@ -176,7 +176,7 @@ echo "================================================================"
 # Shippable-surface footprint report (Atom J1-J4 visible output)
 #
 # Profiles only differ in env flags, but the resulting `.app` bundle size
-# changes with `LAND_SKIP_BUILTIN_EXTENSIONS` (Sky Step 13 skips ~93
+# changes with `Skip` (Sky Step 13 skips ~93
 # extensions, ~200 MB), and Mountain's extension scan observable total
 # changes independently. Print both so a pasted report lets reviewers
 # gauge the cost of each build.

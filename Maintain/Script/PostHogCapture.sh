@@ -15,10 +15,10 @@
 #   PostHogCapture "build:start" "profile" "debug-electron"
 #
 # Honours `.env.Land.PostHog` env:
-#   LAND_POSTHOG_KEY        - project key (default: shipped)
-#   LAND_POSTHOG_HOST       - endpoint (default: eu.i.posthog.com)
-#   LAND_POSTHOG_BUILD_ENABLED - set "false" to disable entirely
-#   LAND_POSTHOG_DISTINCT_ID - override the derived distinct id
+#   Authorize        - project key (default: shipped)
+#   Beam       - endpoint (default: eu.i.posthog.com)
+#   Report - set "false" to disable entirely
+#   Brand - override the derived distinct id
 #
 # Depends on: curl (posix), date (-Iseconds on GNU/BSD), printf.
 #===============================================================================
@@ -34,18 +34,18 @@ PostHogCapture() {
 		return 0
 	fi
 
-	if [ "${LAND_POSTHOG_BUILD_ENABLED:-true}" = "false" ]; then
+	if [ "${Report:-true}" = "false" ]; then
 		return 0
 	fi
 
 	# Default shipped key matches the one the consumers fall back on
 	# when the env lookup is empty.
-	Key="${LAND_POSTHOG_KEY:-}"
-	Host="${LAND_POSTHOG_HOST:-https://eu.i.posthog.com}"
+	Key="${Authorize:-}"
+	Host="${Beam:-https://eu.i.posthog.com}"
 
 	# Distinct-id: respect explicit seed, else user+host for CI correlation.
-	if [ -n "${LAND_POSTHOG_DISTINCT_ID:-}" ]; then
-		DistinctId="$LAND_POSTHOG_DISTINCT_ID"
+	if [ -n "${Brand:-}" ]; then
+		DistinctId="$Brand"
 	else
 		DistinctId="land-dev-${USER:-unknown}-$(uname -n 2>/dev/null || echo host)"
 	fi

@@ -32,7 +32,7 @@
 #                              workbench. Chosen when you want the slim
 #                              Mountain workbench plus single-binary deploy.
 #   debug-electron-bundled   - Electron workbench compiled through Vite/Astro.
-#                              Sky reads BUNDLED_WORKBENCHES, fed Rollup
+#                              Sky reads Pack, fed Rollup
 #                              receives the workbench module as an entry,
 #                              CSS goes through Vite's native pipeline. Output
 #                              under Sky/Target/Static/Bundled/Electron/.
@@ -185,7 +185,7 @@ debug-electron-rest)
 debug-electron-minimal)
 	# Atom J1: ship without any bundled built-in extensions.
 	# Sky's astro.config.ts Step 13 and Mountain's Scanner fallback
-	# paths both observe `LAND_SKIP_BUILTIN_EXTENSIONS=true` and skip
+	# paths both observe `Skip=true` and skip
 	# the copy + scan. Useful when embedding Land inside a host app
 	# that wants a kernel editor.
 	echo "Using Electron workbench (minimal - no built-in extensions)"
@@ -199,7 +199,7 @@ debug-electron-minimal)
 	export NODE_ENV=development
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
-	export LAND_SKIP_BUILTIN_EXTENSIONS=true
+	export Skip=true
 	;;
 debug-mountain-only)
 	# Atom N3: Mountain without Cocoon. Extension host is never
@@ -217,7 +217,7 @@ debug-mountain-only)
 	export NODE_ENV=development
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
-	export LAND_SPAWN_COCOON=false
+	export Spawn=false
 	;;
 debug-cocoon-headless)
 	# Atom N3b: Mountain + Cocoon, but the webview's Wind preload
@@ -235,7 +235,7 @@ debug-cocoon-headless)
 	export NODE_ENV=development
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
-	export LAND_ENABLE_WIND=false
+	export Render=false
 	;;
 debug-kernel)
 	# Atom J4b / N3c: smallest viable shippable surface. No built-in
@@ -252,9 +252,9 @@ debug-kernel)
 	export NODE_ENV=development
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
-	export LAND_SKIP_BUILTIN_EXTENSIONS=true
-	export LAND_SPAWN_COCOON=false
-	export LAND_ENABLE_WIND=false
+	export Skip=true
+	export Spawn=false
+	export Render=false
 	;;
 debug-electron-compiled)
 	# Debug-symbols-and-tags binary with every Sky/Output asset embedded
@@ -305,7 +305,7 @@ debug-mountain-compiled)
 	;;
 debug-electron-bundled)
 	# Vite/Astro-native bundle of vs/code/electron-browser/workbench/.
-	# Sky reads BUNDLED_WORKBENCHES, wires the workbench module as a
+	# Sky reads Pack, wires the workbench module as a
 	# Rollup input, and lets Vite handle CSS extraction + chunk dedup.
 	# Output lands under Sky/Target/Static/Bundled/Electron/. The
 	# existing /Static/Application/ tree is still produced unchanged so
@@ -322,8 +322,8 @@ debug-electron-bundled)
 	export NODE_ENV=development
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
-	export BUNDLED_WORKBENCHES="electron"
-	export LAND_BUNDLED_BOOT=true
+	export Pack="electron"
+	export Boot=true
 	;;
 debug-browser-bundled)
 	# Vite/Astro-native bundle of vs/code/browser/workbench/.
@@ -339,8 +339,8 @@ debug-browser-bundled)
 	export NODE_ENV=development
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
-	export BUNDLED_WORKBENCHES="browser"
-	export LAND_BUNDLED_BOOT=true
+	export Pack="browser"
+	export Boot=true
 	;;
 debug-sessions-bundled)
 	# Vite/Astro-native bundle of vs/sessions/browser/.
@@ -356,8 +356,8 @@ debug-sessions-bundled)
 	export NODE_ENV=development
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
-	export BUNDLED_WORKBENCHES="sessions"
-	export LAND_BUNDLED_BOOT=true
+	export Pack="sessions"
+	export Boot=true
 	;;
 debug-workbench-bundled)
 	# Vite/Astro-native bundle of the base vs/workbench module.
@@ -373,8 +373,8 @@ debug-workbench-bundled)
 	export NODE_ENV=development
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
-	export BUNDLED_WORKBENCHES="workbench"
-	export LAND_BUNDLED_BOOT=true
+	export Pack="workbench"
+	export Boot=true
 	;;
 debug-bundled-all)
 	# Bundle all four workbench entry shapes in one Rollup pass.
@@ -390,8 +390,8 @@ debug-bundled-all)
 	export NODE_ENV=development
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
-	export BUNDLED_WORKBENCHES="electron browser sessions workbench"
-	export LAND_BUNDLED_BOOT=true
+	export Pack="electron browser sessions workbench"
+	export Boot=true
 	;;
 *)
 	echo "Unknown profile: $PROFILE"
