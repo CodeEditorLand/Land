@@ -18,6 +18,11 @@
 #   release-electron - Electron workbench + Rest OXC (full desktop, gRPC proxy)
 #   release-electron-minimal - release-electron without built-in extensions (Atom J4)
 #   release-mountain-only - Mountain without Cocoon subprocess (Atom N3 mirror)
+#   release-electron-bundled  - Electron workbench compiled through Vite/Astro
+#   release-browser-bundled   - Browser workbench compiled through Vite/Astro
+#   release-sessions-bundled  - Sessions workbench compiled through Vite/Astro
+#   release-workbench-bundled - Base workbench compiled through Vite/Astro
+#   release-bundled-all       - All four workbenches bundled in one pass
 #   web-browser      - Web browser deployment (no Tauri)
 #
 #===============================================================================
@@ -47,6 +52,11 @@ while [ $# -gt 0 ]; do
 		echo "  release-mountain-only    - Mountain without Cocoon subprocess (Atom N mirror)"
 		echo "  release-cocoon-headless  - Electron + Cocoon, no Wind preload (Atom N3b)"
 		echo "  release-kernel           - Pure Mountain: no built-ins, no Cocoon, no Wind (Atom N3c)"
+		echo "  release-electron-bundled  - Electron workbench compiled through Vite/Astro"
+		echo "  release-browser-bundled   - Browser workbench compiled through Vite/Astro"
+		echo "  release-sessions-bundled  - Sessions workbench compiled through Vite/Astro"
+		echo "  release-workbench-bundled - Base workbench compiled through Vite/Astro"
+		echo "  release-bundled-all       - All four workbenches bundled in one pass"
 		echo "  web-browser              - Web browser deployment (no Tauri)"
 		exit 0
 		;;
@@ -283,6 +293,103 @@ release-kernel)
 	export LAND_SPAWN_COCOON=false
 	export LAND_ENABLE_WIND=false
 	;;
+release-electron-bundled)
+	# Vite/Astro-native bundle of vs/code/electron-browser/workbench/.
+	# Sky reads BUNDLED_WORKBENCHES, wires the workbench module as a
+	# Rollup input, and lets Vite handle CSS extraction + chunk dedup.
+	# Output lands under Sky/Target/Static/Bundled/Electron/. The
+	# existing /Static/Application/ tree is still produced unchanged.
+	echo "Using Electron workbench bundled through Vite/Astro"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export BUNDLED_WORKBENCHES="electron"
+	export LAND_BUNDLED_BOOT=true
+	;;
+release-browser-bundled)
+	# Vite/Astro-native bundle of vs/code/browser/workbench/.
+	echo "Using Browser workbench bundled through Vite/Astro"
+	export Browser=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=warn
+	export BUNDLED_WORKBENCHES="browser"
+	export LAND_BUNDLED_BOOT=true
+	;;
+release-sessions-bundled)
+	# Vite/Astro-native bundle of vs/sessions/browser/.
+	echo "Using Sessions workbench bundled through Vite/Astro"
+	export Mountain=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export BUNDLED_WORKBENCHES="sessions"
+	export LAND_BUNDLED_BOOT=true
+	;;
+release-workbench-bundled)
+	# Vite/Astro-native bundle of the base vs/workbench module.
+	echo "Using base workbench bundled through Vite/Astro"
+	export Mountain=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export BUNDLED_WORKBENCHES="workbench"
+	export LAND_BUNDLED_BOOT=true
+	;;
+release-bundled-all)
+	# Bundle all four workbench entry shapes in one Rollup pass.
+	# First build is heavy (each variant pulls a ~97-module graph);
+	# the four single-variant profiles exist precisely so each can be
+	# benchmarked in isolation.
+	echo "Bundling all four workbenches through Vite/Astro"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export BUNDLED_WORKBENCHES="electron browser sessions workbench"
+	export LAND_BUNDLED_BOOT=true
+	;;
 web-browser)
 	echo "Using Browser workbench (web-only)"
 	export Browser=true
@@ -308,7 +415,7 @@ web-browser)
 	;;
 *)
 	echo "Unknown profile: $PROFILE"
-	echo "Available profiles: production, release, release-electron, release-electron-minimal, release-mountain-only, release-cocoon-headless, release-kernel, web-browser"
+	echo "Available profiles: production, release, release-electron, release-electron-minimal, release-mountain-only, release-cocoon-headless, release-kernel, release-electron-bundled, release-browser-bundled, release-sessions-bundled, release-workbench-bundled, release-bundled-all, web-browser"
 	exit 1
 	;;
 esac

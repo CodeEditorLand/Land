@@ -31,6 +31,16 @@
 #   debug-mountain-compiled  - Same embedded-resources layout on the Mountain
 #                              workbench. Chosen when you want the slim
 #                              Mountain workbench plus single-binary deploy.
+#   debug-electron-bundled   - Electron workbench compiled through Vite/Astro.
+#                              Sky reads BUNDLED_WORKBENCHES, fed Rollup
+#                              receives the workbench module as an entry,
+#                              CSS goes through Vite's native pipeline. Output
+#                              under Sky/Target/Static/Bundled/Electron/.
+#                              /Static/Application/ tree still produced.
+#   debug-browser-bundled    - Browser workbench compiled through Vite/Astro.
+#   debug-sessions-bundled   - Sessions workbench compiled through Vite/Astro.
+#   debug-workbench-bundled  - Base workbench compiled through Vite/Astro.
+#   debug-bundled-all        - All four workbenches bundled in one Rollup pass.
 #
 #===============================================================================
 
@@ -62,6 +72,11 @@ while [ $# -gt 0 ]; do
 		echo "  debug-kernel            - Pure Mountain: no built-ins, no Cocoon, no Wind (Atom N3c)"
 		echo "  debug-electron-compiled - Electron + single-binary embedded resources (debug symbols + Compile=true)"
 		echo "  debug-mountain-compiled - Mountain + single-binary embedded resources (debug symbols + Compile=true)"
+		echo "  debug-electron-bundled  - Electron workbench compiled through Vite/Astro"
+		echo "  debug-browser-bundled   - Browser workbench compiled through Vite/Astro"
+		echo "  debug-sessions-bundled  - Sessions workbench compiled through Vite/Astro"
+		echo "  debug-workbench-bundled - Base workbench compiled through Vite/Astro"
+		echo "  debug-bundled-all       - All four workbenches bundled in one Rollup pass"
 		exit 0
 		;;
 	*)
@@ -288,9 +303,99 @@ debug-mountain-compiled)
 	export NODE_VERSION=22
 	export NODE_OPTIONS="--max-old-space-size=16384"
 	;;
+debug-electron-bundled)
+	# Vite/Astro-native bundle of vs/code/electron-browser/workbench/.
+	# Sky reads BUNDLED_WORKBENCHES, wires the workbench module as a
+	# Rollup input, and lets Vite handle CSS extraction + chunk dedup.
+	# Output lands under Sky/Target/Static/Bundled/Electron/. The
+	# existing /Static/Application/ tree is still produced unchanged so
+	# both layouts can be benchmarked side-by-side.
+	echo "Using Electron workbench bundled through Vite/Astro (debug)"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=false
+	export Compiler=esbuild
+	export Debug=true
+	export Level=debug
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=development
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export BUNDLED_WORKBENCHES="electron"
+	export LAND_BUNDLED_BOOT=true
+	;;
+debug-browser-bundled)
+	# Vite/Astro-native bundle of vs/code/browser/workbench/.
+	echo "Using Browser workbench bundled through Vite/Astro (debug)"
+	export Browser=true
+	export Bundle=true
+	export Clean=true
+	export Compile=false
+	export Compiler=esbuild
+	export Debug=true
+	export Level=debug
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=development
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export BUNDLED_WORKBENCHES="browser"
+	export LAND_BUNDLED_BOOT=true
+	;;
+debug-sessions-bundled)
+	# Vite/Astro-native bundle of vs/sessions/browser/.
+	echo "Using Sessions workbench bundled through Vite/Astro (debug)"
+	export Mountain=true
+	export Bundle=true
+	export Clean=true
+	export Compile=false
+	export Compiler=esbuild
+	export Debug=true
+	export Level=debug
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=development
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export BUNDLED_WORKBENCHES="sessions"
+	export LAND_BUNDLED_BOOT=true
+	;;
+debug-workbench-bundled)
+	# Vite/Astro-native bundle of the base vs/workbench module.
+	echo "Using base workbench bundled through Vite/Astro (debug)"
+	export Mountain=true
+	export Bundle=true
+	export Clean=true
+	export Compile=false
+	export Compiler=esbuild
+	export Debug=true
+	export Level=debug
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=development
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export BUNDLED_WORKBENCHES="workbench"
+	export LAND_BUNDLED_BOOT=true
+	;;
+debug-bundled-all)
+	# Bundle all four workbench entry shapes in one Rollup pass.
+	echo "Bundling all four workbenches through Vite/Astro (debug)"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=false
+	export Compiler=esbuild
+	export Debug=true
+	export Level=debug
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=development
+	export NODE_VERSION=22
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export BUNDLED_WORKBENCHES="electron browser sessions workbench"
+	export LAND_BUNDLED_BOOT=true
+	;;
 *)
 	echo "Unknown profile: $PROFILE"
-	echo "Available profiles: debug, debug-mountain, debug-electron, debug-electron-rest, debug-electron-minimal, debug-mountain-only, debug-cocoon-headless, debug-kernel, debug-electron-compiled, debug-mountain-compiled"
+	echo "Available profiles: debug, debug-mountain, debug-electron, debug-electron-rest, debug-electron-minimal, debug-mountain-only, debug-cocoon-headless, debug-kernel, debug-electron-compiled, debug-mountain-compiled, debug-electron-bundled, debug-browser-bundled, debug-sessions-bundled, debug-workbench-bundled, debug-bundled-all"
 	exit 1
 	;;
 esac
