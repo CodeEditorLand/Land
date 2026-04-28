@@ -11,7 +11,7 @@ Dependency/ (external dependencies) as git submodules.
   last_sha="48be85495f9e1cdde53da0b2027e8a0e414ab991"
   last_element_sha="Mountain:48be85495f9e1cdde53da0b2027e8a0e414ab991"
   last_date="2026-04-22T22:54:51Z"
-  next_start="Wind commits 2026-04-22 late — polyfill migration x2, IPC colon-routing fix (sha range: 9bc9877..039f52c)"
+  next_start="Wind commits 2026-04-22 late - polyfill migration x2, IPC colon-routing fix (sha range: 9bc9877..039f52c)"
 -->
 
 ## [v2.1] - Q2 2026: Full Workbench Lift
@@ -43,7 +43,7 @@ VS Code workbench rendering in Tauri webview.
 
 #### Mountain
 
-- **[fix]** **Extension type filtering and post-install activation** — The
+- **[fix]** **Extension type filtering and post-install activation** - The
   Extensions sidebar suffered a silent "install succeeded but nothing happened"
   failure across three independent code paths, all fixed together. First,
   `Extensions.rs` was silently dropping the optional `ExtensionType` filter
@@ -55,7 +55,7 @@ VS Code workbench rendering in Tauri webview.
   field. Second, `Extension.rs` was not firing `onStartupFinished` activation
   events after `$deltaExtensions` added an extension to Cocoon's registry;
   extensions with that activation event (such as `Anthropic.claude-code`)
-  registered but never activated — their sidebar contributions and commands
+  registered but never activated - their sidebar contributions and commands
   silently no-oped until the next full workbench restart. The activation burst
   is now fired immediately after registry insertion. Third, `mod.rs` now
   explicitly forwards `extensions:scanSystemExtensions` to `getInstalled(type=0)`
@@ -66,7 +66,7 @@ VS Code workbench rendering in Tauri webview.
   works correctly on first install. `(sha: 48be8549)`
 
 - **[fix]** **Extension manifest fields always present for renderer; log path
-  and VSIX preview hardened** — VS Code's `extensions.contribution.ts`
+  and VSIX preview hardened** - VS Code's `extensions.contribution.ts`
   trusted-publishers migration calls `manifest.publisher.toLowerCase()` at boot
   unconditionally; if the field was absent (previously suppressed by
   `skip_serializing_if = "String::is_empty"` on `ExtensionDescriptionStateDTO`),
@@ -87,7 +87,7 @@ VS Code workbench rendering in Tauri webview.
   `configurationDefaultsOverrides`, and window log files (`network.log`,
   `renderer.log`, `views.log`, `notebook.rendering.log`). `(sha: c61c0b1e)`
 
-- **[fix]** **Atomic shutdown guard and static asset path resolution** —
+- **[fix]** **Atomic shutdown guard and static asset path resolution** -
   Mountain's graceful shutdown sequence was running twice: `app_handle.exit(0)`
   at the end of the first pass causes Tauri to re-deliver a second
   `ExitRequested { code: Some(0) }` event, which re-entered the shutdown task,
@@ -105,7 +105,7 @@ VS Code workbench rendering in Tauri webview.
   `(sha: de7ca500)`
 
 - **[build]** **Binary naming simplified; CSP extended for VS Code file
-  protocol** — A two-step configuration migration resolved cleanly. The first
+  protocol** - A two-step configuration migration resolved cleanly. The first
   step temporarily renamed the binary, lib, and product identifiers to a verbose
   development profile string
   (`DevelopmentNodeEnvironment_MicrosoftVSCodeDependency_22NodeVersion_Bundle_Clean_Debug_ElectronProfile_Mountain`)
