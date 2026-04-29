@@ -35,7 +35,10 @@ fi
 # Domain-specific overlays - sourced AFTER the root `.env.Land` so they
 # compose cleanly. Each overlay owns one concern:
 #   .env.Land.Node       - Pick, Require
-#   .env.Land.Extensions - LAND_{USER,EXTRA,DEV}_EXTENSIONS_DIR, auto-install
+#   .env.Land.Extensions - Ship, Lodge, Extend, Probe, Skip, Mute, Wire,
+#                          Install
+#   .env.Land.PostHog    - Authorize, Beam, Report, Throttle, Buffer,
+#                          Batch, Cap, Replay, Ask, Brand
 # Overlays cascade: real > .Sample > absent. Absent files are silently
 # skipped so a fresh clone still builds with just the root `.env.Land`.
 # ---------------------------------------------------------------------------
@@ -83,10 +86,34 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	SourceOverlayIfPresent ".env.Land.Extensions"
 	SourceOverlayIfPresent ".env.Land.PostHog"
 
-	LandRuntimeVars=$(env | grep -E '^LAND_(NODE|USER|EXTRA|DEV|BUILTIN|AUTO|DISABLE|POSTHOG)_' | sort)
+	# Display the resolved runtime overlays - the single-word PascalCase
+	# verbs the .env.Land.{Node,Extensions,PostHog} overlays own. Pinned
+	# allow-list (not a regex sweep) so unrelated PascalCase env vars
+	# the OS / dev environment exports don't pollute the diagnostic
+	# block. The legacy `^LAND_*` sweep was retired together with the
+	# LAND_ → PascalCase migration of the overlay files.
+	#
+	# `if [ -n ... ]; then ... fi` instead of `[ -z ] && continue` -
+	# Build.sh runs under `set -e` and the `&&`-form trips errexit on
+	# the iteration where Value is empty (`printenv` exits non-zero
+	# when the var is unset, the command substitution captures empty,
+	# `[ -z "" ]` returns 0, `&&` reaches `continue`, `continue` does
+	# its thing, and the iteration's exit status becomes the inverted
+	# test outcome - which dash interprets as a failure under -e and
+	# silently aborts the sourced script. The if-form avoids the
+	# &&-chain entirely.
+	LandRuntimeKeys="Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand"
+	LandRuntimeVars=""
+	for Key in $LandRuntimeKeys; do
+		Value=$(printenv "$Key" 2>/dev/null || true)
+		if [ -n "$Value" ]; then
+			LandRuntimeVars="${LandRuntimeVars}${Key}=${Value}
+"
+		fi
+	done
 	if [ -n "$LandRuntimeVars" ]; then
-		echo "LAND runtime set:"
-		printf '%s\n' "$LandRuntimeVars"
+		echo "Land runtime set:"
+		printf '%s' "$LandRuntimeVars" | sort
 	fi
 	echo "----------------------------------------"
 

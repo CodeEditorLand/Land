@@ -139,7 +139,7 @@ VS Code workbench rendering in Tauri webview.
 - Common: Transport Registry, crate renamed to CommonLibrary
 - Output: source compilation (4,287 .js files, 169MB), 6 polyfill modules
   (~5,200 lines), ESBuild dual-compiler pattern
-- Rest: SWC → OXC migration (7 modules), test suite (3,800 lines)
+- Rest: SWC → OXC migration (7 modules),  suite (3,800 lines)
 - Air: 73 Rust modules, DNS resolver, 35 TODOs closed
 - Maintain: Build.rs split (5,008 lines across 55 files), Rhai scripting
 
