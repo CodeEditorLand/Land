@@ -254,100 +254,124 @@ sprint window:
 
 ---
 
-## [v2.0] - Q1 2026: Editor Launch Sprint
+## [v2.0] - Editor Launch
 
-### Added
+We took the editor from "compiles" to "boots and renders," landing the
+first end-to-end run of the workbench in our Tauri webview against a
+live Cocoon extension host.
 
-- Mountain: 351 .rs files, 70+ gRPC RPCs, 24 IPC domain modules, terminal PTY,
-  secret storage, TLS, AES-256-GCM encryption, OpenTelemetry, PostHog
-- Cocoon: 7 Effect-TS layers (2,325 lines), MountainGRPCClient (1,206 lines, 70+
-  RPCs), ModuleInterceptor (493 lines), 13 interfaces
-- Wind: TauriMainProcessService (232 lines), Preload.ts, Bootstrap/Types/ (30+
-  VS Code type mirrors), DevLog.ts
-- Sky: Astro 6 migration, TypeScript 6, Vite 8
-- Common: Transport Registry, crate renamed to CommonLibrary
-- Output: source compilation (4,287 .js files, 169MB), 6 polyfill modules
-  (~5,200 lines), ESBuild dual-compiler pattern
-- Rest: SWC → OXC migration (7 modules),  suite (3,800 lines)
-- Air: 73 Rust modules, DNS resolver, 35 TODOs closed
-- Maintain: Build.rs split (5,008 lines across 55 files), Rhai scripting
+- **Mountain.** We grew to 351 Rust files, exposed 70+ gRPC RPCs, and
+  organised the IPC surface into 24 domain modules. We landed the
+  terminal PTY substrate, secret storage with AES-256-GCM, TLS, and
+  the first OpenTelemetry + PostHog telemetry plumbing.
+- **Cocoon.** We composed 7 Effect-TS layers (~2,325 lines) - Tracer,
+  Telemetry, Mountain client, vscode-API factory, extension-host,
+  bootstrap, transport - and wrote the gRPC client (~1,206 lines)
+  fronting all 70+ RPCs the Rust side serves. The
+  `ModuleInterceptor` (~493 lines) became our `require('vscode')`
+  entry point so every extension module loads through one shim, and
+  we settled on 13 service interfaces as the stable contract.
+- **Wind.** We delivered our first `TauriMainProcessService` (the
+  `IMainProcessService` replacement that swaps Electron's IPC for our
+  Tauri-backed channel proxy), the renderer-side `Preload.ts`, and a
+  `Bootstrap/Types/` directory mirroring 30+ VS Code interfaces we
+  rely on at the type boundary. Added `DevLog.ts` so the renderer
+  emits the same tag-filtered stream as the Rust side.
+- **Sky.** We migrated to Astro 6, TypeScript 6, and Vite 8.
+- **Common.** We renamed the crate to `CommonLibrary` and shipped
+  the Transport Registry abstraction that lets us swap between gRPC,
+  WebSocket, and in-process transports without touching call sites.
+- **Output.** We compiled the VS Code source tree to 4,287 JS files
+  (~169 MB), wrote 6 polyfill modules (~5,200 lines) for browser
+  APIs the workbench expects but WKWebView omits, and adopted an
+  ESBuild dual-compiler pattern so the bundled and unbundled paths
+  share the same transform pipeline.
+- **Rest.** We migrated from SWC to OXC across 7 transform modules
+  and grew the regression suite to ~3,800 lines so each rewrite the
+  bundler does is shape-checked before it lands.
+- **Air.** We got 73 Rust modules into shape, including the DNS
+  resolver and 35 closed TODOs from the prior cycle.
+- **Maintain.** We split `Build.rs` across 5,008 lines / 55 files
+  and replaced the inline build-script glue with Rhai-driven
+  configuration so build profiles can be tuned without rebuilding
+  the build tool itself.
 
-## [v1.3] - Q4 2025: Dependency Maintenance
+## [v1.3] - Dependency Maintenance
 
-### Changed
+We held the platform steady while we planned the next push. We rolled
+Effect-TS to 3.19.x, Astro to 5.15-5.16, and TypeScript to 5.9.x; kept
+the Cloudflare Workers types and Wrangler 4.x in lock-step; and
+otherwise stayed in stabilisation mode across every component.
 
-- Effect-TS 3.19.x, Astro 5.15-5.16, TypeScript 5.9.x
-- Cloudflare Workers types, Wrangler 4.x maintained
-- All components in stabilization mode
+## [v1.2] - Full-Stack Integration
 
-## [v1.2] - Q3 2025: Full Stack Integration
+We shipped the heaviest single quarter of the project so far. Mountain
+gained 556 commits (464 in a single month) and put every core module
+in place - gRPC handlers, WebSocket, terminal, storage, diagnostics,
+configuration. Cocoon landed 647 commits and roughly 229K lines on top
+of Effect-TS 3.17.x. Wind landed 537 commits and ~226K lines wiring
+its Effect-TS services to Mountain. Common added 7,418 lines of Rust
+DTOs and trait surfaces. Echo's work-stealing scheduler reached the
+API refinement we'd been targeting, with priority lanes still on the
+roadmap for a later cycle.
 
-### Added
+## [v1.1] - Architecture Buildout
 
-- Mountain: 556 commits (464 in June), all core modules, gRPC handlers,
-  WebSocket, terminal, storage, diagnostics, configuration
-- Cocoon: 647 commits, 229K lines in June, Effect-TS 3.17.x
-- Wind: 537 commits, 226K lines in June, Effect-TS services
-- Common: 7,418 lines of Rust in June
-- Echo: work-stealing scheduler API refinement
+We brought the extension-host into existence. Cocoon was created from
+scratch (291 commits, ~32,982 lines) as the Effect-TS-driven sidecar
+that replaces Electron's utility-process model. Wind pivoted to
+Effect-TS at the end of May; we ended the quarter with 370 TypeScript
+files. Sky stood up the Tauri-hosted workbench bootstrap and shipped
+keyboard layouts for 37 locales. The Worker element gained service-
+worker caching plus on-the-fly CSS transpilation. Grove and Mist
+moved from concept into architecture planning, ready to be implemented
+the moment the rest of the stack stabilised. We also publicly
+announced our funding from the NLnet NGI0 Commons Fund this quarter.
 
-## [v1.1] - Q2 2025: Architecture Buildout
+## [v1.0] - Integration Phase
 
-### Added
+We migrated Astro 4 → 5, TypeScript 5.7 → 5.8, and pulled Vite to 6.x
+across every package. Mountain's `ApplicationState` reorganisation
+landed (renaming `app_state` → `ApplicationState`, normalising 12
+DTOs, and exporting a `Knowledge.dot` dependency graph we still
+generate from CI). The Turborepo + pnpm workspace stabilised - clean
+incremental builds, predictable cache keys, no more "rebuilds the
+world" surprises.
 
-- Cocoon created (291 commits, 32,982 lines)
-- Wind: Effect-TS pivot on May 30, 370 .ts files in April
-- Sky: Tauri workbench bootstrap, 37 keyboard layouts
-- Worker: service worker with caching + CSS transpilation
-- Grove, Mist: architecture planning
-- NLnet NGI0 Commons Fund announced
+## [v0.2] - Architecture Solidification
 
-## [v1.0] - Q1 2025: Integration Phase
+We brought Output into the project: ~32K+ JS files lifted from the
+VS Code source tree, ready for the transform pipeline we'd build out
+in the next cycle. Mountain gained the Android Gradle scaffolding
+and an 11,162-line mobile schema, plus the `Cargo.toml` feature-flag
+family (`AirIntegration`, `ExtensionHostCocoon`, …) that controls
+what we link in per profile. We finished importing the VS Code
+module tree as proper git submodules under `Dependency/`.
 
-### Changed
+## [v0.1] - Rapid Development
 
-- Astro 4 → 5 migration, TypeScript 5.7 → 5.8, Vite 6.x
-- Mountain: ApplicationState reorganization (app_state → ApplicationState), 12
-  DTOs, Knowledge.dot graph
-- Turborepo + pnpm workspace stabilized
+We laid down the bones. Mountain: 168 commits, ~28K lines of Rust,
+Tauri 2.x scaffold, the first gRPC scaffolding. Sky: 600 commits
+covering Astro + React + Firebase. Wind: 166 commits, Monaco editor
+mounted, SCSS-based styling. Echo: 334 commits delivering a
+sequence-based task scheduler on top of `crossbeam-deque`. Rest was
+created on September 14 (33 files, the first SWC-driven compiler
+shape). We also did our biggest schema reduction in Mountain in the
+same window: 8,467 → ~1,000 lines (a 78 % cut).
 
-## [v0.2] - Q4 2024: Architecture Solidification
+## [v0.0] - Project Inception
 
-### Added
-
-- Output element: 32K+ .js files from VS Code source compilation
-- Mountain: Android Gradle project scaffold, mobile schema (11,162 lines),
-  Cargo.toml feature flags (AirIntegration, ExtensionHostCocoon, etc.)
-- VS Code module tree fully imported via submodules
-
-## [v0.1] - Q3 2024: Rapid Development
-
-### Added
-
-- Mountain: 168 commits, 28K lines Rust, Tauri 2.x, gRPC scaffolding
-- Sky: 600 commits, Astro + React, Firebase
-- Wind: 166 commits, Monaco editor, SCSS
-- Echo: 334 commits, Sequence-based task scheduler (crossbeam-deque)
-- Rest: created September 14 (33 files, SWC compiler)
-
-### Changed
-
-- Mountain schema reduction: 8,467 → ~1,000 lines (78%)
-
-## [v0.0] - Q2 2024: Project Inception
-
-### Added
-
-- Monorepo structure with Element/ and Dependency/ as git submodules
-  (.gitmodules: ignore = all)
-- Cargo.toml workspace: Common, Echo, Maintain, Mountain, Air, Grove, Mist,
-  Rest, SideCar, tauri-plugin-localhost
-- pnpm-workspace.yaml: Dependency/{Biome,Microsoft,OXC,Rolldown,SWC,Tauri,
-  Vercel}/NPM/**, Element/**, !**/Target/**
-- turbo.json: Turborepo task definitions with global env passthrough
-  (ANDROID_HOME, JAEGER_VERSION, API keys, Apple signing, etc.)
-- CI/CD pipeline: GitHub Actions, Dependabot
-- PascalCase naming convention adopted project-wide
-- Biome formatter (TypeScript), rustfmt nightly (Rust)
-- Mountain: Tauri scaffold (June), Sky: Astro 4 (April), Common: Workers library
-  (April)
+We set up the monorepo. `Element/` and `Dependency/` as git
+submodules with `.gitmodules: ignore = all` so a stray `git add .`
+doesn't convert submodule gitlinks to trees. The `Cargo.toml`
+workspace covered Common, Echo, Maintain, Mountain, Air, Grove,
+Mist, Rest, SideCar, plus `tauri-plugin-localhost`. The
+`pnpm-workspace.yaml` covered `Dependency/{Biome,Microsoft,OXC,
+Rolldown,SWC,Tauri,Vercel}/NPM/**`, `Element/**`, and `!**/Target/**`.
+We adopted the `turbo.json` task definitions with global env passthrough
+(`ANDROID_HOME`, `JAEGER_VERSION`, our shared API keys, Apple signing
+identifiers, …), wired GitHub Actions and Dependabot, and adopted
+PascalCase as the project-wide naming convention. We chose Biome as
+our TypeScript formatter and rustfmt-nightly as our Rust formatter.
+Mountain's Tauri scaffold landed in June, Sky's Astro 4 baseline in
+April, and Common's first Workers library shape went up in April too.
