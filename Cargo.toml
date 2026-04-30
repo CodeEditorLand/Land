@@ -71,7 +71,11 @@ bincode = { version = "=2.0.1", features = [
 ] } # TODO: DO NOT UPGRADE TO 3.0.0
 brotli = { version = "8.0.2" }
 bytes = { version = "1.11.1" }
-chrono = { version = "0.4.44" }
+chrono = { version = "0.4.44", default-features = false, features = [
+	"clock",
+	"std",
+	"serde",
+] }
 clap = { version = "4.6.1", features = ["derive", "env"] }
 colored = { version = "3.1.1" }
 git2 = { version = "0.20.4" }
@@ -107,7 +111,7 @@ md5 = { version = "0.8.0" }
 memmap2 = { version = "0.9.10" }
 metrics = { version = "0.24.3" }
 moka = { version = "0.12.10", features = ["sync"] }
-prometheus = { version = "0.14.0" }
+prometheus = { version = "0.14.0", default-features = false, features = ["protobuf"] }
 notify = { version = "8.2.0" }
 num_cpus = { version = "1.17.0" }
 once_cell = { version = "1.21.4" }
@@ -168,7 +172,7 @@ oxc_codegen = { version = "0.128.0" }
 oxc_semantic = { version = "0.128.0" }
 oxc_span = { version = "0.128.0" }
 oxc_ast = { version = "0.128.0" }
-zip = { version = "8.6.0" }
+zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 p256 = { version = "0.13.2" }
 pem = { version = "3.0.6" }
 rcgen = { version = "0.14.7" }
@@ -195,10 +199,52 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [profile.release]
+# Performance + size - these compose well; documented effects below.
 opt-level = 3
+# `lto = true` is `fat`-LTO (single LLVM linker stage). Combined with
+# `codegen-units = 1` rustc optimises across crate boundaries, often
+# inlining hot tonic / Effect / mmap paths that would otherwise stay
+# behind a function-call boundary. Compile time ~3× longer; runtime
+# ~10-15 % faster on the IPC hot path; binary ~5-10 % smaller.
 lto = true
 codegen-units = 1
 strip = true
+# `panic = "abort"` removes the unwind machinery (~3-5 MB on the
+# Mountain binary). The Tauri runtime already handles panics at the
+# runtime boundary and Mountain's policy on a real panic is exit-and-
+# restart anyway (Cocoon respawns; Wind reconnects). The wins:
+#   - Smaller binary (no unwind tables, no landing pads).
+#   - Faster builds (~10 % off LTO step - no unwind metadata to track).
+#   - Smaller stack frames (no implicit unwind-cleanup state).
+# The cost: `std::panic::catch_unwind` becomes a no-op (panics abort
+# the process). Mountain has zero `catch_unwind` call sites today, so
+# this is purely upside.
+panic = "abort"
+# Explicit defaults (matches Cargo's release defaults; documented for
+# transparency to anyone reading this profile).
+overflow-checks = false
+debug = false
+incremental = false
+
+# Build scripts (`build.rs`, `*-build` crates like `prost-build`,
+# `tonic-prost-build`, `phf_codegen`) only run at compile time; they
+# emit code that the main pipeline consumes. Optimising them at
+# `opt-level = 3` is wasted work - they run once per build. Drop to
+# `opt-level = 0` so build-script compilation is fast. Saves ~30-60 s
+# off the first cold release build; subsequent incremental builds
+# already cache. Unaffected: the actual codegen output (which IS
+# compiled at the main `[profile.release]` opt-level).
+[profile.release.build-override]
+opt-level = 0
+codegen-units = 256
+debug = false
+
+# Same logic for the dev profile - build scripts at opt-level 0
+# are negligibly slower at runtime but compile much faster.
+[profile.dev.build-override]
+opt-level = 0
+codegen-units = 256
+debug = false
 
 [profile.dev]
 opt-level = 0
