@@ -64,3 +64,4 @@ Maintain/Integration/MemoryAudit.sh
 .env.Land.Extensions
 .env.Land.Node
 .env.Land.PostHog
+.env.Land.Diagnostics

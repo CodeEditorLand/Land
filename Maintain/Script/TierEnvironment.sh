@@ -34,11 +34,15 @@ fi
 # ---------------------------------------------------------------------------
 # Domain-specific overlays - sourced AFTER the root `.env.Land` so they
 # compose cleanly. Each overlay owns one concern:
-#   .env.Land.Node       - Pick, Require
-#   .env.Land.Extensions - Ship, Lodge, Extend, Probe, Skip, Mute, Wire,
-#                          Install
-#   .env.Land.PostHog    - Authorize, Beam, Report, Throttle, Buffer,
-#                          Batch, Cap, Replay, Ask, Brand
+#   .env.Land.Node        - Pick, Require
+#   .env.Land.Extensions  - Ship, Lodge, Extend, Probe, Skip, Mute, Wire,
+#                           Install
+#   .env.Land.PostHog     - Authorize, Beam, Report, Throttle, Buffer,
+#                           Batch, Cap, Replay, Ask, Brand
+#   .env.Land.Diagnostics - Inspect, Smoke, Trace, Record (debug-only
+#                           knobs - DevTools auto-open, the smoke-test
+#                           harness gate, dev-log tag selection, and
+#                           the dev-log file sink toggle).
 # Overlays cascade: real > .Sample > absent. Absent files are silently
 # skipped so a fresh clone still builds with just the root `.env.Land`.
 # ---------------------------------------------------------------------------
@@ -85,6 +89,7 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	SourceOverlayIfPresent ".env.Land.Node"
 	SourceOverlayIfPresent ".env.Land.Extensions"
 	SourceOverlayIfPresent ".env.Land.PostHog"
+	SourceOverlayIfPresent ".env.Land.Diagnostics"
 
 	# Display the resolved runtime overlays - the single-word PascalCase
 	# verbs the .env.Land.{Node,Extensions,PostHog} overlays own. Pinned
@@ -102,7 +107,7 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	# test outcome - which dash interprets as a failure under -e and
 	# silently aborts the sourced script. The if-form avoids the
 	# &&-chain entirely.
-	LandRuntimeKeys="Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand"
+	LandRuntimeKeys="Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand Inspect Smoke Trace Record Disable"
 	LandRuntimeVars=""
 	for Key in $LandRuntimeKeys; do
 		Value=$(printenv "$Key" 2>/dev/null || true)

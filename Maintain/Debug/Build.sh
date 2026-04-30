@@ -404,6 +404,23 @@ esac
 # shellcheck disable=SC1091
 . Maintain/Script/ProfileMarker.sh
 
+# Generated-artefact cleanup. Sourced unconditionally; the helper
+# is a no-op when Clean is unset / false. When Clean=true the
+# helper wipes:
+#   - Wind/Source/Effect/Generated/         (Wind codegen)
+#   - Wind/Source/Effect/<X>BridgeShapeGenerated.ts
+#   - Cocoon/Source/Generated/              (Cocoon codegen)
+#   - Sky/Source/Function/Generated/        (Sky channel codegen)
+#   - Mountain/Source/Vine/Generated/       (tonic-prost output)
+#   - Mountain/Source/IPC/Generated/
+#   - Air/Source/Vine/Generated/
+#   - Grove/Source/Protocol/Generated/
+# and bumps the mtime of every `.proto` under `Element/` so
+# `cargo:rerun-if-changed=Proto/<X>.proto` triggers each crate's
+# build.rs (which re-emits Generated/ via tonic-prost-build).
+# shellcheck disable=SC1091
+. Maintain/Script/CleanGenerated.sh
+
 echo ""
 echo "Starting build..."
 echo ""
