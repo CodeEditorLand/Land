@@ -111,7 +111,9 @@ md5 = { version = "0.8.0" }
 memmap2 = { version = "0.9.10" }
 metrics = { version = "0.24.3" }
 moka = { version = "0.12.10", features = ["sync"] }
-prometheus = { version = "0.14.0", default-features = false, features = ["protobuf"] }
+prometheus = { version = "0.14.0", default-features = false, features = [
+	"protobuf",
+] }
 notify = { version = "8.2.0" }
 num_cpus = { version = "1.17.0" }
 once_cell = { version = "1.21.4" }

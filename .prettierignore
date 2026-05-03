@@ -1,3 +1,92 @@
+# ===========================================================================
+# Canonical exclusions - mirrored to:
+#   Maintain/Format.sh             (shfmt find paths)
+#   .vscode/settings.json          (files.exclude / search.exclude /
+#                                   files.watcherExclude / formatFiles.*)
+#   ../.vscode/settings.json       (workspace-root settings)
+#   rustfmt.toml `ignore` array
+#
+# Add new generated / vendored / cache paths here AND in the four sibling
+# files so every formatter / sidebar / search agrees.
+# ===========================================================================
+
+# Vendored upstream code - never reformat. The few subpaths below the
+# wildcard reformat would touch are pre-listed for back-compat with the
+# existing line-by-line ignore further down.
+Dependency
+**/Dependency
+**/Dependency/**
+
+# Cargo build output (workspace + per-Element).
+Target
+target
+**/Target
+**/target
+**/Target/**
+**/target/**
+
+# Cargo build-script artefacts. Tauri's codegen stages binary asset
+# payloads under `.sh` / arbitrary filenames here; many are not valid
+# UTF-8 and prettier crashes on them.
+**/.fingerprint
+**/.fingerprint/**
+**/incremental
+**/incremental/**
+**/deps
+**/deps/**
+**/tauri-codegen-assets
+**/tauri-codegen-assets/**
+
+# Rustdoc + cargo-doc output trees (per-Element + workspace-root).
+**/Documentation/Rust/doc
+**/Documentation/Rust/doc/**
+**/Documentation/Rust/debug
+**/Documentation/Rust/debug/**
+**/Documentation/Rust/release
+**/Documentation/Rust/release/**
+
+# JS/TS build + cache trees.
+.astro
+.cache
+.eslintcache
+.next
+.parcel-cache
+.swc
+.turbo
+dist
+**/.astro
+**/.astro/**
+**/.cache
+**/.cache/**
+**/.eslintcache
+**/.next
+**/.next/**
+**/.parcel-cache
+**/.parcel-cache/**
+**/.swc
+**/.swc/**
+**/.turbo
+**/.turbo/**
+**/dist
+**/dist/**
+
+# Project-internal codegen output (Vine.proto -> tonic, Sky channel
+# codegen, Wind effect bridges, etc).
+**/Generated
+**/Generated/**
+**/.generated
+**/.generated/**
+
+# SideCar's vendored Node distribution per platform/version.
+**/SideCar/*/NODE
+**/SideCar/*/NODE/**
+**/Element/SideCar/*/NODE
+**/Element/SideCar/*/NODE/**
+
+# ===========================================================================
+# Pre-existing ignores (kept verbatim).
+# ===========================================================================
+
 .DS_Store
 .env.development.local
 .env.local

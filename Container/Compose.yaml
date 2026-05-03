@@ -1,0 +1,60 @@
+# ===========================================================================
+# Land Telemetry Stack
+# ---------------------------------------------------------------------------
+# Local OTLP collector + UI for the dual-pipe telemetry layer (PostHog +
+# OpenTelemetry). Mountain (Rust), Cocoon (Node), Wind / Sky / Output
+# (browser + worker), and Build.sh all push spans to the Jaeger HTTP OTLP
+# port at 127.0.0.1:4318 when `OTLPEnabled=true` and `Disable=false`.
+#
+# PostHog is the *event* sink (counts, distributions, dashboards). Jaeger
+# is the *trace* sink (per-request spans, parent/child causality, attribute
+# search). Same `trace_id` rides both pipes so a PostHog event can be opened
+# in Jaeger with one click.
+#
+# Usage:
+#     docker compose -f Land/Container/Compose.yaml up -d
+#     open http://127.0.0.1:16686            # Jaeger UI
+#     curl http://127.0.0.1:4318/v1/traces   # OTLP HTTP ingestion
+#
+# Tear down:
+#     docker compose -f Land/Container/Compose.yaml down
+#
+# CORS:
+# Sky's browser bridge POSTs `/v1/traces` from the Tauri webview origin
+# (`http://localhost:<NetworkMountainPort>` or `tauri://localhost`).
+# `COLLECTOR_OTLP_HTTP_CORS_*` env vars expose the collector to those
+# origins without a proxy.
+# ===========================================================================
+
+services:
+    Jaeger:
+        image: jaegertracing/all-in-one:latest
+        container_name: Land-Jaeger
+        restart: unless-stopped
+        ports:
+            # OTLP HTTP - Land/Mountain, Cocoon, Sky, Wind, Output, Build.sh
+            - "127.0.0.1:4318:4318"
+            # OTLP gRPC - reserved for high-volume Rust sidecars
+            - "127.0.0.1:4317:4317"
+            # Jaeger UI
+            - "127.0.0.1:16686:16686"
+        environment:
+            COLLECTOR_OTLP_ENABLED: "true"
+            COLLECTOR_OTLP_HTTP_CORS_ALLOWED_ORIGINS: "*"
+            COLLECTOR_OTLP_HTTP_CORS_ALLOWED_HEADERS: "Content-Type,Authorization,traceparent,tracestate"
+            # Keep traces in memory; production will swap to Elasticsearch / Cassandra.
+            SPAN_STORAGE_TYPE: "memory"
+            MEMORY_MAX_TRACES: "100000"
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "wget",
+                    "--quiet",
+                    "--tries=1",
+                    "--spider",
+                    "http://127.0.0.1:14269/",
+                ]
+            interval: 10s
+            timeout: 3s
+            retries: 5

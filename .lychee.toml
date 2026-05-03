@@ -50,7 +50,14 @@ timeout = 30
 max_concurrency = 10
 
 # Exclude paths
-exclude_path = ["node_modules", "target", "Rust/doc", "effect", ".git", "Dependency"]
+exclude_path = [
+	"node_modules",
+	"target",
+	"Rust/doc",
+	"effect",
+	".git",
+	"Dependency",
+]
 
 # Accepted status codes
 accept = [200, 204, 301, 302, 307, 308, 429]

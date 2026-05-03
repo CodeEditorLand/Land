@@ -11,7 +11,6 @@
  * scheme handler request offers brotli in `Accept-Encoding`.
  *
  */
-
 import { promises as Filesystem } from "node:fs";
 import { join, relative } from "node:path";
 import { brotliCompressSync, constants } from "node:zlib";
@@ -61,7 +60,9 @@ async function Walk(Root: string): Promise<Array<string>> {
 		let Entries;
 
 		try {
-			Entries = await Filesystem.readdir(Current, { withFileTypes: true });
+			Entries = await Filesystem.readdir(Current, {
+				withFileTypes: true,
+			});
 		} catch {
 			continue;
 		}
@@ -80,20 +81,33 @@ async function Walk(Root: string): Promise<Array<string>> {
 async function ProcessFile(Path: string): Promise<ProcessResult> {
 	const Extension = Path.slice(Path.lastIndexOf("."));
 
-	if (!Compressible.has(Extension)) return { Path, OriginalBytes: 0, CompressedBytes: 0, Skipped: true };
+	if (!Compressible.has(Extension))
+		return { Path, OriginalBytes: 0, CompressedBytes: 0, Skipped: true };
 
-	if (Path.endsWith(".br")) return { Path, OriginalBytes: 0, CompressedBytes: 0, Skipped: true };
+	if (Path.endsWith(".br"))
+		return { Path, OriginalBytes: 0, CompressedBytes: 0, Skipped: true };
 
 	const Stat = await Filesystem.stat(Path);
 
-	if (Stat.size < MinimumSize) return { Path, OriginalBytes: Stat.size, CompressedBytes: 0, Skipped: true };
+	if (Stat.size < MinimumSize)
+		return {
+			Path,
+			OriginalBytes: Stat.size,
+			CompressedBytes: 0,
+			Skipped: true,
+		};
 
 	const Sibling = `${Path}.br`;
 
 	const SiblingStat = await Filesystem.stat(Sibling).catch(() => null);
 
 	if (SiblingStat && SiblingStat.mtimeMs > Stat.mtimeMs) {
-		return { Path, OriginalBytes: Stat.size, CompressedBytes: SiblingStat.size, Skipped: true };
+		return {
+			Path,
+			OriginalBytes: Stat.size,
+			CompressedBytes: SiblingStat.size,
+			Skipped: true,
+		};
 	}
 
 	const Source = await Filesystem.readFile(Path);
@@ -103,7 +117,11 @@ async function ProcessFile(Path: string): Promise<ProcessResult> {
 			[constants.BROTLI_PARAM_QUALITY]: 11,
 			[constants.BROTLI_PARAM_LGWIN]: 24,
 			[constants.BROTLI_PARAM_MODE]:
-				Extension === ".js" || Extension === ".mjs" || Extension === ".cjs" || Extension === ".css" || Extension === ".html"
+				Extension === ".js" ||
+				Extension === ".mjs" ||
+				Extension === ".cjs" ||
+				Extension === ".css" ||
+				Extension === ".html"
 					? constants.BROTLI_MODE_TEXT
 					: constants.BROTLI_MODE_GENERIC,
 		},
@@ -112,12 +130,22 @@ async function ProcessFile(Path: string): Promise<ProcessResult> {
 	const SavingsRatio = 1 - Compressed.byteLength / Source.byteLength;
 
 	if (SavingsRatio < MinimumSavingsRatio) {
-		return { Path, OriginalBytes: Source.byteLength, CompressedBytes: Compressed.byteLength, Skipped: true };
+		return {
+			Path,
+			OriginalBytes: Source.byteLength,
+			CompressedBytes: Compressed.byteLength,
+			Skipped: true,
+		};
 	}
 
 	await Filesystem.writeFile(Sibling, Compressed);
 
-	return { Path, OriginalBytes: Source.byteLength, CompressedBytes: Compressed.byteLength, Skipped: false };
+	return {
+		Path,
+		OriginalBytes: Source.byteLength,
+		CompressedBytes: Compressed.byteLength,
+		Skipped: false,
+	};
 }
 
 async function Main() {
@@ -157,7 +185,9 @@ async function Main() {
 
 			console.log(
 				`[brotli] ${relative(Root, Result.Path)} ${Result.OriginalBytes} -> ${Result.CompressedBytes} (${
-					(((1 - Result.CompressedBytes / Result.OriginalBytes) * 100) | 0)
+					((1 - Result.CompressedBytes / Result.OriginalBytes) *
+						100) |
+					0
 				}%)`,
 			);
 		}
@@ -165,7 +195,9 @@ async function Main() {
 
 	console.log("---");
 
-	console.log(`[brotli] wrote=${Wrote} skipped=${Skipped} total ${TotalOriginal} -> ${TotalCompressed} bytes`);
+	console.log(
+		`[brotli] wrote=${Wrote} skipped=${Skipped} total ${TotalOriginal} -> ${TotalCompressed} bytes`,
+	);
 }
 
 Main().catch((Error: unknown) => {

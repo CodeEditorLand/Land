@@ -216,23 +216,15 @@
 	"tasks": {
 		"Run": {
 			"cache": false,
-			"dependsOn": [
-				"^prepublishOnly"
-			],
+			"dependsOn": ["^prepublishOnly"],
 			"outputLogs": "new-only",
-			"outputs": [
-				"Target/**"
-			],
+			"outputs": ["Target/**"],
 			"persistent": true
 		},
 		"prepublishOnly": {
-			"dependsOn": [
-				"^prepublishOnly"
-			],
+			"dependsOn": ["^prepublishOnly"],
 			"outputLogs": "new-only",
-			"outputs": [
-				"Target/**"
-			]
+			"outputs": ["Target/**"]
 		}
 	},
 	"ui": "stream"

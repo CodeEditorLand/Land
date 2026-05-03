@@ -65,12 +65,52 @@ wrap_comments = true
 style_edition = "2024"
 
 # Paths relative to workspace root to exclude from rustfmt.
-# - Documentation/ contains generated cargo-doc HTML (no .rs source).
-# - Generated/ dirs contain prost-build output; rustfmt corrupts `: ::`
-#   qualifiers in prost macros, producing invalid `:::` token sequences.
+#
+# Mirrored across the same canonical exclusion set used by:
+#   Maintain/Format.sh           (shfmt find paths)
+#   .vscode/settings.json        (files.exclude / search.exclude /
+#                                 files.watcherExclude / formatFiles.*)
+#   .prettierignore              (workspace + Land scope)
+#
+# Categories:
+# - Documentation/Rust/{doc,debug,release} - rustdoc + cargo-doc trees.
+#   The `debug/build/<crate>-<hash>/out/` paths can contain synthesised
+#   `.rs` from build scripts; rustfmt mangles them.
+# - Generated/ dirs - prost-build / tonic-build output. rustfmt corrupts
+#   `: ::` qualifiers in prost macros, producing invalid `:::` tokens.
+# - Target/ - cargo build output.
+# - Dependency/ - vendored upstream code, never reformat.
 ignore = [
+	# Vendored
+	"Dependency/",
+
+	# Cargo build output (workspace + per-Element + per-Documentation)
+	"Target/",
+	"target/",
+	"**/Target/",
+	"**/target/",
+	"**/.fingerprint/",
+	"**/incremental/",
+	"**/deps/",
+	"**/tauri-codegen-assets/",
+
+	# Rustdoc + cargo-doc trees (per-Element variants too)
 	"Documentation/",
+	"**/Documentation/Rust/doc/",
+	"**/Documentation/Rust/debug/",
+	"**/Documentation/Rust/release/",
+
+	# Project-internal codegen output. tonic-build / prost-build
+	# emits these under each crate that wires the build.rs.
 	"Element/Mountain/Source/Vine/Generated",
+	"Element/Mountain/Source/IPC/Generated",
 	"Element/Air/Source/Vine/Generated",
 	"Element/Grove/Source/Protocol/Generated",
+	"Element/Cocoon/Source/Generated",
+	"Element/Wind/Source/Effect/Generated",
+	"**/Generated/",
+	"**/.generated/",
+
+	# SideCar's vendored Node distribution per platform/version.
+	"**/SideCar/*/NODE/",
 ]

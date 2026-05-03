@@ -61,7 +61,15 @@ Dependency/Microsoft/Dependency/Editor/build/
 Maintain/Integration/MemoryAudit.sh
 
 .env.Land
+.env.Land.Bundled
+.env.Land.Diagnostics
 .env.Land.Extensions
 .env.Land.Node
 .env.Land.PostHog
-.env.Land.Diagnostics
+
+.env.Land.Production
+.env.Land.Production.Bundled
+.env.Land.Production.Diagnostics
+.env.Land.Production.Extensions
+.env.Land.Production.Node
+.env.Land.Production.PostHog

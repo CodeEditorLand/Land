@@ -24,11 +24,11 @@
  *      listened-from-Sky, or listened-but-never-emitted).
  *
  */
-
 import { promises as Filesystem } from "node:fs";
 import { dirname, join, relative } from "node:path";
 
-const RepoRoot = "/Volumes/CORSAIR/Developer/macOS/Application/CodeEditorLand/Land";
+const RepoRoot =
+	"/Volumes/CORSAIR/Developer/macOS/Application/CodeEditorLand/Land";
 
 interface Handler {
 	WireName: string;
@@ -46,7 +46,10 @@ interface Channel {
 	ListenedFromSky: boolean;
 }
 
-async function Walk(Root: string, Predicate: (Path: string) => boolean): Promise<Array<string>> {
+async function Walk(
+	Root: string,
+	Predicate: (Path: string) => boolean,
+): Promise<Array<string>> {
 	const Out: Array<string> = [];
 
 	const Stack: Array<string> = [Root];
@@ -57,7 +60,9 @@ async function Walk(Root: string, Predicate: (Path: string) => boolean): Promise
 		let Entries;
 
 		try {
-			Entries = await Filesystem.readdir(Current, { withFileTypes: true });
+			Entries = await Filesystem.readdir(Current, {
+				withFileTypes: true,
+			});
 		} catch {
 			continue;
 		}
@@ -66,7 +71,12 @@ async function Walk(Root: string, Predicate: (Path: string) => boolean): Promise
 			const Full = join(Current, Entry.name);
 
 			if (Entry.isDirectory()) {
-				if (Entry.name === "Target" || Entry.name === "node_modules" || Entry.name === ".git") continue;
+				if (
+					Entry.name === "Target" ||
+					Entry.name === "node_modules" ||
+					Entry.name === ".git"
+				)
+					continue;
 
 				Stack.push(Full);
 			} else if (Entry.isFile() && Predicate(Full)) {
@@ -79,7 +89,9 @@ async function Walk(Root: string, Predicate: (Path: string) => boolean): Promise
 }
 
 function HandlerToWireName(FunctionName: string): string {
-	const Stripped = FunctionName.startsWith("handle_") ? FunctionName.slice("handle_".length) : FunctionName;
+	const Stripped = FunctionName.startsWith("handle_")
+		? FunctionName.slice("handle_".length)
+		: FunctionName;
 
 	const Segments = Stripped.split("_");
 
@@ -101,9 +113,12 @@ function HandlerToWireName(FunctionName: string): string {
 }
 
 async function ScanHandlers(): Promise<Array<Handler>> {
-	const HandlerDir = join(RepoRoot, "Element/Mountain/Source/IPC/WindServiceHandlers");
+	const HandlerDir = join(
+		RepoRoot,
+		"Element/Mountain/Source/IPC/WindServiceHandlers",
+	);
 
-	const RustFiles = await Walk(HandlerDir, Path => Path.endsWith(".rs"));
+	const RustFiles = await Walk(HandlerDir, (Path) => Path.endsWith(".rs"));
 
 	const Out: Array<Handler> = [];
 
@@ -131,9 +146,14 @@ async function ScanSkyChannels(): Promise<Array<Channel>> {
 
 	const SkySource = join(RepoRoot, "Element/Sky/Source");
 
-	const RustFiles = await Walk(MountainSource, Path => Path.endsWith(".rs"));
+	const RustFiles = await Walk(MountainSource, (Path) =>
+		Path.endsWith(".rs"),
+	);
 
-	const TsFiles = await Walk(SkySource, Path => Path.endsWith(".ts") || Path.endsWith(".tsx"));
+	const TsFiles = await Walk(
+		SkySource,
+		(Path) => Path.endsWith(".ts") || Path.endsWith(".tsx"),
+	);
 
 	const Map = new globalThis.Map<string, Channel>();
 
@@ -147,7 +167,12 @@ async function ScanSkyChannels(): Promise<Array<Channel>> {
 		for (const Match of Source.matchAll(EmitRegex)) {
 			const Name = Match[1];
 
-			if (!Map.has(Name)) Map.set(Name, { Name, EmittedFrom: [], ListenedFromSky: false });
+			if (!Map.has(Name))
+				Map.set(Name, {
+					Name,
+					EmittedFrom: [],
+					ListenedFromSky: false,
+				});
 
 			Map.get(Name)?.EmittedFrom.push(relative(RepoRoot, File));
 		}
@@ -159,13 +184,20 @@ async function ScanSkyChannels(): Promise<Array<Channel>> {
 		for (const Match of Source.matchAll(ListenRegex)) {
 			const Name = Match[1];
 
-			if (!Map.has(Name)) Map.set(Name, { Name, EmittedFrom: [], ListenedFromSky: false });
+			if (!Map.has(Name))
+				Map.set(Name, {
+					Name,
+					EmittedFrom: [],
+					ListenedFromSky: false,
+				});
 
 			(Map.get(Name) as Channel).ListenedFromSky = true;
 		}
 	}
 
-	return Array.from(Map.values()).sort((A, B) => A.Name.localeCompare(B.Name));
+	return Array.from(Map.values()).sort((A, B) =>
+		A.Name.localeCompare(B.Name),
+	);
 }
 
 async function WriteIfChanged(Path: string, Content: string): Promise<boolean> {
@@ -196,7 +228,10 @@ async function Main() {
 			"\t",
 		) + "\n";
 
-	const HandlerPath = join(RepoRoot, "Element/Mountain/Source/IPC/Generated/HandlerRegistry.json");
+	const HandlerPath = join(
+		RepoRoot,
+		"Element/Mountain/Source/IPC/Generated/HandlerRegistry.json",
+	);
 
 	const HandlerWrote = await WriteIfChanged(HandlerPath, HandlerManifest);
 
@@ -206,10 +241,10 @@ async function Main() {
 
 export type SkyChannelName =
 ${
-		Channels.length === 0
-			? "\t| string"
-			: Channels.map(C => `\t| "${C.Name}"`).join("\n")
-	};
+	Channels.length === 0
+		? "\t| string"
+		: Channels.map((C) => `\t| "${C.Name}"`).join("\n")
+};
 
 export const SkyChannels: ReadonlyArray<{
 \tName: SkyChannelName;
@@ -220,28 +255,45 @@ export const SkyChannels: ReadonlyArray<{
 export const SkyChannelCount = ${Channels.length};
 `;
 
-	const ChannelPath = join(RepoRoot, "Element/Sky/Source/Function/Generated/SkyChannels.ts");
+	const ChannelPath = join(
+		RepoRoot,
+		"Element/Sky/Source/Function/Generated/SkyChannels.ts",
+	);
 
 	const ChannelWrote = await WriteIfChanged(ChannelPath, ChannelTs);
 
-	console.log(`[codegen] handlers=${Handlers.length} ${HandlerWrote ? "(updated)" : "(unchanged)"}`);
+	console.log(
+		`[codegen] handlers=${Handlers.length} ${HandlerWrote ? "(updated)" : "(unchanged)"}`,
+	);
 
-	console.log(`[codegen] channels=${Channels.length} ${ChannelWrote ? "(updated)" : "(unchanged)"}`);
+	console.log(
+		`[codegen] channels=${Channels.length} ${ChannelWrote ? "(updated)" : "(unchanged)"}`,
+	);
 
-	const EmitterOnly = Channels.filter(C => C.EmittedFrom.length > 0 && !C.ListenedFromSky);
+	const EmitterOnly = Channels.filter(
+		(C) => C.EmittedFrom.length > 0 && !C.ListenedFromSky,
+	);
 
-	const ListenerOnly = Channels.filter(C => C.EmittedFrom.length === 0 && C.ListenedFromSky);
+	const ListenerOnly = Channels.filter(
+		(C) => C.EmittedFrom.length === 0 && C.ListenedFromSky,
+	);
 
 	if (EmitterOnly.length > 0) {
-		console.warn(`[codegen] WARN: ${EmitterOnly.length} sky:// channels have emitters but no Sky listener:`);
+		console.warn(
+			`[codegen] WARN: ${EmitterOnly.length} sky:// channels have emitters but no Sky listener:`,
+		);
 
 		for (const Orphan of EmitterOnly) {
-			console.warn(`  - ${Orphan.Name} (emitted from ${Orphan.EmittedFrom.length} site(s))`);
+			console.warn(
+				`  - ${Orphan.Name} (emitted from ${Orphan.EmittedFrom.length} site(s))`,
+			);
 		}
 	}
 
 	if (ListenerOnly.length > 0) {
-		console.warn(`[codegen] WARN: ${ListenerOnly.length} sky:// channels have Sky listeners but no Mountain emitter:`);
+		console.warn(
+			`[codegen] WARN: ${ListenerOnly.length} sky:// channels have Sky listeners but no Mountain emitter:`,
+		);
 
 		for (const Orphan of ListenerOnly) {
 			console.warn(`  - ${Orphan.Name}`);
