@@ -25,10 +25,13 @@
  *
  */
 import { promises as Filesystem } from "node:fs";
-import { dirname, join, relative } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const RepoRoot =
-	"/Volumes/CORSAIR/Developer/macOS/Application/CodeEditorLand/Land";
+// Resolve the Land repo root from this script's own location -
+// `Land/Maintain/Codegen/Sync.ts` -> `Land/`. Keeps codegen
+// reproducible across machines, CI runners, and worktrees.
+const RepoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 interface Handler {
 	WireName: string;

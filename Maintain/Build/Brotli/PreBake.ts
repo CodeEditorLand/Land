@@ -12,12 +12,24 @@
  *
  */
 import { promises as Filesystem } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { brotliCompressSync, constants } from "node:zlib";
 
+// Resolve the Land repo root from this script's own location -
+// `Land/Maintain/Build/Brotli/PreBake.ts` -> `Land/`. Keeps the
+// pre-bake step reproducible across machines, CI runners, and
+// worktrees.
+const RepoRoot = resolve(
+	dirname(fileURLToPath(import.meta.url)),
+	"..",
+	"..",
+	"..",
+);
+
 const BundleRoots = [
-	"/Volumes/CORSAIR/Developer/macOS/Application/CodeEditorLand/Land/Element/Sky/Target/Static/Application",
-	"/Volumes/CORSAIR/Developer/macOS/Application/CodeEditorLand/Land/Element/Sky/Target/_astro",
+	join(RepoRoot, "Element/Sky/Target/Static/Application"),
+	join(RepoRoot, "Element/Sky/Target/_astro"),
 ];
 
 const Compressible = new globalThis.Set([
