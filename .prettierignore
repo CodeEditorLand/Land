@@ -76,6 +76,8 @@ dist
 **/Generated/**
 **/.generated
 **/.generated/**
+**/gen
+**/gen/**
 
 # SideCar's vendored Node distribution per platform/version.
 **/SideCar/*/NODE

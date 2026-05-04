@@ -110,6 +110,7 @@ ignore = [
 	"Element/Wind/Source/Effect/Generated",
 	"**/Generated/",
 	"**/.generated/",
+	"**/gen/",
 
 	# SideCar's vendored Node distribution per platform/version.
 	"**/SideCar/*/NODE/",
