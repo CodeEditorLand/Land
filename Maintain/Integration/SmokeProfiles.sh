@@ -210,10 +210,10 @@ else
 	echo "  Bundled extensions:    (none - minimal or kernel profile)"
 fi
 
-CocoonBundle="Element/Cocoon/Target/Bootstrap/Implementation/CocoonMain.js"
+CocoonBundle="Element/Cocoon/Target/Bootstrap/Implementation/Cocoon/Main.js"
 if [ -f "$CocoonBundle" ]; then
 	CocoonSize=$(du -sh "$CocoonBundle" 2> /dev/null | awk '{print $1}')
-	echo "  CocoonMain.js:         $CocoonSize"
+	echo "  Cocoon/Main.js:        $CocoonSize"
 fi
 
 WindBundle="Element/Wind/Target"
