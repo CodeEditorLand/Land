@@ -1,6 +1,7 @@
 [workspace]
 exclude = [
 	"Dependency/Microsoft/Dependency/Editor/cli",
+	"Dependency/Microsoft/Dependency/Editor/build/win32",
 	"Element/Document",
 	# Tauri ecosystem repos are vendored under Dependency/Tauri/Dependency/
 	# but have their own workspaces and `{ workspace = true }` inheritance
