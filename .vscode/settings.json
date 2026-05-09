@@ -136,9 +136,9 @@
 		"**/tauri-codegen-assets": true
 	},
 	"shellformat.path": "/opt/homebrew/bin/shfmt",
-	"typescript.enablePromptUseWorkspaceTsdk": true,
-	"typescript.tsc.autoDetect": "off",
-	"typescript.tsdk": "node_modules/typescript/lib",
+	"js/ts.tsdk.promptToUseWorkspaceVersion": true,
+	"js/ts.tsc.autoDetect": "off",
+	"js/ts.tsdk.path": "node_modules/typescript/lib",
 	"typescript.tsserver.pluginPaths": ["./Element/Sky/node_modules"],
 	"formatFiles.excludedFolders": [
 		"node_modules",
@@ -167,5 +167,14 @@
 		"tauri-codegen-assets"
 	],
 	"formatFiles.excludePattern": "**/node_modules/**/*,**/Dependency/*/Dependency/**/*,**/Dependency/**/*,**/Target/**/*,**/target/**/*,**/Generated/**/*,**/.generated/**/*,**/generated/**/*,**/gen/**/*,**/Documentation/Rust/doc/**/*,**/Documentation/Rust/debug/**/*,**/Documentation/Rust/release/**/*,**/Documentation/Rust/**/*,**/Documentation/Module/**/*,**/Element/SideCar/*/NODE/**/*,**/SideCar/*/NODE/**/*,**/.fingerprint/**/*,**/incremental/**/*,**/deps/**/*,**/tauri-codegen-assets/**/*,**/.turbo/**/*,**/.astro/**/*,**/.next/**/*,**/.swc/**/*,**/.parcel-cache/**/*,**/.eslintcache/**/*,**/.cache/**/*,**/dist/**/*",
-	"vsicons.presets.angular": true
+	"vsicons.presets.angular": true,
+	"[python]": {
+		"editor.defaultFormatter": "charliermarsh.ruff"
+	},
+	"[c]": {
+		"editor.defaultFormatter": "ms-vscode.cpptools"
+	},
+	"[svg]": {
+		"editor.defaultFormatter": "redhat.vscode-xml"
+	}
 }
