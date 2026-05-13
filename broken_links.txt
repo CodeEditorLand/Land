@@ -1,0 +1,86 @@
+Issues found in 7 inputs. Find details below.
+
+[Documentation/GitHub/Workflow/ApplicationStartupAndHandshake.md]:
+[404] https://github.com/CodeEditorLand/Cocoon/tree/Current/src/Index.ts#L1 (at 102:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Cocoon/tree/Current/src/Index.ts#L1 (at 105:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Cocoon/tree/Current/src/Index.ts#L1 (at 109:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Cocoon/tree/Current/src/Index.ts#L1 (at 128:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Cocoon/tree/Current/src/Index.ts#L1 (at 130:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Cocoon/tree/Current/src/Index.ts#L1 (at 133:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Cocoon/tree/Current/src/Index.ts#L1 (at 135:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Cocoon/tree/Current/src/Index.ts#L1 (at 138:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Cocoon/tree/Current/src/Index.ts#L1 (at 141:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Grove/tree/Current/vs/workbench/browser/workbench.ts#L1 (at 170:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Grove/tree/Current/vs/workbench/browser/workbench.ts#L1 (at 174:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Mountain/Source/handlers/config.rs#L1 (at 77:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Mountain/Source/handlers/extension_management.rs#L1 (at 80:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Mountain/Source/handlers/process_management.rs#L1 (at 86:9) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Mountain/Source/handlers/process_management/CocoonManagement.rs#L1 (at 118:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Mountain/Source/handlers/process_management/CocoonManagement.rs#L1 (at 121:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Mountain/Source/handlers/process_management/CocoonManagement.rs#L1 (at 89:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Mountain/Source/handlers/process_management/CocoonManagement.rs#L1 (at 91:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Mountain/Source/vine/server.rs#L1 (at 83:9) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/scripts/cocoon/bootstrap-fork.js#L1 (at 96:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Mountain/tree/Current/src/main.rs#L1 (at 61:6) | Error (cached)
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/index.html#L1 (at 149:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/DesktopMain.ts#L1 (at 159:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/DesktopMain.ts#L1 (at 163:9) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/DesktopMain.ts#L1 (at 165:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/DesktopMain.ts#L1 (at 166:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/DesktopMain.ts#L1 (at 167:7) | Rejected status code: 404 Not Found
+
+[Documentation/GitHub/Workflow/ExecutingACommandFromTheCommandPalette.md]:
+[404] https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Track/TrackLogic.rs (at 88:6) | Rejected status code: 404 Not Found
+
+[Documentation/GitHub/Workflow/InvokingALanguageFeatureHoverProvider.md]:
+[404] https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Track/TrackLogic.rs (at 87:6) | Rejected status code: 404 Not Found
+
+[Documentation/GitHub/Workflow/OpeningAFileFromTheUI.md]:
+[404] https://github.com/CodeEditorLand/Mountain/tree/Current/src/main.rs#L1 (at 153:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Integration/Tauri/Wrap/ReadFile.ts#L1 (at 145:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Integration/Tauri/Wrap/ReadFile.ts#L1 (at 148:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Integration/Tauri/Wrap/ReadFile.ts#L1 (at 156:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1 (at 115:5) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1 (at 119:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1 (at 87:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1 (at 89:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1 (at 91:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1 (at 94:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1 (at 96:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1 (at 98:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/EditorGroups/Definition.ts#L1 (at 106:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/EditorGroups/Definition.ts#L1 (at 179:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/File/Live.ts#L1 (at 121:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/File/Live.ts#L1 (at 124:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/FileSystem/Definition.ts#L1 (at 129:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/FileSystem/Definition.ts#L1 (at 131:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/FileSystem/Definition.ts#L1 (at 134:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/FileSystem/Definition.ts#L1 (at 136:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/FileSystem/Definition.ts#L1 (at 139:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/FileSystem/Definition.ts#L1 (at 141:7) | Rejected status code: 404 Not Found
+
+[Documentation/GitHub/Workflow/RunningExtensionTests.md]:
+[404] https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Testing/ (at 5:3) | Rejected status code: 404 Not Found
+
+[Documentation/GitHub/Workflow/TierGatedImplementationSelection.md]:
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts (at 143:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts (at 245:15) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Cocoon/Source/Configuration/ESBuild/Config/TargetConfig.ts (at 244:15) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Cocoon/Source/Configuration/ESBuild/Config/TargetConfig.ts (at 95:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Cocoon/Source/Utility/Tier.ts (at 153:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Cocoon/Source/Utility/Tier.ts (at 243:15) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Mountain/build.rs (at 111:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Mountain/build.rs (at 241:15) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Mountain/Cargo.toml (at 124:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Mountain/Source/Binary/Main/Entry.rs (at 133:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Mountain/Source/LandFixTier.rs (at 131:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Mountain/Source/LandFixTier.rs (at 242:15) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Sky/astro.config.ts (at 101:7) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Sky/astro.config.ts (at 247:15) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Wind/Source/Utility/Tier.ts (at 176:6) | Rejected status code: 404 Not Found
+[404] https://github.com/CodeEditorLand/Land/tree/Current/Element/Wind/Source/Utility/Tier.ts (at 246:15) | Rejected status code: 404 Not Found
+
+[README.md]:
+[404] https://playform.cloud/Dark/Image/GitHub/Made/Tauri.svg (at 37:60) | Rejected status code: 404 Not Found
+
+🔍 457 Total (in 7s 92ms) 🔗 239 Unique ✅ 381 OK 🚫 69 Errors 👻 7 Excluded 🔀 38 Redirects
