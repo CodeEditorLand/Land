@@ -67,11 +67,10 @@ MatchChainContinue = re.compile(r"^\s*\.")
 MatchCommentLine = re.compile(r"^\s*(//|/\*|\*)")
 
 
-def _scan_line(line: str, mid_block_comment: bool = False):
+def _scan_line(line: str, mid_block_comment: bool = False) -> dict:
     """
-    Scan a single Rust source line, skipping string/char/raw-string
-    content and block comments. Return a dict with depth deltas and
-    metadata.
+    Scan a single Rust source line, skipping string/char/raw-string/content
+    and block comments. Return a dict with depth deltas and metadata.
 
     Parameters
     ----------
@@ -91,7 +90,7 @@ def _scan_line(line: str, mid_block_comment: bool = False):
     pos = 0
     length = len(line)
 
-    # ── state ──
+    # State
     in_block = mid_block_comment
     in_double = False
     in_char = False
@@ -101,19 +100,19 @@ def _scan_line(line: str, mid_block_comment: bool = False):
     while pos < length:
         ch = line[pos]
 
-        # ── inside a double-quoted string ──
+        # Inside a double-quoted string
         if in_double:
-            if ch == '\\' and pos + 1 < length:
-                pos += 2  # skip escaped character
+            if ch == "\\":
+                pos += 2
                 continue
             if ch == '"':
                 in_double = False
             pos += 1
             continue
 
-        # ── inside a char literal ──
+        # Inside a char literal
         if in_char:
-            if ch == '\\' and pos + 1 < length:
+            if ch == "\\":
                 pos += 2
                 continue
             if ch == "'":
@@ -121,38 +120,47 @@ def _scan_line(line: str, mid_block_comment: bool = False):
             pos += 1
             continue
 
-        # ── inside a raw string r#"…"# / r##"…"## ──
+        # Inside a raw string r#"..."# / r##"..."##
         if in_raw:
             if ch == '"':
                 hashes = 0
-                while pos + 1 + hashes < length and line[pos + 1 + hashes] == '#':
+                while True:
+                    nh = pos + 1 + hashes
+                    if nh >= length or line[nh] != "#":
+                        break
                     hashes += 1
                     if hashes == raw_hash_count:
                         in_raw = False
-                        pos += 1 + hashes
+                        pos = nh + 1
                         break
+                if in_raw and hashes < raw_hash_count:
+                    # Still inside the raw string (no matching close found)
+                    pos += 1
+                    continue
+                else:
+                    continue
             pos += 1
             continue
 
-        # ── inside a block comment /* … */ ──
+        # Inside a block comment
         if in_block:
-            if ch == '*' and pos + 1 < length and line[pos + 1] == '/':
+            if ch == "*" and pos + 1 < length and line[pos + 1] == "/":
                 in_block = False
                 pos += 2
                 continue
             pos += 1
             continue
 
-        # ── raw string open: r" / r#" / r##" / br" / br#" ──
-        if ch in ('r', 'b') and not in_double and not in_char:
+        # Raw string open: r" / r#" / r##" / br" / br#" / b" / br"
+        if ch in ("r", "b") and not in_double and not in_char:
             start = pos
-            if ch == 'b' and pos + 1 < length and line[pos + 1] == 'r':
-                start = pos + 1  # skip 'b', treat as 'r'
+            if ch == "b" and pos + 1 < length and line[pos + 1] == "r":
+                start += 1
             nxt = start + 1
-            if nxt < length and line[nxt] == 'r':
-                nxt += 1  # 'r'
+            if nxt < length and line[nxt] == "r":
+                nxt += 1
             count = 0
-            while nxt < length and line[nxt] == '#':
+            while nxt < length and line[nxt] == "#":
                 count += 1
                 nxt += 1
             if nxt < length and line[nxt] == '"':
@@ -161,68 +169,80 @@ def _scan_line(line: str, mid_block_comment: bool = False):
                 pos = nxt + 1
                 continue
 
-        # ── double-quote string open ──
+        # Double-quote string open
         if ch == '"':
             in_double = True
             pos += 1
             continue
 
-        # ── char literal open ──
+        # Char literal open — in Rust, ' followed by a single char (or escape)
+        # and then ' is a char literal. If the next ' is far away it's likely
+        # a lifetime annotation (e.g. &'static), which is code, not a string.
         if ch == "'":
-            in_char = True
+            # Peek ahead: is this a valid char literal?
+            peek_pos = pos + 1
+            if peek_pos < length:
+                if line[peek_pos] == '\\':
+                    # Escaped char: look for closing ' after the escape
+                    peek_pos += 2
+                    if peek_pos < length and line[peek_pos] == "'":
+                        in_char = True
+                        pos += 1
+                        continue
+                elif line[peek_pos] != "'":
+                    # Non-empty, non-quote char
+                    next_q = line.find("'", peek_pos + 1)
+                    if next_q > 0 and next_q - peek_pos <= 2:
+                        # Likely a char literal (1 or 2 chars between quotes)
+                        in_char = True
+                        pos += 1
+                        continue
+                # else: single quote followed by quote => byte string or empty
+            # Not a char literal — treat ' as a code char
+            if ch not in (" ", "\t", "\r", "\n"):
+                last_char = ch
             pos += 1
             continue
 
-        # ── line comment ──
-        if ch == '/' and pos + 1 < length and line[pos + 1] == '/':
-            break  # rest of line is comment, stop scanning
+        # Line comment
+        if ch == "/" and pos + 1 < length and line[pos + 1] == "/":
+            break
 
-        # ── block comment open ──
-        if ch == '/' and pos + 1 < length and line[pos + 1] == '*':
+        # Block comment open
+        if ch == "/" and pos + 1 < length and line[pos + 1] == "*":
             in_block = True
             pos += 2
             continue
 
-        # ── depth characters (outside all strings and comments) ──
-        if ch == '(':
+        # Depth characters
+        if ch == "(":
             paren_delta += 1
-        elif ch == ')':
+        elif ch == ")":
             paren_delta -= 1
-        elif ch == '{':
+        elif ch == "{":
             brace_delta += 1
-        elif ch == '}':
+        elif ch == "}":
             brace_delta -= 1
 
-        if ch not in (' ', '\t', '\r', '\n'):
+        if ch not in (" ", "\t", "\r", "\n"):
             last_char = ch
 
         pos += 1
-
-    ends_in_block = in_block
-    ends_in_str = in_double or in_char or in_raw
 
     return {
         "paren_delta": paren_delta,
         "brace_delta": brace_delta,
         "last_char": last_char,
-        "ends_in_block": ends_in_block,
-        "ends_in_str": ends_in_str,
+        "ends_in_block": in_block,
+        "ends_in_str": in_double or in_char or in_raw,
     }
 
 
 def Transform(source: str, open_brace_max_depth: int = 1) -> str:
-    """
-    Return source with blank lines inserted per the Mountain convention.
-
-    open_brace_max_depth:
-        Insert a blank line after { only when the brace depth after the
-        line is <= this value.  Default 1 = impl/enum/struct/mod only.
-        Set to 2 to also cover fn/method bodies.
-    """
     line_list = source.split("\n")
     output: list[str] = []
 
-    block_comment_open = False  # carried across lines for /* … */
+    block_comment_open = False
     paren_depth = 0
     brace_depth = 0
     brace_depth_import = 0
@@ -232,13 +252,10 @@ def Transform(source: str, open_brace_max_depth: int = 1) -> str:
     paren_open_brace_stack: list[int] = []
 
     for index, line in enumerate(line_list):
-        # ── scan the line ──
         scan = _scan_line(line, mid_block_comment=block_comment_open)
-
-        # ── update block comment state ──
         block_comment_open = scan["ends_in_block"]
 
-        # ── use { … } import block tracking ──
+        # use { ... } import block tracking
         if not block_comment_open and not scan["ends_in_str"]:
             if re.match(r"\s*use\s+", line):
                 in_use_block = True
@@ -248,7 +265,7 @@ def Transform(source: str, open_brace_max_depth: int = 1) -> str:
                     in_use_block = False
                     brace_depth_import = 0
 
-            # ── update depth (clamp to 0 for safety) ──
+            # Update paren stack
             close_count = max(0, -scan["paren_delta"])
             for _ in range(close_count):
                 if paren_open_brace_stack:
@@ -259,10 +276,10 @@ def Transform(source: str, open_brace_max_depth: int = 1) -> str:
             paren_depth = max(0, paren_depth + scan["paren_delta"])
             brace_depth = max(0, brace_depth + scan["brace_delta"])
 
-        # ── emit current line ──
+        # Emit current line
         output.append(line)
 
-        # ── decide whether to insert a blank line after ──
+        # Decide whether to insert a blank line after
         in_comment = block_comment_open or bool(MatchCommentLine.match(line))
 
         if in_comment or in_use_block or scan["ends_in_str"]:
@@ -309,7 +326,6 @@ def Transform(source: str, open_brace_max_depth: int = 1) -> str:
 
 
 def process_file(filepath: Path, dry_run: bool, open_brace_max_depth: int) -> bool:
-    """Return True if file was (or would be) changed."""
     try:
         text = filepath.read_text(encoding="utf-8")
     except Exception as error:
@@ -399,7 +415,7 @@ def main() -> None:
     )
     total = len(target)
     verb = "would change" if args.DryRun else "changed"
-    print(f"\nDone — {verb} {changed}/{total} file(s).")
+    print(f"\nDone - {verb} {changed}/{total} file(s).")
 
 
 if __name__ == "__main__":

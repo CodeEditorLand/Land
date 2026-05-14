@@ -36,8 +36,9 @@ Rules (state-machine, line-by-line):
 
   General
   ───────
-  • Strings (single-quote, double-quote, backtick) are scanned so delimiters
-    inside string content never trigger insertion.
+  • Strings (single-quote, double-quote, backtick), JSX fragments, block
+    comments, and template-literal interpolations are scanned so delimiters
+    inside content never corrupt depth tracking or trigger insertion.
   • Never insert a second consecutive blank line (next line already blank → skip).
 
 Usage:
@@ -71,343 +72,402 @@ MatchCommentLine = re.compile(r"^\s*(//|\*)")
 MatchImportExportOpen = re.compile(r"^\s*(import|export)\s*(type\s*)?\{")
 
 
-def ScanLine(Line: str) -> dict:
+def _scan_line(
+    line: str,
+    mid_block_comment: bool = False,
+    mid_single: bool = False,
+    mid_double: bool = False,
+    mid_template: bool = False,
+) -> dict:
     """
-    Walk Line char-by-char and return a dict with the net depth changes and
-    whether the line ends inside a string or template literal.
+    Scan a single TypeScript/JavaScript source line, skipping string,
+    template literal, and block-comment content.
 
-    Handles:
-      • Single-quoted strings  '...'
-      • Double-quoted strings  "..."
-      • Template literals      `...${...}...`  (nested ${ } tracked separately)
-      • Escaped characters     \\ \'  \"  `
-      • Block-comment open/close /* and */  (counted by caller via .count())
+    Parameters
+    ----------
+    mid_block_comment : True if the line starts inside an open /*.
+    mid_single        : True if the line starts mid-single-quoted string.
+    mid_double        : True if the line starts mid-double-quoted string.
+    mid_template      : True if the line starts mid-template literal.
 
-    Returns:
-      ParenDelta         — net change in paren depth
-      BraceDelta         — net change in brace depth (excluding template ${})
-      ParenOpenBraces    — list of BraceDepth snapshots at each ( opened
-      TemplateDelta      — net change in template-interpolation depth
-      EndsInString       — True if line ends mid-string (incomplete literal)
+    Returns
+    -------
+    paren_delta            : int  — net parenthesis depth change
+    brace_delta            : int  — net brace depth change
+    last_char              : str|None — last non-whitespace code char
+    ends_in_block          : bool — line ends with unclosed /*
+    ends_in_string_single   : bool — line ends mid-single-quoted string
+    ends_in_string_double   : bool — line ends mid-double-quoted string
+    ends_in_string_template : bool — line ends mid-template literal
+    ends_in_string          : bool — any of the above three
     """
-    ParenDelta = 0
-    BraceDelta = 0
-    TemplateDelta = 0
-    ParenOpenBraces: list[int] = []
-    RunningBrace = 0
+    paren_delta = 0
+    brace_delta = 0
+    last_char = None
+    pos = 0
+    length = len(line)
 
-    InSingle = False
-    InDouble = False
-    InTemplate = False
-    TemplateDepth = 0
-    InTemplateExpr = 0
+    # State (from caller carry-over)
+    in_block = mid_block_comment
+    in_single = mid_single
+    in_double = mid_double
+    in_template_text = mid_template
+    in_template_expr = 0  # reset each line; multi-line ${} is tracked
 
-    Pos = 0
-    Length = len(Line)
+    while pos < length:
+        ch = line[pos]
 
-    while Pos < Length:
-        Ch = Line[Pos]
-
-        # Escape sequences — skip next char inside any string
-        if Ch == "\\" and (InSingle or InDouble or InTemplate):
-            Pos += 2
+        # Inside a double-quoted string
+        if in_double:
+            if ch == "\\":
+                pos += 2
+                continue
+            if ch == '"':
+                in_double = False
+            pos += 1
             continue
 
-        # Single-quote string
-        if Ch == "'" and not InDouble and not InTemplate and InTemplateExpr == 0:
-            InSingle = not InSingle
-            Pos += 1
+        # Inside a single-quoted string
+        if in_single:
+            if ch == "\\":
+                pos += 2
+                continue
+            if ch == "'":
+                in_single = False
+            pos += 1
             continue
 
-        # Double-quote string
-        if Ch == '"' and not InSingle and not InTemplate and InTemplateExpr == 0:
-            InDouble = not InDouble
-            Pos += 1
+        # Inside a template literal -- text mode (outside ${})
+        if in_template_text and in_template_expr == 0:
+            if ch == "`":
+                # Closing backtick -- end the template literal
+                in_template_text = False
+                pos += 1
+                continue
+            if ch == "$" and pos + 1 < length and line[pos + 1] == "{":
+                in_template_expr = 1
+                pos += 2
+                continue
+            pos += 1
             continue
 
-        # Template literal backtick
-        if Ch == "`" and not InSingle and not InDouble:
-            InTemplate = not InTemplate
-            Pos += 1
-            continue
-
-        # Skip content inside plain strings
-        if InSingle or InDouble:
-            Pos += 1
-            continue
-
-        # Template interpolation ${ — opens expression context
-        if InTemplate and Ch == "$" and Pos + 1 < Length and Line[Pos + 1] == "{":
-            InTemplateExpr += 1
-            TemplateDelta += 1
-            Pos += 2
-            continue
-
-        # Inside template but outside ${ } — skip (it's string content)
-        if InTemplate and InTemplateExpr == 0:
-            Pos += 1
-            continue
-
-        # From here: real code characters (outside all strings)
-
-        if Ch == "(":
-            ParenDelta += 1
-            ParenOpenBraces.append(RunningBrace)
-            Pos += 1
-            continue
-
-        if Ch == ")":
-            ParenDelta -= 1
-            if ParenOpenBraces:
-                ParenOpenBraces.pop()
-            Pos += 1
-            continue
-
-        if Ch == "{":
-            BraceDelta += 1
-            RunningBrace += 1
-            if InTemplateExpr > 0:
-                InTemplateExpr += 1
-                TemplateDelta += 1
-            Pos += 1
-            continue
-
-        if Ch == "}":
-            if InTemplateExpr > 0:
-                InTemplateExpr -= 1
-                TemplateDelta -= 1
-                if InTemplateExpr == 0:
-                    Pos += 1
+        # Inside a template expression ${ ... }
+        if in_template_expr > 0:
+            if ch == "\\":
+                pos += 2
+                continue
+            if ch == '"':
+                in_double = not in_double
+                pos += 1
+                continue
+            if ch == "'":
+                in_single = not in_single
+                pos += 1
+                continue
+            if ch == "`":
+                in_template_text = True
+                pos += 1
+                continue
+            if ch == "{":
+                in_template_expr += 1
+                brace_delta += 1
+                if ch not in (" ", "\t", "\r", "\n"):
+                    last_char = ch
+                pos += 1
+                continue
+            if ch == "}":
+                in_template_expr -= 1
+                if in_template_expr == 0:
+                    in_template_text = True
+                    pos += 1
                     continue
-            BraceDelta -= 1
-            RunningBrace = max(0, RunningBrace - 1)
-            Pos += 1
+                brace_delta -= 1
+                if ch not in (" ", "\t", "\r", "\n"):
+                    last_char = ch
+                pos += 1
+                continue
+            # Regular char inside expr
+            if ch == "(":
+                paren_delta += 1
+            elif ch == ")":
+                paren_delta -= 1
+            elif ch == "{":
+                brace_delta += 1
+                in_template_expr += 1
+            elif ch == "}":
+                brace_delta -= 1
+                in_template_expr -= 1
+                if in_template_expr == 0:
+                    in_template_text = True
+
+            if ch not in (" ", "\t", "\r", "\n"):
+                last_char = ch
+            pos += 1
             continue
 
-        Pos += 1
+        # Inside a block comment
+        if in_block:
+            if ch == "*" and pos + 1 < length and line[pos + 1] == "/":
+                in_block = False
+                pos += 2
+                continue
+            pos += 1
+            continue
+
+        # Backtick: template literal open or close
+        if ch == "`":
+            in_template_text = not in_template_text
+            pos += 1
+            continue
+
+        # Double-quote string open
+        if ch == '"':
+            in_double = True
+            pos += 1
+            continue
+
+        # Single-quote string open
+        if ch == "'":
+            in_single = True
+            pos += 1
+            continue
+
+        # Line comment
+        if ch == "/" and pos + 1 < length and line[pos + 1] == "/":
+            break
+
+        # Block comment open
+        if ch == "/" and pos + 1 < length and line[pos + 1] == "*":
+            in_block = True
+            pos += 2
+            continue
+
+        # Depth characters (outside all strings and comments)
+        if ch == "(":
+            paren_delta += 1
+        elif ch == ")":
+            paren_delta -= 1
+        elif ch == "{":
+            brace_delta += 1
+        elif ch == "}":
+            brace_delta -= 1
+
+        if ch not in (" ", "\t", "\r", "\n"):
+            last_char = ch
+
+        pos += 1
 
     return {
-        "ParenDelta": ParenDelta,
-        "BraceDelta": BraceDelta,
-        "ParenOpenBraces": ParenOpenBraces,
-        "TemplateDelta": TemplateDelta,
-        "EndsInString": InSingle or InDouble or InTemplate,
+        "paren_delta": paren_delta,
+        "brace_delta": brace_delta,
+        "last_char": last_char,
+        "ends_in_block": in_block,
+        "ends_in_string_single": in_single,
+        "ends_in_string_double": in_double,
+        "ends_in_string_template": in_template_text,
+        "ends_in_string": in_double or in_single or in_template_text,
     }
 
 
-def Transform(Source: str, OpenBraceMaxDepth: int = 1) -> str:
-    """
-    Return Source with blank lines inserted per the Mountain convention.
+def Transform(source: str, open_brace_max_depth: int = 1) -> str:
+    line_list = source.split("\n")
+    output: list[str] = []
 
-    OpenBraceMaxDepth:
-        Insert a blank line after { only when the resulting brace depth
-        is <= this value.  Default 1 = class/function/interface/enum only.
-        Set to 2 to also cover method bodies.
-        Pass 2**31 (via --OpenBraceDepth All) to apply at every depth.
-    """
-    LineList = Source.split("\n")
-    Output: list[str] = []
+    block_comment_open = False
+    paren_depth = 0
+    brace_depth = 0
+    brace_depth_import = 0
+    in_import_block = False
+    in_single_quote = False   # carried multi-line single-quoted string
+    in_double_quote = False  # carried multi-line double-quoted string
+    in_template_text = False # carried multi-line template literal
 
-    BlockCommentDepth = 0
-    ParenDepth = 0
-    BraceDepth = 0
-    InImportBlock = False
-    BraceDepthImport = 0
-    InString = False
+    # Stack: brace depth snapshot at each '(' open, for RelativeBraceDepth.
+    paren_open_brace_stack: list[int] = []
 
-    # Stack: BraceDepth snapshots at each ( opened, for RelativeBraceDepth logic
-    ParenOpenBraceStack: list[int] = []
+    for index, line in enumerate(line_list):
+        scan = _scan_line(
+            line,
+            mid_block_comment=block_comment_open,
+            mid_single=in_single_quote,
+            mid_double=in_double_quote,
+            mid_template=in_template_text,
+        )
+        block_comment_open = scan["ends_in_block"]
+        in_single_quote = scan["ends_in_string_single"]
+        in_double_quote = scan["ends_in_string_double"]
+        in_template_text = scan["ends_in_string_template"]
 
-    for Index, Line in enumerate(LineList):
-        # ── block comment tracking ──────────────────────────────────────────
-        OpenCount = Line.count("/*")
-        CloseCount = Line.count("*/")
-        WasInBlock = BlockCommentDepth > 0
-        BlockCommentDepth = max(0, BlockCommentDepth + OpenCount - CloseCount)
-        InBlockNow = BlockCommentDepth > 0 or WasInBlock
+        # import/export { ... } block tracking
+        if not block_comment_open and not scan["ends_in_string"]:
+            if MatchImportExportOpen.match(line):
+                in_import_block = True
+            if in_import_block:
+                brace_depth_import += line.count("{") - line.count("}")
+                if brace_depth_import <= 0:
+                    in_import_block = False
+                    brace_depth_import = 0
 
-        # ── import/export { ... } block tracking ────────────────────────────
-        if MatchImportExportOpen.match(Line):
-            InImportBlock = True
-        if InImportBlock:
-            BraceDepthImport += Line.count("{") - Line.count("}")
-            if BraceDepthImport <= 0:
-                InImportBlock = False
-                BraceDepthImport = 0
+            # Update paren stack
+            close_count = max(0, -scan["paren_delta"])
+            for _ in range(close_count):
+                if paren_open_brace_stack:
+                    paren_open_brace_stack.pop()
+            for _ in range(max(0, scan["paren_delta"])):
+                paren_open_brace_stack.append(brace_depth)
 
-        # ── scan line for depth changes ──────────────────────────────────────
-        if not InBlockNow and not InString:
-            Scan = ScanLine(Line)
-            InString = Scan["EndsInString"]
+            paren_depth = max(0, paren_depth + scan["paren_delta"])
+            brace_depth = max(0, brace_depth + scan["brace_delta"])
 
-            # Update paren stack: pop existing entries for closed parens,
-            # push new entries for opened parens — use per-line deltas
-            ClosedCount = max(0, -Scan["ParenDelta"]) if Scan["ParenDelta"] < 0 else 0
-            for _ in range(ClosedCount):
-                if ParenOpenBraceStack:
-                    ParenOpenBraceStack.pop()
-            for Snapshot in Scan["ParenOpenBraces"]:
-                ParenOpenBraceStack.append(BraceDepth + Snapshot)
+        # Emit current line
+        output.append(line)
 
-            ParenDepth = max(0, ParenDepth + Scan["ParenDelta"])
-            BraceDepth = max(0, BraceDepth + Scan["BraceDelta"])
-        else:
-            if InString:
-                # Re-scan to detect end of multi-line string (rare in TS/JS
-                # outside template literals, but handle gracefully)
-                Scan = ScanLine(Line)
-                InString = Scan["EndsInString"]
+        # Decide whether to insert a blank line after
+        in_comment = block_comment_open or bool(MatchCommentLine.match(line))
 
-        # ── emit current line ────────────────────────────────────────────────
-        Output.append(Line)
-
-        # ── decide whether to insert blank line ─────────────────────────────
-        InComment = InBlockNow or bool(MatchCommentLine.match(Line))
-
-        if InComment or InImportBlock or InString:
+        if in_comment or in_import_block or scan["ends_in_string"]:
             continue
 
-        Stripped = Line.rstrip()
-        if not Stripped:
+        stripped = line.rstrip()
+        if not stripped:
             continue
 
-        Last = Stripped[-1]
-
-        if Index + 1 >= len(LineList):
+        last = scan["last_char"]
+        if last is None:
             continue
 
-        Next = LineList[Index + 1]
-        NextBlank = Next.strip() == ""
-        NextClosing = bool(MatchClosingToken.match(Next))
-        NextChain = bool(MatchChainContinue.match(Next))
-
-        if NextBlank or NextClosing or NextChain:
+        if index + 1 >= len(line_list):
             continue
 
-        if Last in (";", "}") and ParenDepth == 0:
-            Output.append("")
+        next_line = line_list[index + 1]
+        next_blank = next_line.strip() == ""
+        next_closing = bool(MatchClosingToken.match(next_line))
+        next_chain = bool(MatchChainContinue.match(next_line))
 
-        elif Last == ",":
-            if ParenDepth == 0:
-                Output.append("")
-            elif ParenOpenBraceStack:
-                RelativeBraceDepth = BraceDepth - ParenOpenBraceStack[-1]
-                if RelativeBraceDepth == 0:
-                    Output.append("")
+        if next_blank or next_closing or next_chain:
+            continue
 
-        elif Last == "{" and ParenDepth == 0:
-            if BraceDepth <= OpenBraceMaxDepth:
-                Output.append("")
+        if last in (";", "}") and paren_depth == 0:
+            output.append("")
 
-    return "\n".join(Output)
+        elif last == ",":
+            if paren_depth == 0:
+                output.append("")
+            elif paren_open_brace_stack:
+                relative_brace_depth = brace_depth - paren_open_brace_stack[-1]
+                if relative_brace_depth == 0:
+                    output.append("")
+
+        elif last == "{" and paren_depth == 0:
+            if brace_depth <= open_brace_max_depth:
+                output.append("")
+
+    return "\n".join(output)
 
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
 
-def ProcessFile(FilePath: Path, DryRun: bool, OpenBraceMaxDepth: int) -> bool:
-    """Return True if file was (or would be) changed."""
+def process_file(filepath: Path, dry_run: bool, open_brace_max_depth: int) -> bool:
     try:
-        Text = FilePath.read_text(encoding="utf-8")
-    except Exception as Error:
-        print(f"  ERROR reading {FilePath}: {Error}", file=sys.stderr)
+        text = filepath.read_text(encoding="utf-8")
+    except Exception as error:
+        print(f"  ERROR reading {filepath}: {error}", file=sys.stderr)
         return False
 
-    NewText = Transform(Text, OpenBraceMaxDepth=OpenBraceMaxDepth)
-    if NewText == Text:
+    new_text = Transform(text, open_brace_max_depth=open_brace_max_depth)
+    if new_text == text:
         return False
 
-    if DryRun:
-        print(f"[DRY RUN] Would modify: {FilePath}")
+    if dry_run:
+        print(f"[DRY RUN] Would modify: {filepath}")
     else:
-        FilePath.write_text(NewText, encoding="utf-8")
-        print(f"Modified: {FilePath}")
+        filepath.write_text(new_text, encoding="utf-8")
+        print(f"Modified: {filepath}")
     return True
 
 
-def Main() -> None:
+def main() -> None:
     import argparse
 
-    Parser = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    Parser.add_argument(
+    parser.add_argument(
         "files",
         nargs="*",
         help=".ts / .js / .tsx / .jsx file paths (shell globs ok if quoted)",
     )
-    Parser.add_argument(
+    parser.add_argument(
         "--All",
         action="store_true",
         help="Recursively process every .ts / .js / .tsx / .jsx file under the current directory",
     )
-    Parser.add_argument(
+    parser.add_argument(
         "--DryRun",
         action="store_true",
         help="Show what would change without writing anything",
     )
 
-    def ParseDepth(Value: str) -> int:
-        if Value.lower() in ("all", "inf", "infinite"):
+    def parse_depth(value: str) -> int:
+        if value.lower() in ("all", "inf", "infinite"):
             return 2**31
         try:
-            return int(Value)
+            return int(value)
         except ValueError:
             raise argparse.ArgumentTypeError(
-                f"Expected an integer or 'All', got: {Value!r}"
+                f"Expected an integer or 'All', got: {value!r}"
             )
 
-    Parser.add_argument(
+    parser.add_argument(
         "--OpenBraceDepth",
-        type=ParseDepth,
+        type=parse_depth,
         default=1,
         metavar="N|All",
         help=(
             "Insert blank after { only when brace depth after the line is <= N. "
-            "Default 1 (class/function/interface/enum). Use 2 to also cover method bodies. "
+            "Default 1 (class/function/interface/enum). Use 2 to also cover fn bodies. "
             "Pass All (or Inf) to apply at every nesting depth."
         ),
     )
-    Args = Parser.parse_args()
+    args = parser.parse_args()
 
-    Extensions = {".ts", ".js", ".tsx", ".jsx"}
-    Target: list[Path] = []
+    extensions = {".ts", ".js", ".tsx", ".jsx"}
+    target: list[Path] = []
 
-    if Args.All:
-        Target = sorted(
-            FilePath
-            for FilePath in Path(".").rglob("*")
-            if FilePath.suffix in Extensions
+    if args.All:
+        target = sorted(
+            fp for fp in Path(".").rglob("*") if fp.suffix in extensions
         )
     else:
-        for Pattern in Args.files:
-            Candidate = Path(Pattern)
-            if Candidate.is_absolute():
-                if Candidate.exists():
-                    Target.append(Candidate)
+        for pattern in args.files:
+            candidate = Path(pattern)
+            if candidate.is_absolute():
+                if candidate.exists():
+                    target.append(candidate)
                 else:
-                    print(f"Warning: no match for '{Pattern}'", file=sys.stderr)
+                    print(f"Warning: no match for '{pattern}'", file=sys.stderr)
             else:
-                Expanded = sorted(Path(".").glob(Pattern))
-                if Expanded:
-                    Target.extend(Expanded)
-                elif Candidate.exists():
-                    Target.append(Candidate)
+                expanded = sorted(Path(".").glob(pattern))
+                if expanded:
+                    target.extend(expanded)
+                elif candidate.exists():
+                    target.append(candidate)
                 else:
-                    print(f"Warning: no match for '{Pattern}'", file=sys.stderr)
+                    print(f"Warning: no match for '{pattern}'", file=sys.stderr)
 
-    if not Target:
-        Parser.print_help()
+    if not target:
+        parser.print_help()
         sys.exit(1)
 
-    Changed = sum(
-        ProcessFile(FilePath, Args.DryRun, Args.OpenBraceDepth) for FilePath in Target
+    changed = sum(
+        process_file(fp, args.DryRun, args.OpenBraceDepth) for fp in target
     )
-    Total = len(Target)
-    Verb = "would change" if Args.DryRun else "changed"
-    print(f"\nDone — {Verb} {Changed}/{Total} file(s).")
+    total = len(target)
+    verb = "would change" if args.DryRun else "changed"
+    print(f"\nDone - {verb} {changed}/{total} file(s).")
 
 
 if __name__ == "__main__":
-    Main()
+    main()
