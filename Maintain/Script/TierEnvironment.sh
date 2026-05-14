@@ -189,7 +189,7 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	# test outcome - which dash interprets as a failure under -e and
 	# silently aborts the sourced script. The if-form avoids the
 	# &&-chain entirely.
-	LandRuntimeKeys="Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand OTLPEndpoint OTLPEnabled Capture Inspect Smoke Trace Record Disable Pack Boot LandIsProduction"
+	LandRuntimeKeys="Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand OTLPEndpoint OTLPEnabled Capture Inspect Smoke Trace Record Disable DisableUIFixes Pack Boot LandIsProduction"
 	LandRuntimeVars=""
 	for Key in $LandRuntimeKeys; do
 		Value=$(printenv "$Key" 2> /dev/null || true)
