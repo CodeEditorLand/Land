@@ -313,9 +313,9 @@ graph LR
 > git fetch --all
 > git reset --hard Parent/main
 > git clean -dfx
-> dum install
-> dum compile
-> dum compile-extensions-build
+> npm install
+> npm run compile
+> npm run compile-extensions-build
 > ```
 >
 > **Step 2: Build Land Application**

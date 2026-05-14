@@ -31,13 +31,13 @@ sequenceDiagram
     ESBuild->>ESBuild: Inject __LandTier_<Name>__ defines
     Vite->>Vite: Substitute import.meta.env.Tier*
 
-    Note over Mountain,Wind: Build complete — every Element<br/>has the resolved tier burned in.
+    Note over Mountain,Wind: Build complete - every Element<br/>has the resolved tier burned in.
 
     Mountain->>Mountain: LandFixTier::LogResolvedTiers()<br/>prints runtime banner
     Cocoon->>Cocoon: Utility/Tier.ts default export<br/>prints runtime banner
     Wind->>Wind: Utility/Tier.ts default export<br/>prints runtime banner
 
-    Note over Mountain,Wind: All three banners must agree —<br/>mismatch indicates config drift.
+    Note over Mountain,Wind: All three banners must agree -<br/>mismatch indicates config drift.
 ```
 
 ---
@@ -60,7 +60,7 @@ sequenceDiagram
 
 2.  **Naming convention**
     - **Action:** Variables use `PascalCase` with the `Tier` prefix. The values
-      are free-form strings chosen per capability — typically `Layer2` /
+      are free-form strings chosen per capability - typically `Layer2` /
       `Layer3` / `Layer4` / `Layer5` where L2 is a round-trip RPC, L3 a native
       in-language fallback, L4 a pure-Rust implementation, and L5 an OS-level
       integration. For non-layered capabilities the values are descriptive
@@ -105,7 +105,7 @@ sequenceDiagram
 
 ---
 
-#### **Phase 3: `Mountain` — Rust Compile-Time Propagation**
+#### **Phase 3: `Mountain` - Rust Compile-Time Propagation**
 
 1.  **`build.rs` tier propagation
     ([`Land/Element/Mountain/build.rs`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Mountain/build.rs))**
@@ -132,12 +132,12 @@ sequenceDiagram
     - **Action:** `LogResolvedTiers()` is called from
       [`Binary::Main::Entry::Fn`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Mountain/Source/Binary/Main/Entry.rs)
       before the Tokio runtime spins up. It prints a single line naming every
-      capability's compiled value — zero runtime cost, since every value is a
+      capability's compiled value - zero runtime cost, since every value is a
       literal produced by `env!(...)`.
 
 ---
 
-#### **Phase 4: `Cocoon` — TypeScript Runtime Dispatch**
+#### **Phase 4: `Cocoon` - TypeScript Runtime Dispatch**
 
 1.  **`CocoonMain.ts` prelude
     ([`Land/Element/Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts))**
@@ -160,9 +160,9 @@ sequenceDiagram
 3.  **Dispatch patterns**
     - **Static dispatch (preferred):**
       `export default Tier.Glob === "Native" ? CompileNative : CompileJavaScript;`
-      — esbuild's `define` substitutions dead-code-eliminate the inactive arm in
+      - esbuild's `define` substitutions dead-code-eliminate the inactive arm in
       production bundles.
-    - **Runtime branch:** `if (Tier.FileSystem === "Layer3") { … } else { … }` —
+    - **Runtime branch:** `if (Tier.FileSystem === "Layer3") { … } else { … }` -
       used when two arms must coexist in the same bundle.
     - **Async memoisation:** when an upgraded tier needs one-time async setup
       (e.g. opening a shared-memory segment), wrap the setup in a memoised
@@ -170,7 +170,7 @@ sequenceDiagram
 
 ---
 
-#### **Phase 5: `Wind` / `Sky` — Webview Dispatch**
+#### **Phase 5: `Wind` / `Sky` - Webview Dispatch**
 
 1.  **`Wind/Source/Utility/Tier.ts`
     ([`Land/Element/Wind/Source/Utility/Tier.ts`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Wind/Source/Utility/Tier.ts))**
@@ -178,10 +178,10 @@ sequenceDiagram
       `import.meta.env.Tier<Capability>` (Vite-substituted at build time),
       falling through to `globalThis.__LandTiers` (populated by Sky's polyfill
       layer) and finally hard-coded defaults.
-    - Emits its own boot banner via `console.info` — visible in DevTools.
+    - Emits its own boot banner via `console.info` - visible in DevTools.
 
 2.  **Cross-Element agreement**
-    - **Action:** All three banners — Mountain, Cocoon, Wind — should report
+    - **Action:** All three banners - Mountain, Cocoon, Wind - should report
       identical values for each capability. A mismatch means one build tool read
       a different env file or a polyfill failed to populate
       `globalThis.__LandTiers`; both paths are grep-able from the boot log.
@@ -226,7 +226,7 @@ sequenceDiagram
   type level only); the banner shows the typo verbatim so it is visible at boot.
 - **Banner disagreement:** Compare the three `[LandFix:Tier] …` lines in the
   boot log. If they disagree on a capability, one build tool did not see the
-  override — usually because the shell that launched the build did not source
+  override - usually because the shell that launched the build did not source
   `.env.Land`. Re-run under `./Maintain/Debug/Build.sh`, which is the sole
   supported entry point.
 

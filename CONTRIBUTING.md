@@ -136,45 +136,11 @@ respectful environment for everyone!
 
 ## Building & Running
 
-> [!IMPORTANT]
->
-> The build is a two-step linear flow. Do NOT pull submodules recursively --
-> each submodule is managed independently on its own branch.
->
-> **Step 1: Compile VS Code Source**
->
-> ```sh
-> cd Dependency/Microsoft/Dependency/Editor
-> nvm use 22
-> git fetch --all
-> git reset --hard Parent/main
-> git clean -dfx
-> dum install
-> dum compile
-> dum compile-extensions-build
-> ```
->
-> **Step 2: Build Land Application**
->
-> ```sh
-> cd Land # back to repository root
-> export Trace=all Record=1 Disable=false
-> ./Maintain/Debug/Build.sh --profile debug-electron-bundled
-> ```
+To build Land from source, follow the comprehensive guide in
+[`Documentation/GitHub/Building.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Building.md).
+This document covers all prerequisites, the two-step build process, environment
+configuration, and troubleshooting.
 
-### Submodule Structure
-
-| Element      | Submodule Repository                                 |
-| :----------- | :--------------------------------------------------- |
-| `Common`     | github.com/CodeEditorLand/Common                     |
-| `Mountain`   | github.com/CodeEditorLand/Mountain                   |
-| `Sky`        | github.com/CodeEditorLand/Sky                        |
-| `Wind`       | github.com/CodeEditorLand/Wind                       |
-| `Cocoon`     | github.com/CodeEditorLand/Cocoon                     |
-| `Rest`       | github.com/CodeEditorLand/Rest                       |
-| `Output`     | github.com/CodeEditorLand/Output                     |
-| `Dependency` | github.com/CodeEditorLand/Dependency                 |
-| `Editor`     | github.com/CodeEditorLand/Editor (inside Dependency) |
-
-Clone each submodule individually on its target branch. Do NOT use
-`git clone --recurse-submodules`.
+For a quick summary, see the main
+[`README.md`](https://github.com/CodeEditorLand/Land/tree/Current/README.md) -
+Project overview and quick start
