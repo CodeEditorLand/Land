@@ -131,3 +131,43 @@ For answers to common questions about this code of conduct, see the FAQ at
 
 Thank you for being part of our community and helping us create a safe and
 respectful environment for everyone!
+
+---
+
+## Building & Running
+
+> [!IMPORTANT]
+>
+> The build is a two-step linear flow. Do NOT pull submodules recursively -- each
+> submodule is managed independently on its own branch.
+>
+> **Step 1: Compile VS Code Source**
+>
+> ```sh
+> cd Dependency/Microsoft/Dependency/Editor
+> nvm use 22 ; git fetch --all ; git reset --hard Parent/main ; git clean -dfx ; dum install ; dum compile ; dum compile-extensions-build
+> ```
+>
+> **Step 2: Build Land Application**
+>
+> ```sh
+> cd Land  # back to repository root
+> export Trace=all Record=1 Disable=false ; ./Maintain/Debug/Build.sh --profile debug-electron-bundled
+> ```
+
+### Submodule Structure
+
+| Element        | Submodule Repository                                  |
+| :------------- | :---------------------------------------------------- |
+| `Common`       | github.com/CodeEditorLand/Common                      |
+| `Mountain`     | github.com/CodeEditorLand/Mountain                    |
+| `Sky`          | github.com/CodeEditorLand/Sky                         |
+| `Wind`         | github.com/CodeEditorLand/Wind                        |
+| `Cocoon`       | github.com/CodeEditorLand/Cocoon                      |
+| `Rest`         | github.com/CodeEditorLand/Rest                        |
+| `Output`       | github.com/CodeEditorLand/Output                      |
+| `Dependency`   | github.com/CodeEditorLand/Dependency                  |
+| `Editor`       | github.com/CodeEditorLand/Editor (inside Dependency)  |
+
+Clone each submodule individually on its target branch. Do NOT use
+`git clone --recurse-submodules`.

@@ -298,108 +298,52 @@ graph LR
 
 ---
 
-## Getting Started 🚀
+## Getting Started 🚀
 
-Follow these steps to get **Land** up and running on your system.
+> [!IMPORTANT]
+>
+> The build is a two-step linear flow. Do NOT pull submodules recursively -- each
+> submodule is managed independently on its own branch.
+>
+> **Step 1: Compile VS Code Source**
+>
+> ```sh
+> cd Dependency/Microsoft/Dependency/Editor
+> nvm use 22 ; git fetch --all ; git reset --hard Parent/main ; git clean -dfx ; dum install ; dum compile ; dum compile-extensions-build
+> ```
+>
+> **Step 2: Build Land Application**
+>
+> ```sh
+> cd Land  # back to repository root
+> export Trace=all Record=1 Disable=false ; ./Maintain/Debug/Build.sh --profile debug-electron-bundled
+> ```
 
-### **1. Clone the Repository:**
+### Submodule Structure
 
-This command downloads the **Land** project files. The `--recurse-submodules`
-flag is crucial as it fetches all "Element" submodules and the VS Code source
-code dependency.
+| Element        | Submodule Repository                                  |
+| :------------- | :---------------------------------------------------- |
+| `Common`       | github.com/CodeEditorLand/Common                      |
+| `Mountain`     | github.com/CodeEditorLand/Mountain                    |
+| `Sky`          | github.com/CodeEditorLand/Sky                         |
+| `Wind`         | github.com/CodeEditorLand/Wind                        |
+| `Cocoon`       | github.com/CodeEditorLand/Cocoon                      |
+| `Rest`         | github.com/CodeEditorLand/Rest                        |
+| `Output`       | github.com/CodeEditorLand/Output                      |
+| `Dependency`   | github.com/CodeEditorLand/Dependency                  |
+| `Editor`       | github.com/CodeEditorLand/Editor (inside Dependency)  |
 
-```sh
-git clone ssh://git@github.com/CodeEditorLand/Land.git --recurse-submodules
-```
+Clone each submodule individually on its target branch. Do NOT use
+`git clone --recurse-submodules`.
 
-### **2. Install Dependencies:**
+### Build Profiles
 
-This command uses `pnpm` (a **Node.js** package manager) to install all
-**JavaScript** dependencies required for building the `Sky` frontend, the
-`Cocoon` sidecar, and various development tools.
+| Profile                       | Use Case                                    |
+| :---------------------------- | :------------------------------------------ |
+| `debug-electron-bundled`      | Full bundled Electron debug build           |
+| `debug-electron-unbundled`    | Electron debug without bundling             |
 
-```sh
-pnpm install
-```
-
-### **3. Build the Application**
-
-The build process is multi-stage. It uses a set of environment variables to
-control the output, allowing you to create either an optimized production build
-or a flexible development build.
-
-**Build Variables Explained:**
-
-These variables are passed to our build scripts to configure their behavior:
-
-| Variable       | Purpose                                                                                                                                                                                                                                                                        |
-| :------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NODE_VERSION` | Sets the `Node.js` version for the `SideCar` picked from - https://github.com/CodeEditorLand/SideCar to be included in the final build in `Mountain`.                                                                                                                          |
-| `NODE_ENV`     | Sets the build mode. `development` includes source maps and skips minification for easier debugging. `production` creates smaller, optimized files for release.                                                                                                                |
-| `Clean`        | If `true`, the build script will first delete the `Land/Element/Output` directory to ensure a completely fresh build without any old artifacts.                                                                                                                                |
-| `Browser`      | If `true`, configures the TypeScript and bundler settings to produce code compatible with a browser environment, which is necessary for `Wind`/`Sky` running in Tauri's webview.                                                                                               |
-| `Dependency`   | Specifies the source directory for the VS Code platform code. This should always be set to `Microsoft/VSCode` to point to the submodule at `Land/Dependency/Microsoft/Dependency/Editor`.                                                                                      |
-| `Bundle`       | **(Important)** If `true`, this triggers the `Sky` build element to bundle the required VS Code platform JavaScript into a format that the `Cocoon` (Node.js) sidecar can load and use. This is essential for Path A.                                                          |
-| `Compile`      | If `true`, this bundles the code into single, self-contained files. This is typically used for production builds to reduce the number of network requests and simplify deployment. When `false` (for `tauri dev`), it allows for faster, incremental builds and hot-reloading. |
-| `NODE_OPTIONS` | Used to increase the default memory limit for Node.js. The bundling process, especially for the entire VS Code platform, can be memory-intensive.                                                                                                                              |
-
-**Development Build:**
-
-This command creates a full development build of the application. The output is
-not as optimized as a release build but is ideal for debugging.
-
-```sh
-pnpm cross-env \
-	NODE_ENV=development \
-	NODE_VERSION=22 \
-	Clean=true \
-	Browser=true \
-	Dependency=Microsoft/VSCode \
-	Bundle=false \
-	Compile=false \
-	NODE_OPTIONS=--max-old-space-size=16384 \
-	pnpm tauri build
-```
-
-**Production Build (Release):**
-
-This command creates a fully optimized, minified, and production-ready version
-of **Land**, suitable for packaging and distribution.
-
-```sh
-pnpm cross-env \
-	NODE_ENV=production \
-	NODE_VERSION=22 \
-	Clean=true \
-	Browser=true \
-	Dependency=Microsoft/VSCode \
-	Bundle=true \
-	Compile=true \
-	NODE_OPTIONS=--max-old-space-size=16384 \
-	pnpm tauri build --release
-```
-
-### **4. Run Land for Development**
-
-This is the primary command you will use during active development. It starts
-**Land** with hot-reloading enabled for the frontend, allowing UI changes to be
-seen instantly without a full application rebuild.
-
-Notice that `Bundle` and `Compile` are set to `false`. This is because
-`tauri dev` uses Vite (or a similar dev server) which handles module bundling
-on-the-fly, providing a much faster development experience.
-
-```sh
-pnpm cross-env \
-	NODE_ENV=development \
-	Clean=true \
-	Browser=true \
-	Dependency=Microsoft/VSCode \
-	Bundle=false \
-	Compile=false \
-	NODE_OPTIONS=--max-old-space-size=16384 \
-	pnpm tauri dev
-```
+Run the build from the Land repository root after completing Step 1.
 
 ---
 
