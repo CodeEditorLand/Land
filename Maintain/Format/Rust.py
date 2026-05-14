@@ -35,9 +35,9 @@ Rules (state-machine, line-by-line):
 
   General
   ───────
-  • Strings ("..." and '...' and raw r#"..."#) and char literals ('.') are
-    scanned so delimiters inside string content never trigger insertion or
-    corrupt depth tracking.
+  • Strings ("..."), char literals ('.'), raw strings (r#"..."#), and
+    block comments (/* ... */) are scanned so delimiters inside them never
+    corrupt depth tracking or trigger insertion.
   • Never insert a second consecutive blank line (next line already blank -> skip).
 
 Usage:
@@ -67,346 +67,303 @@ MatchChainContinue = re.compile(r"^\s*\.")
 MatchCommentLine = re.compile(r"^\s*(//|/\*|\*)")
 
 
-def ScanLine(Line: str) -> dict:
+def _scan_line(line: str, mid_block_comment: bool = False):
     """
-    Walk Line char-by-char, skipping string/char/raw-string content,
-    and return net depth changes plus whether the line ends mid-string.
+    Scan a single Rust source line, skipping string/char/raw-string
+    content and block comments. Return a dict with depth deltas and
+    metadata.
 
-    Handles:
-      • Double-quoted strings      "..."
-      • Single-quoted char/byte    'x' | b'x'
-      • Escaped characters         \\ \\'  \\"
-      • Raw byte strings           br#"..."# / rb"..." / b"..."
-      • Template-literal-ish Rust  (none, just raw strings)
-      • Block-comment open/close   /* and */
+    Parameters
+    ----------
+    mid_block_comment : True if the line starts inside an open /* */ comment.
 
-    Returns:
-      ParenDelta   — net change in paren depth (outside all strings)
-      BraceDelta   — net change in brace depth (outside all strings)
-      LastNonWhitespace — last non-whitespace char outside strings
-      EndsInString — True if line ends mid-string or mid-comment
+    Returns
+    -------
+    paren_delta   : int  — net parenthesis depth change
+    brace_delta   : int  — net brace depth change
+    last_char     : str|None — last non-whitespace code character on the line
+    ends_in_block : bool — the line ends with an unclosed /*
+    ends_in_str   : bool — the line ends mid-string / mid-char / mid-raw-str
     """
-    ParenDelta = 0
-    BraceDelta = 0
-    EndsInString = False
-    LastNonWhitespace = None
+    paren_delta = 0
+    brace_delta = 0
+    last_char = None
+    pos = 0
+    length = len(line)
 
-    InDouble = False
-    InChar = False
-    InRawString = False
-    RawHashCount = 0
-    InBlockComment = False
-    Pos = 0
-    Length = len(Line)
+    # ── state ──
+    in_block = mid_block_comment
+    in_double = False
+    in_char = False
+    in_raw = False
+    raw_hash_count = 0
 
-    while Pos < Length:
-        Ch = Line[Pos]
+    while pos < length:
+        ch = line[pos]
 
         # ── inside a double-quoted string ──
-        if InDouble:
-            if Ch == "\\":
-                Pos += 2  # skip escaped char
+        if in_double:
+            if ch == '\\' and pos + 1 < length:
+                pos += 2  # skip escaped character
                 continue
-            if Ch == '"':
-                InDouble = False
-                Pos += 1
-                continue
-            Pos += 1
+            if ch == '"':
+                in_double = False
+            pos += 1
             continue
 
         # ── inside a char literal ──
-        if InChar:
-            if Ch == "\\":
-                Pos += 2
+        if in_char:
+            if ch == '\\' and pos + 1 < length:
+                pos += 2
                 continue
-            if Ch == "'":
-                InChar = False
-                Pos += 1
-                continue
-            Pos += 1
+            if ch == "'":
+                in_char = False
+            pos += 1
             continue
 
-        # ── inside a raw string r#"..."# ──
-        if InRawString:
-            if Ch == '"':
-                # count trailing #'s to see if the raw string closes
-                EndPos = Pos
-                Hashes = 0
-                while EndPos + 1 + Hashes < Length and Line[EndPos + 1 + Hashes] == '#':
-                    Hashes += 1
-                    if Hashes == RawHashCount:
-                        InRawString = False
-                        Pos += 1 + Hashes
+        # ── inside a raw string r#"…"# / r##"…"## ──
+        if in_raw:
+            if ch == '"':
+                hashes = 0
+                while pos + 1 + hashes < length and line[pos + 1 + hashes] == '#':
+                    hashes += 1
+                    if hashes == raw_hash_count:
+                        in_raw = False
+                        pos += 1 + hashes
                         break
-            if InRawString:
-                Pos += 1
-                continue
-
-        # ── inside a block comment ──
-        if InBlockComment:
-            if Ch == '*' and Pos + 1 < Length and Line[Pos + 1] == '/':
-                InBlockComment = False
-                Pos += 2
-                continue
-            Pos += 1
+            pos += 1
             continue
 
-        # ── raw string open: r#" / r##" / br#" / b" ──
-        if Ch == 'r' or Ch == 'b' or (Ch == 'b' and Pos + 1 < Length and Line[Pos + 1] == 'r'):
-            # Check for br" / br#" / b" / r" / r#"
-            RawPrefixEnd = Pos
-            if Ch == 'b':
-                RawPrefixEnd = Pos + 1
-                if Pos + 1 < Length and Line[Pos + 1] == 'r':
-                    RawPrefixEnd = Pos + 2
-            if Ch == 'r':
-                RawPrefixEnd = Pos + 1
-            if RawPrefixEnd < Length and Line[RawPrefixEnd] == '"':
-                # count leading #'s
-                RawHashCount = 0
-                CheckPos = RawPrefixEnd + 1
-                while CheckPos < Length and Line[CheckPos] == '#':
-                    RawHashCount += 1
-                    CheckPos += 1
-                if CheckPos < Length and Line[CheckPos] == '#':
-                    # keep going
-                    pass
-                if CheckPos < Length or RawHashCount > 0 or True:
-                    # it's at least a raw string start with 0 #'s
-                    InRawString = True
-                    Pos = RawPrefixEnd + 1 + RawHashCount
-                    continue
-            # Not a raw string open, fall through
+        # ── inside a block comment /* … */ ──
+        if in_block:
+            if ch == '*' and pos + 1 < length and line[pos + 1] == '/':
+                in_block = False
+                pos += 2
+                continue
+            pos += 1
+            continue
+
+        # ── raw string open: r" / r#" / r##" / br" / br#" ──
+        if ch in ('r', 'b') and not in_double and not in_char:
+            start = pos
+            if ch == 'b' and pos + 1 < length and line[pos + 1] == 'r':
+                start = pos + 1  # skip 'b', treat as 'r'
+            nxt = start + 1
+            if nxt < length and line[nxt] == 'r':
+                nxt += 1  # 'r'
+            count = 0
+            while nxt < length and line[nxt] == '#':
+                count += 1
+                nxt += 1
+            if nxt < length and line[nxt] == '"':
+                in_raw = True
+                raw_hash_count = count
+                pos = nxt + 1
+                continue
 
         # ── double-quote string open ──
-        if Ch == '"':
-            InDouble = True
-            Pos += 1
+        if ch == '"':
+            in_double = True
+            pos += 1
             continue
 
         # ── char literal open ──
-        if Ch == "'":
-            InChar = True
-            Pos += 1
+        if ch == "'":
+            in_char = True
+            pos += 1
             continue
+
+        # ── line comment ──
+        if ch == '/' and pos + 1 < length and line[pos + 1] == '/':
+            break  # rest of line is comment, stop scanning
 
         # ── block comment open ──
-        if Ch == '/' and Pos + 1 < Length and Line[Pos + 1] == '*':
-            InBlockComment = True
-            Pos += 2
+        if ch == '/' and pos + 1 < length and line[pos + 1] == '*':
+            in_block = True
+            pos += 2
             continue
 
-        # ── real code character ──
-        if Ch in ('(', ')', '{', '}'):
-            if Ch == '(':
-                ParenDelta += 1
-            elif Ch == ')':
-                ParenDelta -= 1
-            elif Ch == '{':
-                BraceDelta += 1
-            elif Ch == '}':
-                BraceDelta -= 1
+        # ── depth characters (outside all strings and comments) ──
+        if ch == '(':
+            paren_delta += 1
+        elif ch == ')':
+            paren_delta -= 1
+        elif ch == '{':
+            brace_delta += 1
+        elif ch == '}':
+            brace_delta -= 1
 
-        if Ch not in (' ', '\t', '\r', '\n'):
-            LastNonWhitespace = Ch
+        if ch not in (' ', '\t', '\r', '\n'):
+            last_char = ch
 
-        Pos += 1
+        pos += 1
 
-    EndsInString = InDouble or InChar or InRawString or InBlockComment
+    ends_in_block = in_block
+    ends_in_str = in_double or in_char or in_raw
 
     return {
-        "ParenDelta": ParenDelta,
-        "BraceDelta": BraceDelta,
-        "LastNonWhitespace": LastNonWhitespace,
-        "EndsInString": EndsInString,
+        "paren_delta": paren_delta,
+        "brace_delta": brace_delta,
+        "last_char": last_char,
+        "ends_in_block": ends_in_block,
+        "ends_in_str": ends_in_str,
     }
 
 
-def Transform(Source: str, OpenBraceMaxDepth: int = 1) -> str:
+def Transform(source: str, open_brace_max_depth: int = 1) -> str:
     """
-    Return Source with blank lines inserted per the Mountain convention.
+    Return source with blank lines inserted per the Mountain convention.
 
-    OpenBraceMaxDepth:
-        Insert a blank line after { only when the resulting brace depth
-        is <= this value.  Default 1 = impl/enum/struct/mod only.
+    open_brace_max_depth:
+        Insert a blank line after { only when the brace depth after the
+        line is <= this value.  Default 1 = impl/enum/struct/mod only.
         Set to 2 to also cover fn/method bodies.
     """
-    LineList = Source.split("\n")
-    Output: list[str] = []
+    line_list = source.split("\n")
+    output: list[str] = []
 
-    BlockCommentDepth = 0
-    ParenDepth = 0
-    BraceDepth = 0
-    BraceDepthImport = 0
-    InUseBlock = False
-    InStringCarry = False  # multi-line raw string / comment carry
+    block_comment_open = False  # carried across lines for /* … */
+    paren_depth = 0
+    brace_depth = 0
+    brace_depth_import = 0
+    in_use_block = False
 
-    # Stack: each entry is the BraceDepth recorded when a '(' was opened.
-    # Used to compute RelativeBraceDepth = BraceDepth - BraceDepthAtParenOpen,
-    # which distinguishes direct macro args (relative=0) from struct/closure
-    # bodies inside a macro call (relative>0).
-    ParenOpenBraceStack: list[int] = []
+    # Stack: brace depth snapshot at each '(' open, for RelativeBraceDepth.
+    paren_open_brace_stack: list[int] = []
 
-    for Index, Line in enumerate(LineList):
-        # ── block comment tracking (line-level, handles // comments properly) ──
-        WasInBlock = BlockCommentDepth > 0
-        if WasInBlock or InStringCarry:
-            # Reuse ScanLine to advance block comment state even while in string
-            Scan = ScanLine(Line)
-            InStringCarry = Scan["EndsInString"] and InStringCarry
-            InBlockNow = WasInBlock
-            # If we're not in string carry, update block depth normally
-            if not WasInBlock:
-                # We're in a string that spans lines — don't touch block depth
-                pass
-            else:
-                # Track block comment depth manually for multi-line block comments
-                OpenCount = Line.count("/*")
-                CloseCount = Line.count("*/")
-                BlockCommentDepth = max(0, BlockCommentDepth + OpenCount - CloseCount)
-            # Since the carry is already tracked in ScanLine, just re-check
-            if not InStringCarry:
-                BlockCommentDepth = max(0, BlockCommentDepth)
-        else:
-            Scan = ScanLine(Line)
-            InBlockNow = Scan["EndsInString"]
+    for index, line in enumerate(line_list):
+        # ── scan the line ──
+        scan = _scan_line(line, mid_block_comment=block_comment_open)
 
-        # ── use { ... } import block tracking ──
-        # Only check on lines that are not in strings or block comments
-        if not InBlockNow and not InStringCarry:
-            if re.match(r"\s*use\s+", Line):
-                InUseBlock = True
-            if InUseBlock:
-                BraceDepthImport += Line.count("{") - Line.count("}")
-                if BraceDepthImport <= 0:
-                    InUseBlock = False
-                    BraceDepthImport = 0
+        # ── update block comment state ──
+        block_comment_open = scan["ends_in_block"]
 
-            # ── paren + brace depth using string-aware ScanLine ──
-            ParenDepth = max(0, ParenDepth + Scan["ParenDelta"])
-            for _ in range(max(0, -Scan["ParenDelta"])):
-                if ParenOpenBraceStack:
-                    ParenOpenBraceStack.pop()
-            # Push new open-brace snapshots for this line
-            # (ScanLine doesn't track snapshots yet, track them here)
-            for _ in range(max(0, Scan["ParenDelta"])):
-                ParenOpenBraceStack.append(BraceDepth)
-            BraceDepth = max(0, BraceDepth + Scan["BraceDelta"])
+        # ── use { … } import block tracking ──
+        if not block_comment_open and not scan["ends_in_str"]:
+            if re.match(r"\s*use\s+", line):
+                in_use_block = True
+            if in_use_block:
+                brace_depth_import += line.count("{") - line.count("}")
+                if brace_depth_import <= 0:
+                    in_use_block = False
+                    brace_depth_import = 0
 
-            if Scan["EndsInString"]:
-                InStringCarry = True
-            else:
-                InStringCarry = False
+            # ── update depth (clamp to 0 for safety) ──
+            close_count = max(0, -scan["paren_delta"])
+            for _ in range(close_count):
+                if paren_open_brace_stack:
+                    paren_open_brace_stack.pop()
+            for _ in range(max(0, scan["paren_delta"])):
+                paren_open_brace_stack.append(brace_depth)
 
-        # ── emit current line ────────────────────────────────────────────────
-        Output.append(Line)
+            paren_depth = max(0, paren_depth + scan["paren_delta"])
+            brace_depth = max(0, brace_depth + scan["brace_delta"])
 
-        # ── decide whether to insert blank line ─────────────────────────────
-        InComment = InBlockNow or bool(MatchCommentLine.match(Line))
+        # ── emit current line ──
+        output.append(line)
 
-        if InComment or InUseBlock or InStringCarry:
+        # ── decide whether to insert a blank line after ──
+        in_comment = block_comment_open or bool(MatchCommentLine.match(line))
+
+        if in_comment or in_use_block or scan["ends_in_str"]:
             continue
 
-        Stripped = Line.rstrip()
-        if not Stripped:
+        stripped = line.rstrip()
+        if not stripped:
             continue
 
-        # Use ScanLine's LastNonWhitespace if available
-        Last = Scan["LastNonWhitespace"] if "Scan" in dir() else Stripped[-1]
-        if Last is None:
+        last = scan["last_char"]
+        if last is None:
             continue
 
-        if Index + 1 >= len(LineList):
+        if index + 1 >= len(line_list):
             continue
 
-        Next = LineList[Index + 1]
-        NextBlank = Next.strip() == ""
-        NextClosing = bool(MatchClosingToken.match(Next))
-        NextChain = bool(MatchChainContinue.match(Next))
+        next_line = line_list[index + 1]
+        next_blank = next_line.strip() == ""
+        next_closing = bool(MatchClosingToken.match(next_line))
+        next_chain = bool(MatchChainContinue.match(next_line))
 
-        if NextBlank or NextClosing or NextChain:
+        if next_blank or next_closing or next_chain:
             continue
 
-        if Last in (";", "}") and ParenDepth == 0:
-            Output.append("")
+        if last in (";", "}") and paren_depth == 0:
+            output.append("")
 
-        elif Last == ",":
-            if ParenDepth == 0:
-                # Top-level comma (match arm, etc.)
-                Output.append("")
-            elif ParenOpenBraceStack:
-                # Inside parens: only add blank when NOT inside a brace
-                # block that was opened after the paren (struct/closure body)
-                RelativeBraceDepth = BraceDepth - ParenOpenBraceStack[-1]
-                if RelativeBraceDepth == 0:
-                    Output.append("")
+        elif last == ",":
+            if paren_depth == 0:
+                output.append("")
+            elif paren_open_brace_stack:
+                relative_brace_depth = brace_depth - paren_open_brace_stack[-1]
+                if relative_brace_depth == 0:
+                    output.append("")
 
-        elif Last == "{" and ParenDepth == 0:
-            if BraceDepth <= OpenBraceMaxDepth:
-                Output.append("")
+        elif last == "{" and paren_depth == 0:
+            if brace_depth <= open_brace_max_depth:
+                output.append("")
 
-    return "\n".join(Output)
+    return "\n".join(output)
 
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
 
-def ProcessFile(FilePath: Path, DryRun: bool, OpenBraceMaxDepth: int) -> bool:
+def process_file(filepath: Path, dry_run: bool, open_brace_max_depth: int) -> bool:
     """Return True if file was (or would be) changed."""
     try:
-        Text = FilePath.read_text(encoding="utf-8")
-    except Exception as Error:
-        print(f"  ERROR reading {FilePath}: {Error}", file=sys.stderr)
+        text = filepath.read_text(encoding="utf-8")
+    except Exception as error:
+        print(f"  ERROR reading {filepath}: {error}", file=sys.stderr)
         return False
 
-    NewText = Transform(Text, OpenBraceMaxDepth=OpenBraceMaxDepth)
-    if NewText == Text:
+    new_text = Transform(text, open_brace_max_depth=open_brace_max_depth)
+    if new_text == text:
         return False
 
-    if DryRun:
-        print(f"[DRY RUN] Would modify: {FilePath}")
+    if dry_run:
+        print(f"[DRY RUN] Would modify: {filepath}")
     else:
-        FilePath.write_text(NewText, encoding="utf-8")
-        print(f"Modified: {FilePath}")
+        filepath.write_text(new_text, encoding="utf-8")
+        print(f"Modified: {filepath}")
     return True
 
 
-def Main() -> None:
+def main() -> None:
     import argparse
 
-    Parser = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    Parser.add_argument(
+    parser.add_argument(
         "files",
         nargs="*",
         help=".rs file paths (shell globs ok if quoted)",
     )
-    Parser.add_argument(
+    parser.add_argument(
         "--All",
         action="store_true",
         help="Recursively process every .rs file under the current directory",
     )
-    Parser.add_argument(
+    parser.add_argument(
         "--DryRun",
         action="store_true",
         help="Show what would change without writing anything",
     )
 
-    def ParseDepth(Value: str) -> int:
-        if Value.lower() in ("all", "inf", "infinite"):
+    def parse_depth(value: str) -> int:
+        if value.lower() in ("all", "inf", "infinite"):
             return 2**31
         try:
-            return int(Value)
+            return int(value)
         except ValueError:
             raise argparse.ArgumentTypeError(
-                f"Expected an integer or 'All', got: {Value!r}"
+                f"Expected an integer or 'All', got: {value!r}"
             )
 
-    Parser.add_argument(
+    parser.add_argument(
         "--OpenBraceDepth",
-        type=ParseDepth,
+        type=parse_depth,
         default=1,
         metavar="N|All",
         help=(
@@ -415,35 +372,35 @@ def Main() -> None:
             "Pass All (or Inf) to apply at every nesting depth."
         ),
     )
-    Args = Parser.parse_args()
+    args = parser.parse_args()
 
-    Target: list[Path] = []
+    target: list[Path] = []
 
-    if Args.All:
-        Target = sorted(Path(".").rglob("*.rs"))
+    if args.All:
+        target = sorted(Path(".").rglob("*.rs"))
     else:
-        for Pattern in Args.files:
-            Expanded = sorted(Path(".").glob(Pattern))
-            if Expanded:
-                Target.extend(Expanded)
+        for pattern in args.files:
+            expanded = sorted(Path(".").glob(pattern))
+            if expanded:
+                target.extend(expanded)
             else:
-                Candidate = Path(Pattern)
-                if Candidate.exists():
-                    Target.append(Candidate)
+                candidate = Path(pattern)
+                if candidate.exists():
+                    target.append(candidate)
                 else:
-                    print(f"Warning: no match for '{Pattern}'", file=sys.stderr)
+                    print(f"Warning: no match for '{pattern}'", file=sys.stderr)
 
-    if not Target:
-        Parser.print_help()
+    if not target:
+        parser.print_help()
         sys.exit(1)
 
-    Changed = sum(
-        ProcessFile(FilePath, Args.DryRun, Args.OpenBraceDepth) for FilePath in Target
+    changed = sum(
+        process_file(fp, args.DryRun, args.OpenBraceDepth) for fp in target
     )
-    Total = len(Target)
-    Verb = "would change" if Args.DryRun else "changed"
-    print(f"\nDone — {Verb} {Changed}/{Total} file(s).")
+    total = len(target)
+    verb = "would change" if args.DryRun else "changed"
+    print(f"\nDone — {verb} {changed}/{total} file(s).")
 
 
 if __name__ == "__main__":
-    Main()
+    main()
