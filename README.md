@@ -302,46 +302,53 @@ graph LR
 
 > [!IMPORTANT]
 >
-> The build is a two-step linear flow. Do NOT pull submodules recursively -- each
-> submodule is managed independently on its own branch.
+> The build is a two-step linear flow. Do NOT pull submodules recursively --
+> each submodule is managed independently on its own branch.
 >
 > **Step 1: Compile VS Code Source**
 >
 > ```sh
 > cd Dependency/Microsoft/Dependency/Editor
-> nvm use 22 ; git fetch --all ; git reset --hard Parent/main ; git clean -dfx ; dum install ; dum compile ; dum compile-extensions-build
+> nvm use 22
+> git fetch --all
+> git reset --hard Parent/main
+> git clean -dfx
+> dum install
+> dum compile
+> dum compile-extensions-build
 > ```
 >
 > **Step 2: Build Land Application**
 >
 > ```sh
-> cd Land  # back to repository root
-> export Trace=all Record=1 Disable=false ; ./Maintain/Debug/Build.sh --profile debug-electron-bundled
+> cd Land # back to repository root
+> export Trace=all Record=1 Disable=false
+> ./Maintain/Debug/Build.sh --profile debug-electron-bundled
 > ```
 
 ### Submodule Structure
 
-| Element        | Submodule Repository                                  |
-| :------------- | :---------------------------------------------------- |
-| `Common`       | github.com/CodeEditorLand/Common                      |
-| `Mountain`     | github.com/CodeEditorLand/Mountain                    |
-| `Sky`          | github.com/CodeEditorLand/Sky                         |
-| `Wind`         | github.com/CodeEditorLand/Wind                        |
-| `Cocoon`       | github.com/CodeEditorLand/Cocoon                      |
-| `Rest`         | github.com/CodeEditorLand/Rest                        |
-| `Output`       | github.com/CodeEditorLand/Output                      |
-| `Dependency`   | github.com/CodeEditorLand/Dependency                  |
-| `Editor`       | github.com/CodeEditorLand/Editor (inside Dependency)  |
+| Element      | Submodule Repository                                 |
+| :----------- | :--------------------------------------------------- |
+| `Common`     | github.com/CodeEditorLand/Common                     |
+| `Mountain`   | github.com/CodeEditorLand/Mountain                   |
+| `Sky`        | github.com/CodeEditorLand/Sky                        |
+| `Wind`       | github.com/CodeEditorLand/Wind                       |
+| `Cocoon`     | github.com/CodeEditorLand/Cocoon                     |
+| `Rest`       | github.com/CodeEditorLand/Rest                       |
+| `Output`     | github.com/CodeEditorLand/Output                     |
+| `Dependency` | github.com/CodeEditorLand/Dependency                 |
+| `Editor`     | github.com/CodeEditorLand/Editor (inside Dependency) |
 
 Clone each submodule individually on its target branch. Do NOT use
 `git clone --recurse-submodules`.
 
 ### Build Profiles
 
-| Profile                       | Use Case                                    |
-| :---------------------------- | :------------------------------------------ |
-| `debug-electron-bundled`      | Full bundled Electron debug build           |
-| `debug-electron-unbundled`    | Electron debug without bundling             |
+| Profile                    | Use Case                          |
+| :------------------------- | :-------------------------------- |
+| `debug-electron-bundled`   | Full bundled Electron debug build |
+| `debug-electron-unbundled` | Electron debug without bundling   |
 
 Run the build from the Land repository root after completing Step 1.
 
