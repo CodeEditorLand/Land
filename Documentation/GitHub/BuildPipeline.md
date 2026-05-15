@@ -1,9 +1,9 @@
 # Build Pipeline
 
-This document describes the complete build pipeline for the Land code editor,
-from environment variable resolution through binary artifact production. The
-pipeline is a multi-stage, multi-language process that coordinates Rust,
-TypeScript, and static asset compilation across 15+ component workspaces.
+This document describes the complete build pipeline for the **Land** code
+editor, from environment variable resolution through binary artifact production.
+The pipeline is a multi-stage, multi-language process that coordinates `Rust`,
+`TypeScript`, and static asset compilation across 15+ component workspaces.
 
 ---
 
@@ -24,11 +24,13 @@ TypeScript, and static asset compilation across 15+ component workspaces.
 
 ---
 
-## Pipeline Overview
+## Pipeline Overview 📋
 
-The Land build is a two-stage linear flow. Stage 1 produces the compiled VS Code
-platform code. Stage 2 compiles the native Rust backend and bundles the
-TypeScript frontend.
+The **Land** build is a two-stage linear flow:
+
+- **Stage 1** - Produces the compiled VS Code platform code
+- **Stage 2** - Compiles the native `Rust` backend and bundles the `TypeScript`
+  frontend
 
 ```mermaid
 sequenceDiagram
@@ -52,9 +54,9 @@ sequenceDiagram
 
 ### Stage 1: VS Code Platform Compilation
 
-The VS Code source is vendored as a Git submodule at
+The VS Code source is vendored as a `Git` submodule at
 `Dependency/Microsoft/Dependency/Editor`. Stage 1 produces the compiled
-JavaScript platform code that Cocoon and Sky consume:
+JavaScript platform code that `Cocoon` and `Sky` consume:
 
 ```sh
 cd Dependency/Microsoft/Dependency/Editor
@@ -73,8 +75,8 @@ containing compiled extension JavaScript and metadata. These are consumed by the
 
 ### Stage 2: Land Application Assembly
 
-Stage 2 compiles the native Rust backend and bundles the TypeScript frontend
-into a runnable Tauri application:
+Stage 2 compiles the native `Rust` backend and bundles the `TypeScript` frontend
+into a runnable `Tauri` application:
 
 ```sh
 cd Land
@@ -84,19 +86,19 @@ export Trace=all Record=1 Disable=false
 
 The build script invokes, in sequence:
 
-1. **Rust workspace compilation** via `cargo build` for Common, Echo, Mist,
-   Mountain, Rest, SideCar, Air
-2. **Output artifact bundling** via ESBuild for the VS Code platform code
-3. **Cocoon compilation** via ESBuild for the extension host
-4. **Worker compilation** via ESBuild for the service worker
-5. **Wind + Sky compilation** via Vite/Astro for the UI layer
+1. **Rust workspace compilation** via `cargo build` for `Common`, `Echo`,
+   `Mist`, `Mountain`, `Rest`, `SideCar`, `Air`
+2. **Output artifact bundling** via `ESBuild` for the VS Code platform code
+3. **Cocoon compilation** via `ESBuild` for the extension host
+4. **Worker compilation** via `ESBuild` for the service worker
+5. **Wind + Sky compilation** via `Vite`/`Astro` for the UI layer
 6. **Tauri bundling** for the final `.app` bundle
 
 ---
 
-## Environment Variable System
+## Environment Variable System ⚙️
 
-Land uses a multi-file `.env` system with 18 files across 6 domains:
+**Land** uses a multi-file `.env` system with 18 files across 6 domains:
 
 ### File Discovery
 
@@ -108,7 +110,7 @@ The build script resolves env files in this priority order:
 4. `.env.Land.Sample` (checked-in defaults)
 5. `../.env.Land.Sample`
 
-Resolved file is sourced via `set -a; . "$EnvFile"; set +a`, exporting every
+The resolved file is sourced via `set -a; . "$EnvFile"; set +a`, exporting every
 key-value pair into the shell environment so every child tool inherits the same
 variable set.
 
@@ -144,29 +146,29 @@ Each build profile loads a specific combination of env files:
 
 ---
 
-## Profile System
+## Profile System 📋
 
 ### Available Build Profiles
 
-| Profile String                  | Workbench      | Feature Coverage                 | Output Type              |
-| ------------------------------- | -------------- | -------------------------------- | ------------------------ |
-| `debug`                         | Browser        | 70-80%                           | Dev binary               |
-| `debug-mountain`                | Mountain       | 80-90%                           | Dev binary (recommended) |
-| `debug-electron`                | Electron       | 95%+                             | Dev binary               |
-| `debug-electron-rest`           | Electron + OXC | 95%+ + fastest TS                | Dev binary               |
-| `debug-electron-minimal`        | Electron       | No built-in extensions           | Dev binary               |
-| `debug-mountain-only`           | Mountain       | No Cocoon subprocess             | Dev binary               |
-| `debug-cocoon-headless`         | None           | Mountain + Cocoon, Wind disabled | Dev binary               |
-| `debug-kernel`                  | None           | Pure Mountain, no built-ins      | Dev binary               |
-| `debug-electron-compiled`       | Electron       | Single-binary embedded resources | Dev binary               |
-| `debug-mountain-compiled`       | Mountain       | Single-binary embedded resources | Dev binary               |
-| `debug-electron-bundled`        | Electron       | Vite/Astro compiled workbench    | Dev binary               |
-| `debug-browser-bundled`         | Browser        | Vite/Astro compiled workbench    | Dev binary               |
-| `debug-sessions-bundled`        | Sessions       | Vite/Astro compiled workbench    | Dev binary               |
-| `debug-workbench-bundled`       | Workbench      | Vite/Astro compiled workbench    | Dev binary               |
-| `debug-bundled-all`             | All four       | Single Rollup pass               | Dev binary               |
-| `production-electron-bundled`   | Electron       | Optimized release                | Prod binary              |
-| `production-electron-unbundled` | Electron       | Release without bundled assets   | Prod binary              |
+| Profile String                  | Workbench      | Feature Coverage                     | Output Type              |
+| ------------------------------- | -------------- | ------------------------------------ | ------------------------ |
+| `debug`                         | Browser        | 70-80%                               | Dev binary               |
+| `debug-mountain`                | Mountain       | 80-90%                               | Dev binary (recommended) |
+| `debug-electron`                | Electron       | 95%+                                 | Dev binary               |
+| `debug-electron-rest`           | Electron + OXC | 95%+ + fastest TS                    | Dev binary               |
+| `debug-electron-minimal`        | Electron       | No built-in extensions               | Dev binary               |
+| `debug-mountain-only`           | Mountain       | No `Cocoon` subprocess               | Dev binary               |
+| `debug-cocoon-headless`         | None           | Mountain + `Cocoon`, `Wind` disabled | Dev binary               |
+| `debug-kernel`                  | None           | Pure `Mountain`, no built-ins        | Dev binary               |
+| `debug-electron-compiled`       | Electron       | Single-binary embedded resources     | Dev binary               |
+| `debug-mountain-compiled`       | Mountain       | Single-binary embedded resources     | Dev binary               |
+| `debug-electron-bundled`        | Electron       | `Vite`/`Astro` compiled workbench    | Dev binary               |
+| `debug-browser-bundled`         | Browser        | `Vite`/`Astro` compiled workbench    | Dev binary               |
+| `debug-sessions-bundled`        | Sessions       | `Vite`/`Astro` compiled workbench    | Dev binary               |
+| `debug-workbench-bundled`       | Workbench      | `Vite`/`Astro` compiled workbench    | Dev binary               |
+| `debug-bundled-all`             | All four       | Single Rollup pass                   | Dev binary               |
+| `production-electron-bundled`   | Electron       | Optimized release                    | Prod binary              |
+| `production-electron-unbundled` | Electron       | Release without bundled assets       | Prod binary              |
 
 ### Program Launch Options
 
@@ -180,7 +182,7 @@ The build script supports additional runtime flags:
 
 ---
 
-## Env Propagation to Each Element
+## Env Propagation to Each Element 📡
 
 Each Element reads the resolved environment variables through its own build
 system path:
@@ -273,17 +275,23 @@ Wind/Source/Utility/Tier.ts
 
 ### Cross-Element Agreement
 
-All three runtime banners (Mountain Rust `env!()` banner, Cocoon
-`LandFixLog.Info` banner, Wind `console.info` banner) must report identical tier
-values. A mismatch indicates one build tool read a different env file.
+All three runtime banners must report identical tier values:
+
+| Element    | Banner Mechanism         |
+| ---------- | ------------------------ |
+| `Mountain` | `Rust` `env!()` banner   |
+| `Cocoon`   | `LandFixLog.Info` banner |
+| `Wind`     | `console.info` banner    |
+
+A mismatch indicates one build tool read a different env file.
 
 ---
 
-## Rust Build Process
+## Rust Build Process 🔧
 
 ### Workspace Structure
 
-The Rust elements form a workspace at `Land/Cargo.toml`:
+The `Rust` elements form a workspace at `Land/Cargo.toml`:
 
 ```toml
 [workspace]
@@ -301,7 +309,7 @@ members = [
 
 ### build.rs Tier Propagation
 
-Every Rust Element with tier-gated features has a `build.rs` that:
+Every `Rust` Element with tier-gated features has a `build.rs` that:
 
 1. Calls `PropagateTierGating()` which scans the resolved env file
 2. Emits `cargo:rustc-env=` for every row (defaults + overrides)
@@ -313,7 +321,7 @@ Every Rust Element with tier-gated features has a `build.rs` that:
 
 ### Feature Gates
 
-Non-default tier values activate Cargo features:
+Non-default tier values activate `Cargo` features:
 
 ```toml
 [features]
@@ -328,11 +336,11 @@ features, keeping the baseline compilation lean.
 
 ---
 
-## TypeScript Build Process
+## TypeScript Build Process 📦
 
 ### ESBuild Compilation (Cocoon, Output, Worker)
 
-Cocoon, Output, and Worker compile through ESBuild with:
+`Cocoon`, `Output`, and `Worker` compile through `ESBuild` with:
 
 1. **Env-injected defines** via `CocoonEsbuildDefine` JSON blob
 2. **Target configuration** via `TargetConfig.ts` (resolves platform, arch,
@@ -341,7 +349,7 @@ Cocoon, Output, and Worker compile through ESBuild with:
 
 ### Vite/Astro Compilation (Sky, Wind)
 
-Sky and Wind compile through Vite with Astro:
+`Sky` and `Wind` compile through `Vite` with `Astro`:
 
 1. **Vite define map** receives every `Tier*` env var as `import.meta.env.Tier*`
 2. **Astro pages** are rendered to static HTML + JS bundles
@@ -350,7 +358,7 @@ Sky and Wind compile through Vite with Astro:
 
 ---
 
-## Artifact Layout
+## Artifact Layout 📁
 
 After a successful build, artifacts are placed in per-Element target
 directories:
@@ -385,7 +393,7 @@ graph TB
 
 ---
 
-## Output Transform Pipeline
+## Output Transform Pipeline 🔧
 
 The `Output` element manages the compilation of VS Code platform source code
 through two parallel compiler paths:
@@ -393,7 +401,7 @@ through two parallel compiler paths:
 ### Primary Path (ESBuild)
 
 1. **Input:** `Dependency/Editor/out/` (Stage 1 compiled VS Code)
-2. **Processing:** ESBuild applies transforms for Tauri compatibility:
+2. **Processing:** `ESBuild` applies transforms for `Tauri` compatibility:
     - Module resolution remapping (`electron` -> `@tauri-apps/api`)
     - `require()` interceptor patches
     - Source map generation
@@ -403,18 +411,18 @@ through two parallel compiler paths:
 ### Optional Path (Rest/OXC)
 
 1. **Input:** Same VS Code source
-2. **Processing:** Rest (Rust OXC) re-compiles TypeScript 2-3x faster:
-    - OXC parser handles decorators, class fields, JSX
-    - OXC transformer produces VS Code-compatible output
-    - Rest `--compiler` CLI flag activates this path
-3. **Output:** Same layout, substituted for ESBuild output when
+2. **Processing:** `Rest` (`Rust` `OXC`) re-compiles `TypeScript` 2-3x faster:
+    - `OXC` parser handles decorators, class fields, `JSX`
+    - `OXC` transformer produces VS Code-compatible output
+    - `Rest` `--compiler` CLI flag activates this path
+3. **Output:** Same layout, substituted for `ESBuild` output when
    `--compiler rest` is set
 
 ---
 
-## Worker Build Process
+## Worker Build Process 🗂️
 
-The `Worker` element compiles independently through ESBuild with no runtime
+The `Worker` element compiles independently through `ESBuild` with no runtime
 dependencies:
 
 1. **Input:** `Element/Worker/Source/`
@@ -423,45 +431,45 @@ dependencies:
     - CSS module interceptor (intercepts `import 'styles.css'` in JS and loads
       as `<link>`)
 3. **Output:** `Element/Worker/Target/`
-4. **Consumed by:** Sky at build time (bundled into UI as
+4. **Consumed by:** `Sky` at build time (bundled into UI as
    `<script type="module">`)
 
-The Worker has zero runtime dependencies (`"dependencies": {}` in its
+The `Worker` has zero runtime dependencies (`"dependencies": {}` in its
 `package.json`). All functionality is implemented with standard `ServiceWorker`
 and `Cache` APIs.
 
 ---
 
-## SideCar Binary Management
+## SideCar Binary Management 📦
 
-The `SideCar` element manages vendored Node.js runtime binaries:
+The `SideCar` element manages vendored `Node.js` runtime binaries:
 
 1. **Binary resolution:** `Build.sh` reads `NodeVersion` and `NodePlatform` from
    env
-2. **Download:** SideCar's tool fetches the exact binary from official sources
+2. **Download:** `SideCar`'s tool fetches the exact binary from official sources
 3. **Caching:** Binaries cached by version + platform key in
    `SideCar/Cache.json`
-4. **Git LFS:** Large binaries stored via Git LFS for version-controlled
+4. **Git LFS:** Large binaries stored via `Git LFS` for version-controlled
    distribution
-5. **Consumption:** Mountain's build process copies the resolved binary into the
-   app bundle
+5. **Consumption:** `Mountain`'s build process copies the resolved binary into
+   the app bundle
 
 Target triples supported:
 
-- `aarch64-apple-darwin` (Apple Silicon macOS)
-- `x86_64-apple-darwin` (Intel macOS)
+- `aarch64-apple-darwin` (Apple Silicon `macOS`)
+- `x86_64-apple-darwin` (Intel `macOS`)
 - `aarch64-unknown-linux-gnu` (ARM64 Linux)
 - `x86_64-unknown-linux-gnu` (x86_64 Linux)
 
 ---
 
-## Related Documentation
+## Related Documentation 📋
 
 - [Architecture](Architecture.md) - System architecture overview
 - [EditorCore](EditorCore.md) - Editor workbench adaptation
 - [Polyfills](Polyfills.md) - Compatibility shims
-- [RustInfrastructure](RustInfrastructure.md) - Rust backend components
-- [InterComponentProtocol](InterComponentProtocol.md) - gRPC protocol
+- [RustInfrastructure](RustInfrastructure.md) - `Rust` backend components
+- [InterComponentProtocol](InterComponentProtocol.md) - `gRPC` protocol
   specification
 - [Building](Building.md) - Build instructions and prerequisites
 - [BuildMatrix](BuildMatrix.md) - Full build variant matrix

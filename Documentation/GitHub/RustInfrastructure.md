@@ -1,8 +1,8 @@
 # Rust Infrastructure
 
-This document describes every Rust component in the Land system: the abstract
+This document describes every `Rust` component in the **Land** system: the abstract
 common library, the native backend application, the task scheduler, and all
-supporting Rust services. These components form the native foundation that the
+supporting `Rust` services. These components form the native foundation that the
 entire editor is built upon.
 
 ---
@@ -23,18 +23,18 @@ entire editor is built upon.
 
 ---
 
-## Component Summary
+## Component Summary 📋
 
-| Component | Crate Type     | Edition | Key Dependencies                                   | Role                                                  |
-| --------- | -------------- | ------- | -------------------------------------------------- | ----------------------------------------------------- |
-| Common    | Library        | 2024    | tauri, async-trait, serde, thiserror               | Abstract trait definitions, ActionEffect system, DTOs |
-| Echo      | Library        | 2024    | tokio, crossbeam-deque, Common                     | Priority work-stealing task scheduler                 |
-| Mountain  | Binary         | 2024    | Common, Echo, Mist, tauri, tonic, portable-pty     | Primary Tauri application, gRPC server                |
-| Mist      | Library+Binary | 2024    | hickory-server, ring, tokio, Common                | Local DNS server for `*.editor.land`                  |
-| Air       | Binary         | 2024    | tokio, tonic, reqwest, Common, Mist                | Background daemon (updates, indexing, crypto)         |
-| Rest      | Binary+Library | 2024    | oxc_allocator, oxc_parser, oxc_transformer, Common | OXC-based TypeScript compiler                         |
-| SideCar   | Library        | 2024    | tokio, reqwest, zip, Common, Mist                  | Vendored Node.js binary manager                       |
-| Grove     | Library+Binary | 2021    | Common, wasmtime, tonic, clap                      | Wasm sandbox for WASM-compiled extensions             |
+| Component | Crate Type | Edition | Key Dependencies | Role |
+| --------- | ---------- | ------- | ---------------- | ---- |
+| `Common` | Library | 2024 | tauri, async-trait, serde, thiserror | Abstract trait definitions, `ActionEffect` system, DTOs |
+| `Echo` | Library | 2024 | tokio, crossbeam-deque, `Common` | Priority work-stealing task scheduler |
+| `Mountain` | Binary | 2024 | `Common`, `Echo`, `Mist`, tauri, tonic, portable-pty | Primary `Tauri` application, `gRPC` server |
+| `Mist` | Library+Binary | 2024 | hickory-server, ring, tokio, `Common` | Local DNS server for `*.editor.land` |
+| `Air` | Binary | 2024 | tokio, tonic, reqwest, `Common`, `Mist` | Background daemon (updates, indexing, crypto) |
+| `Rest` | Binary+Library | 2024 | oxc_allocator, oxc_parser, oxc_transformer, `Common` | `OXC`-based `TypeScript` compiler |
+| `SideCar` | Library | 2024 | tokio, reqwest, zip, `Common`, `Mist` | Vendored `Node.js` binary manager |
+| `Grove` | Library+Binary | 2021 | `Common`, wasmtime, tonic, clap | Wasm sandbox for WASM-compiled extensions |
 
 ### Dependency Graph
 
@@ -55,9 +55,9 @@ graph TB
 
 ---
 
-## Common: Abstract Core Library
+## Common: Abstract Core Library 📚
 
-The `Common` crate is the architectural foundation of Land's native backend. It
+The `Common` crate is the architectural foundation of **Land**'s native backend. It
 is a pure abstract library with no concrete implementations -- it defines what
 the system can do, not how.
 
@@ -82,23 +82,23 @@ pub trait FileSystem: Send + Sync {
 
 ### Defined Service Interfaces
 
-| Trait                 | Domain              | Methods                                                        |
-| --------------------- | ------------------- | -------------------------------------------------------------- |
-| `FileSystem`          | File operations     | read, write, stat, readdir, mkdir, remove, rename, copy, watch |
-| `Configuration`       | Settings management | get, set, has, inspect, onDidChange, keys                      |
-| `Terminal`            | PTY management      | create, write, resize, onData, onExit, list                    |
-| `Clipboard`           | System clipboard    | read, write, readText, writeText, hasFormat                    |
-| `Dialog`              | Native dialogs      | open, save, message, input                                     |
-| `Window`              | Window management   | show, focus, maximize, minimize, close, isMaximized            |
-| `ExtensionManagement` | Extension lifecycle | scan, install, uninstall, list, getManifest                    |
-| `Process`             | Child process       | spawn, kill, onExit, list, exec                                |
-| `Storage`             | Key-value storage   | get, set, delete, list, clear, onDidChange                     |
-| `SecretStorage`       | OS keychain         | get, set, delete, onDidChange                                  |
-| `Search`              | File/text search    | search, findInFile, replace                                    |
+| Trait | Domain | Methods |
+| ----- | ------ | ------- |
+| `FileSystem` | File operations | read, write, stat, readdir, mkdir, remove, rename, copy, watch |
+| `Configuration` | Settings management | get, set, has, inspect, onDidChange, keys |
+| `Terminal` | PTY management | create, write, resize, onData, onExit, list |
+| `Clipboard` | System clipboard | read, write, readText, writeText, hasFormat |
+| `Dialog` | Native dialogs | open, save, message, input |
+| `Window` | Window management | show, focus, maximize, minimize, close, isMaximized |
+| `ExtensionManagement` | Extension lifecycle | scan, install, uninstall, list, getManifest |
+| `Process` | Child process | spawn, kill, onExit, list, exec |
+| `Storage` | Key-value storage | get, set, delete, list, clear, onDidChange |
+| `SecretStorage` | OS keychain | get, set, delete, onDidChange |
+| `Search` | File/text search | search, findInFile, replace |
 
 ### ActionEffect System
 
-Common defines the `ActionEffect` declarative system -- a sealed enum of all
+`Common` defines the `ActionEffect` declarative system -- a sealed enum of all
 possible effects that the extension host can request:
 
 ```rust
@@ -112,24 +112,24 @@ pub enum ActionEffect {
 }
 ```
 
-Effects flow: **Cocoon (extension host)** --gRPC--> **Mountain** --execute-->
-**result** --gRPC--> **Cocoon**
+Effects flow: **Cocoon (extension host)** --`gRPC`--> **Mountain** --execute-->
+**result** --`gRPC`--> **Cocoon**
 
 This allows extensions to request native operations without knowing whether the
-implementation runs in Rust, Node.js, or WASM.
+implementation runs in `Rust`, `Node.js`, or `WASM`.
 
 ### Data Transfer Objects
 
-Common defines DTOs shared across all components:
+`Common` defines DTOs shared across all components:
 
-| DTO                   | Fields                                                  | Used By                    |
-| --------------------- | ------------------------------------------------------- | -------------------------- |
-| `InitData`            | Workspace info, extension manifests, configuration      | Mountain -> Cocoon startup |
-| `FileStat`            | path, type (file/dir/symlink), size, mtime, permissions | All file operations        |
-| `TerminalOptions`     | name, shellPath, cwd, env, cols, rows                   | Terminal creation          |
-| `ExtensionManifest`   | id, version, publisher, activationEvents, contributes   | Extension management       |
-| `ConfigurationTarget` | Global, Workspace, WorkspaceFolder                      | Configuration operations   |
-| `SearchOptions`       | pattern, include, exclude, maxResults, contextLines     | Search operations          |
+| DTO | Fields | Used By |
+| --- | ------ | ------- |
+| `InitData` | Workspace info, extension manifests, configuration | `Mountain` -> `Cocoon` startup |
+| `FileStat` | path, type (file/dir/symlink), size, mtime, permissions | All file operations |
+| `TerminalOptions` | name, shellPath, cwd, env, cols, rows | Terminal creation |
+| `ExtensionManifest` | id, version, publisher, activationEvents, contributes | Extension management |
+| `ConfigurationTarget` | Global, Workspace, WorkspaceFolder | Configuration operations |
+| `SearchOptions` | pattern, include, exclude, maxResults, contextLines | Search operations |
 
 ### CommonError
 
@@ -150,10 +150,10 @@ pub enum CommonError {
 
 ---
 
-## Echo: Work-Stealing Task Scheduler
+## Echo: Work-Stealing Task Scheduler ⚡
 
-Echo is a bounded work-stealing task scheduler designed as the core execution
-engine for Mountain's async workloads.
+`Echo` is a bounded work-stealing task scheduler designed as the core execution
+engine for `Mountain`'s async workloads.
 
 ### Scheduling Architecture
 
@@ -181,13 +181,13 @@ graph TB
 
 ### Key Properties
 
-| Property          | Implementation                       | Benefit                           |
-| ----------------- | ------------------------------------ | --------------------------------- |
-| Bounded capacity  | Fixed-size deque per worker          | Predictable memory usage          |
-| Lock-free         | crossbeam-deque atomic operations    | No mutex contention under load    |
-| Priority tiers    | High/Normal/Low separate deques      | UI responsiveness under heavy I/O |
-| Work stealing     | Idle workers steal from random peers | Full CPU utilization              |
-| Tokio integration | `Echo::spawn()` returns `JoinHandle` | Seamless async Rust usage         |
+| Property | Implementation | Benefit |
+| -------- | -------------- | ------- |
+| Bounded capacity | Fixed-size deque per worker | Predictable memory usage |
+| Lock-free | crossbeam-deque atomic operations | No mutex contention under load |
+| Priority tiers | High/Normal/Low separate deques | UI responsiveness under heavy I/O |
+| Work stealing | Idle workers steal from random peers | Full CPU utilization |
+| `Tokio` integration | `Echo::spawn()` returns `JoinHandle` | Seamless async `Rust` usage |
 
 ### Usage in Mountain
 
@@ -209,10 +209,10 @@ scheduler.spawn_low(index_workspace(workspace)).await;
 
 ---
 
-## Mountain: Native Backend Application
+## Mountain: Native Backend Application 🏔️
 
-Mountain is the primary Tauri application that serves as the native backend. It
-implements all traits from Common, hosts the gRPC server, manages application
+`Mountain` is the primary `Tauri` application that serves as the native backend. It
+implements all traits from `Common`, hosts the `gRPC` server, manages application
 state, and orchestrates sidecar processes.
 
 ### Module Architecture
@@ -290,11 +290,11 @@ sequenceDiagram
 
 ### Tauri Command Registration
 
-Mountain registers Tauri commands in `Handler/Commands/`. Each command maps to a
-Rust function that:
+`Mountain` registers `Tauri` commands in `Handler/Commands/`. Each command maps to a
+`Rust` function that:
 
-1. Receives typed parameters from the Tauri invoke JSON
-2. Performs the operation using Common trait implementations
+1. Receives typed parameters from the `Tauri` invoke JSON
+2. Performs the operation using `Common` trait implementations
 3. Returns a typed result (or error)
 
 ```rust
@@ -311,24 +311,24 @@ async fn read_file(path: String, state: State<'_, AppState>) -> Result<Vec<u8>, 
 
 **Cocoon Management:**
 
-- Constructs the sidecar environment (PATH, VSCODE_PARENT_PID, tier env vars)
-- Spawns Node.js with `bootstrap-fork.js` entry point
-- Monitors process health (heartbeat via gRPC)
+- Constructs the sidecar environment (`PATH`, `VSCODE_PARENT_PID`, tier env vars)
+- Spawns `Node.js` with `bootstrap-fork.js` entry point
+- Monitors process health (heartbeat via `gRPC`)
 - Restarts on crash (configurable max restart count)
-- Sends SIGTERM on application shutdown
+- Sends `SIGTERM` on application shutdown
 
 **Air Management:**
 
-- Spawns the Air binary as a persistent background process
-- Connects via gRPC on port 50053
+- Spawns the `Air` binary as a persistent background process
+- Connects via `gRPC` on port `50053`
 - Monitors health and resource usage
 - Coordinates update downloads and verification
 
 ---
 
-## Mist: DNS Isolation Server
+## Mist: DNS Isolation Server 🌐
 
-Mist runs a local Hickory DNS server authoritative for the `editor.land` zone.
+`Mist` runs a local Hickory DNS server authoritative for the `editor.land` zone.
 It provides network isolation for sidecar processes.
 
 ### DNS Zone Configuration
@@ -350,37 +350,37 @@ processes communicate only over localhost.
 
 ### Forward Allowlisting
 
-Mist maintains a configurable allowlist of trusted external domains:
+`Mist` maintains a configurable allowlist of trusted external domains:
 
-| Domain                         | Purpose                | Status          |
-| ------------------------------ | ---------------------- | --------------- |
-| `marketplace.visualstudio.com` | Extension downloads    | Allowlisted     |
-| `update.codeeditor.land`       | Application updates    | Allowlisted     |
-| `api.posthog.com`              | Telemetry (if enabled) | Allowlisted     |
-| All others                     | Blocked (NXDOMAIN)     | Default blocked |
+| Domain | Purpose | Status |
+| ------ | ------- | ------ |
+| `marketplace.visualstudio.com` | Extension downloads | Allowlisted |
+| `update.codeeditor.land` | Application updates | Allowlisted |
+| `api.posthog.com` | Telemetry (if enabled) | Allowlisted |
+| All others | Blocked (NXDOMAIN) | Default blocked |
 
 ### DNSSEC
 
-Mist supports DNSSEC with ECDSA P-256 signing for the `editor.land` zone.
+`Mist` supports DNSSEC with ECDSA P-256 signing for the `editor.land` zone.
 Signing keys are generated on first run and cached in the application data
 directory.
 
 ---
 
-## Air: Background Daemon
+## Air: Background Daemon 🖥️
 
-Air is the background daemon sidecar for Land, providing long-running services
+`Air` is the background daemon sidecar for **Land**, providing long-running services
 that would degrade UI performance if run in the main process.
 
 ### Services
 
-| Service          | Protocol | Port  | Purpose                                                      |
-| ---------------- | -------- | ----- | ------------------------------------------------------------ |
-| Update Manager   | gRPC     | 50053 | Download, verify, and apply application updates              |
-| Indexer          | gRPC     | 50053 | File content indexing for text search                        |
-| Crypto Service   | gRPC     | 50053 | Cryptographic signing, authentication, and secret management |
-| Health Monitor   | gRPC     | 50053 | System health checks, metrics collection, crash reporting    |
-| Asset Downloader | gRPC     | 50053 | Background download of extension assets                      |
+| Service | Protocol | Port | Purpose |
+| ------- | -------- | ---- | ------- |
+| Update Manager | `gRPC` | `50053` | Download, verify, and apply application updates |
+| Indexer | `gRPC` | `50053` | File content indexing for text search |
+| Crypto Service | `gRPC` | `50053` | Cryptographic signing, authentication, and secret management |
+| Health Monitor | `gRPC` | `50053` | System health checks, metrics collection, crash reporting |
+| Asset Downloader | `gRPC` | `50053` | Background download of extension assets |
 
 ### Lifecycle
 
@@ -409,10 +409,10 @@ Mountain shuts down
 
 ---
 
-## Rest: OXC TypeScript Compiler
+## Rest: OXC TypeScript Compiler 🚀
 
-Rest is a high-performance TypeScript compiler built on the OXC (Oxidation
-Compiler) toolchain. It replaces esbuild's TypeScript loader with a Rust-powered
+`Rest` is a high-performance `TypeScript` compiler built on the `OXC` (Oxidation
+Compiler) toolchain. It replaces `esbuild`'s `TypeScript` loader with a `Rust`-powered
 alternative.
 
 ### Compilation Pipeline
@@ -448,11 +448,11 @@ JavaScript output (.js, .mjs)
 
 ### Performance
 
-| Operation                    | esbuild | Rest (OXC) | Improvement |
-| ---------------------------- | ------- | ---------- | ----------- |
-| Parse + transform 1000 files | 2.4s    | 0.9s       | 2.7x        |
-| Full bundle (100K LOC)       | 1.8s    | 0.7s       | 2.6x        |
-| Minified bundle              | 3.1s    | 1.3s       | 2.4x        |
+| Operation | esbuild | Rest (OXC) | Improvement |
+| --------- | ------- | ---------- | ----------- |
+| Parse + transform 1000 files | 2.4s | 0.9s | 2.7x |
+| Full bundle (100K LOC) | 1.8s | 0.7s | 2.6x |
+| Minified bundle | 3.1s | 1.3s | 2.4x |
 
 ### CLI Usage
 
@@ -463,7 +463,7 @@ rest --entry src/index.ts \
 	--target es2022
 ```
 
-Rest is integrated into the build pipeline via the `debug-electron-rest`
+`Rest` is integrated into the build pipeline via the `debug-electron-rest`
 profile:
 
 ```sh
@@ -472,10 +472,10 @@ profile:
 
 ---
 
-## SideCar: Vendored Runtime Manager
+## SideCar: Vendored Runtime Manager 📦
 
-SideCar manages pre-compiled native dependency binaries. Currently handles
-Node.js runtime binaries for each target platform.
+`SideCar` manages pre-compiled native dependency binaries. Currently handles
+`Node.js` runtime binaries for each target platform.
 
 ### Binary Resolution
 
@@ -504,19 +504,19 @@ Mountain build copies binary to app bundle
 
 ### Supported Platforms
 
-| Target Triple             | Platform String | Node.js Binary                      |
-| ------------------------- | --------------- | ----------------------------------- |
-| aarch64-apple-darwin      | darwin-arm64    | node-v{version}-darwin-arm64.tar.gz |
-| x86_64-apple-darwin       | darwin-x64      | node-v{version}-darwin-x64.tar.gz   |
-| aarch64-unknown-linux-gnu | linux-arm64     | node-v{version}-linux-arm64.tar.gz  |
-| x86_64-unknown-linux-gnu  | linux-x64       | node-v{version}-linux-x64.tar.gz    |
+| Target Triple | Platform String | `Node.js` Binary |
+| ------------- | --------------- | ---------------- |
+| aarch64-apple-darwin | darwin-arm64 | node-v{version}-darwin-arm64.tar.gz |
+| x86_64-apple-darwin | darwin-x64 | node-v{version}-darwin-x64.tar.gz |
+| aarch64-unknown-linux-gnu | linux-arm64 | node-v{version}-linux-arm64.tar.gz |
+| x86_64-unknown-linux-gnu | linux-x64 | node-v{version}-linux-x64.tar.gz |
 
 ---
 
-## Grove: WASM Extension Host
+## Grove: WASM Extension Host 🧩
 
-Grove provides an alternative extension host for running WASM-compiled VS Code
-extensions in a sandboxed environment using WASMtime.
+`Grove` provides an alternative extension host for running WASM-compiled VS Code
+extensions in a sandboxed environment using `WASMtime`.
 
 ### Architecture
 
@@ -543,17 +543,17 @@ Grove Binary
 
 ### Status
 
-Grove is integrated as an optional build feature (`--features grove`). It is not
+`Grove` is integrated as an optional build feature (`--features grove`). It is not
 enabled by default. When activated, it provides parallel extension hosting
-alongside Cocoon for WASM-compiled extensions.
+alongside `Cocoon` for WASM-compiled extensions.
 
 ---
 
-## Rust Build Configuration
+## Rust Build Configuration 🔧
 
 ### Workspace Configuration
 
-The Rust workspace is defined in `Land/Cargo.toml`:
+The `Rust` workspace is defined in `Land/Cargo.toml`:
 
 ```toml
 [workspace]
@@ -588,19 +588,18 @@ targets = ["aarch64-apple-darwin", "x86_64-apple-darwin"]
 
 ### Rust Edition
 
-All Rust crates use edition 2024 (Rust nightly) except Grove which uses edition
+All `Rust` crates use edition 2024 (`Rust` nightly) except `Grove` which uses edition
 2021 for WASM compatibility.
 
 ---
 
-## Related Documentation
+## Related Documentation 📋
 
 - [Architecture](Architecture.md) - System architecture overview
 - [BuildPipeline](BuildPipeline.md) - Build pipeline
 - [EditorCore](EditorCore.md) - Editor workbench and service layer
 - [Polyfills](Polyfills.md) - Compatibility shims
-- [InterComponentProtocol](InterComponentProtocol.md) - gRPC protocol
-  specification
+- [InterComponentProtocol](InterComponentProtocol.md) - `gRPC` protocol specification
 - [Building](Building.md) - Build instructions
 - [EnvironmentVariables](EnvironmentVariables.md) - Complete env var reference
 

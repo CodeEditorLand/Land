@@ -1,8 +1,8 @@
 # Inter-Component Protocol
 
-This document specifies the communication protocols used between Land
-components. It covers the gRPC service definitions (Vine protocol), the Tauri
-IPC mechanism, the Spine extension coordination protocol, and the connection
+This document specifies the communication protocols used between **Land**
+components. It covers the `gRPC` service definitions (`Vine` protocol), the `Tauri`
+IPC mechanism, the `Spine` extension coordination protocol, and the connection
 lifecycle management.
 
 ---
@@ -21,16 +21,16 @@ lifecycle management.
 
 ---
 
-## Protocol Overview
+## Protocol Overview 🔌
 
-Land uses three communication protocols operating at different abstraction
+**Land** uses three communication protocols operating at different abstraction
 levels:
 
-| Protocol    | Transport           | Layer       | Components                           | Purpose                     |
-| ----------- | ------------------- | ----------- | ------------------------------------ | --------------------------- |
-| Tauri IPC   | In-process IPC      | Application | Wind/Sky <-> Mountain                | UI-backend communication    |
-| gRPC (Vine) | TCP localhost       | Service     | Cocoon <-> Mountain Air <-> Mountain | Inter-service RPC           |
-| Spine       | gRPC + ActionEffect | Extension   | Cocoon -> Mountain                   | Extension host coordination |
+| Protocol | Transport | Layer | Components | Purpose |
+| -------- | --------- | ----- | ---------- | ------- |
+| `Tauri` IPC | In-process IPC | Application | `Wind`/`Sky` <-> `Mountain` | UI-backend communication |
+| `gRPC` (`Vine`) | TCP localhost | Service | `Cocoon` <-> `Mountain`, `Air` <-> `Mountain` | Inter-service RPC |
+| `Spine` | `gRPC` + `ActionEffect` | Extension | `Cocoon` -> `Mountain` | Extension host coordination |
 
 ### Protocol Stack
 
@@ -66,12 +66,12 @@ graph BT
 
 ---
 
-## Tauri IPC
+## Tauri IPC 🎮
 
 ### Commands (Request-Response)
 
-Wind invokes Mountain handlers through `@tauri-apps/api` `invoke()`. Each
-command maps to a registered Rust handler in Mountain.
+`Wind` invokes `Mountain` handlers through `@tauri-apps/api` `invoke()`. Each
+command maps to a registered `Rust` handler in `Mountain`.
 
 **Wind-side invocation:**
 
@@ -108,26 +108,26 @@ fn main() {
 
 ### Command Catalog
 
-| Command             | Parameters                                    | Returns          | Purpose                   |
-| ------------------- | --------------------------------------------- | ---------------- | ------------------------- | ----------------------- |
-| `read_file`         | `{ path: string }`                            | `Uint8Array`     | Read file from disk       |
-| `write_file`        | `{ path: string, content: Uint8Array }`       | `void`           | Write file to disk        |
-| `get_configuration` | `{ key?: string }`                            | `Configuration`  | Read configuration values |
-| `set_configuration` | `{ key: string, value: any, target: string }` | `void`           | Update configuration      |
-| `open_dialog`       | `{ options: DialogOptions }`                  | `string[]`       | Open native file dialog   |
-| `save_dialog`       | `{ options: DialogOptions }`                  | `string          | null`                     | Open native save dialog |
-| `show_message`      | `{ message: string, type: string }`           | `string`         | Show OS message box       |
-| `create_terminal`   | `{ name: string, cwd?: string }`              | `number`         | Create PTY terminal       |
-| `write_terminal`    | `{ id: number, data: string }`                | `void`           | Write to terminal PTY     |
-| `execute_command`   | `{ commandId: string, args: any[] }`          | `any`            | Execute a command         |
-| `get_clipboard`     | `{ format: string }`                          | `string`         | Read clipboard contents   |
-| `set_clipboard`     | `{ text: string }`                            | `void`           | Write to clipboard        |
-| `get_environment`   | `{ name: string }`                            | `string`         | Read environment variable |
-| `search_files`      | `{ pattern: string, options: SearchOptions }` | `SearchResult[]` | Search for files          |
+| Command | Parameters | Returns | Purpose |
+| ------- | ---------- | ------- | ------- |
+| `read_file` | `{ path: string }` | `Uint8Array` | Read file from disk |
+| `write_file` | `{ path: string, content: Uint8Array }` | `void` | Write file to disk |
+| `get_configuration` | `{ key?: string }` | `Configuration` | Read configuration values |
+| `set_configuration` | `{ key: string, value: any, target: string }` | `void` | Update configuration |
+| `open_dialog` | `{ options: DialogOptions }` | `string[]` | Open native file dialog |
+| `save_dialog` | `{ options: DialogOptions }` | `string \| null` | Open native save dialog |
+| `show_message` | `{ message: string, type: string }` | `string` | Show OS message box |
+| `create_terminal` | `{ name: string, cwd?: string }` | `number` | Create PTY terminal |
+| `write_terminal` | `{ id: number, data: string }` | `void` | Write to terminal PTY |
+| `execute_command` | `{ commandId: string, args: any[] }` | `any` | Execute a command |
+| `get_clipboard` | `{ format: string }` | `string` | Read clipboard contents |
+| `set_clipboard` | `{ text: string }` | `void` | Write to clipboard |
+| `get_environment` | `{ name: string }` | `string` | Read environment variable |
+| `search_files` | `{ pattern: string, options: SearchOptions }` | `SearchResult[]` | Search for files |
 
 ### Events (Push from Mountain)
 
-Mountain emits events that Wind/Sky listen to via `@tauri-apps/api/event`:
+`Mountain` emits events that `Wind`/`Sky` listen to via `@tauri-apps/api/event`:
 
 ```typescript
 import { listen } from "@tauri-apps/api/event";
@@ -140,31 +140,29 @@ const unlisten = await listen("configuration-changed", (event) => {
 
 ### Event Catalog
 
-| Event                   | Payload                          | Direction        | Purpose                             |
-| ----------------------- | -------------------------------- | ---------------- | ----------------------------------- |
-| `configuration-changed` | `{ keys: string[] }`             | Mountain -> Wind | Configuration updates               |
-| `extension-activated`   | `{ id: string }`                 | Mountain -> Wind | Extension activation notification   |
-| `terminal-data`         | `{ id: number, data: string }`   | Mountain -> Wind | Terminal output streaming           |
-| `file-changed`          | `{ path: string, type: string }` | Mountain -> Wind | File system watcher notification    |
-| `theme-changed`         | `{ theme: string }`              | Mountain -> Wind | Color theme change                  |
-| `window-state-changed`  | `{ state: string }`              | Mountain -> Wind | Window maximize/minimize/fullscreen |
+| Event | Payload | Direction | Purpose |
+| ----- | ------- | --------- | ------- |
+| `configuration-changed` | `{ keys: string[] }` | `Mountain` -> `Wind` | Configuration updates |
+| `extension-activated` | `{ id: string }` | `Mountain` -> `Wind` | Extension activation notification |
+| `terminal-data` | `{ id: number, data: string }` | `Mountain` -> `Wind` | Terminal output streaming |
+| `file-changed` | `{ path: string, type: string }` | `Mountain` -> `Wind` | File system watcher notification |
+| `theme-changed` | `{ theme: string }` | `Mountain` -> `Wind` | Color theme change |
+| `window-state-changed` | `{ state: string }` | `Mountain` -> `Wind` | Window maximize/minimize/fullscreen |
 
 ### Serialization
 
-Tauri IPC uses JSON serialization with the following conventions:
+`Tauri` IPC uses JSON serialization with the following conventions:
 
 - **Strings** are UTF-8 encoded
-- **Numbers** are JSON numbers (f64), deserialized to appropriate Rust types
-- **Binary data** is `Vec<u8>` / `Uint8Array`, serialized as JSON number arrays
-  for small payloads, or via custom serializer for large files
-- **Complex types** are serialized through serde `Serialize`/`Deserialize`
-  traits
+- **Numbers** are JSON numbers (f64), deserialized to appropriate `Rust` types
+- **Binary data** is `Vec<u8>` / `Uint8Array`, serialized as JSON number arrays for small payloads, or via custom serializer for large files
+- **Complex types** are serialized through serde `Serialize`/`Deserialize` traits
 
 ---
 
-## Vine gRPC Protocol
+## Vine gRPC Protocol 🔌
 
-Vine defines the gRPC service contracts for Mountain-Cocoon and Mountain-Air
+`Vine` defines the `gRPC` service contracts for `Mountain`-`Cocoon` and `Mountain`-`Air`
 communication. The protocol is defined in `.proto` files located at
 `Element/Mountain/Proto/Vine.proto`.
 
@@ -211,31 +209,31 @@ service BackgroundServices {
 
 ### Service: ExtensionHost
 
-Used for Mountain <-> Cocoon communication:
+Used for `Mountain` <-> `Cocoon` communication:
 
-| RPC                  | Direction          | Trigger              | Purpose                              |
-| -------------------- | ------------------ | -------------------- | ------------------------------------ |
-| `Initialize`         | Mountain -> Cocoon | After handshake      | Send init data, start extension host |
-| `Shutdown`           | Mountain -> Cocoon | App quit             | Graceful extension host shutdown     |
-| `Heartbeat`          | Bidirectional      | Every 5 seconds      | Connection health monitoring         |
-| `ActivateExtension`  | Mountain -> Cocoon | Extension activation | Activate a VS Code extension         |
-| `ExecuteCommand`     | Cocoon -> Mountain | Extension command    | Execute a registered command         |
-| `RegisterCommand`    | Cocoon -> Mountain | Extension startup    | Register a command handler           |
-| `ProvideHover`       | Cocoon -> Mountain | User hovers          | Request hover information            |
-| `ProvideCompletions` | Cocoon -> Mountain | User types           | Request completion items             |
-| `ProvideDefinition`  | Cocoon -> Mountain | User clicks          | Request definition location          |
-| `CreateWebviewPanel` | Cocoon -> Mountain | Extension            | Create a webview panel               |
-| `SendWebviewMessage` | Cocoon -> Mountain | Extension            | Send message to webview              |
+| RPC | Direction | Trigger | Purpose |
+| --- | --------- | ------- | ------- |
+| `Initialize` | `Mountain` -> `Cocoon` | After handshake | Send init data, start extension host |
+| `Shutdown` | `Mountain` -> `Cocoon` | App quit | Graceful extension host shutdown |
+| `Heartbeat` | Bidirectional | Every 5 seconds | Connection health monitoring |
+| `ActivateExtension` | `Mountain` -> `Cocoon` | Extension activation | Activate a VS Code extension |
+| `ExecuteCommand` | `Cocoon` -> `Mountain` | Extension command | Execute a registered command |
+| `RegisterCommand` | `Cocoon` -> `Mountain` | Extension startup | Register a command handler |
+| `ProvideHover` | `Cocoon` -> `Mountain` | User hovers | Request hover information |
+| `ProvideCompletions` | `Cocoon` -> `Mountain` | User types | Request completion items |
+| `ProvideDefinition` | `Cocoon` -> `Mountain` | User clicks | Request definition location |
+| `CreateWebviewPanel` | `Cocoon` -> `Mountain` | Extension | Create a webview panel |
+| `SendWebviewMessage` | `Cocoon` -> `Mountain` | Extension | Send message to webview |
 
 ### Service: BackgroundServices
 
-Used for Mountain <-> Air communication:
+Used for `Mountain` <-> `Air` communication:
 
-| RPC             | Direction       | Purpose                      |
-| --------------- | --------------- | ---------------------------- |
-| `Connect`       | Air -> Mountain | Register available services  |
-| `HealthCheck`   | Bidirectional   | Connection health monitoring |
-| `PerformAction` | Mountain -> Air | Execute background operation |
+| RPC | Direction | Purpose |
+| --- | --------- | ------- |
+| `Connect` | `Air` -> `Mountain` | Register available services |
+| `HealthCheck` | Bidirectional | Connection health monitoring |
+| `PerformAction` | `Mountain` -> `Air` | Execute background operation |
 
 ### Message Formats
 
@@ -301,20 +299,20 @@ message WebviewOptions {
 
 ### Port Allocation
 
-| Service             | Element | Port  | Transport |
-| ------------------- | ------- | ----- | --------- |
-| Extension Host      | Cocoon  | 50051 | TCP       |
-| Background Services | Air     | 50053 | TCP       |
+| Service | Element | Port | Transport |
+| ------- | ------- | ---- | --------- |
+| Extension Host | `Cocoon` | `50051` | TCP |
+| Background Services | `Air` | `50053` | TCP |
 
 Ports can be overridden via `NetworkMountainPort` and `NetworkCocoonPort`
 environment variables.
 
 ---
 
-## Spine Extension Protocol
+## Spine Extension Protocol 🔄
 
-The Spine protocol is the extension host coordination layer built on top of Vine
-gRPC. It implements an action/response pattern for extension-to-backend
+The `Spine` protocol is the extension host coordination layer built on top of `Vine`
+`gRPC`. It implements an action/response pattern for extension-to-backend
 communication.
 
 ### Action/Response Pattern
@@ -340,7 +338,7 @@ sequenceDiagram
 
 ### ActionEffect Types
 
-The Spine protocol encodes all possible extension actions as a discriminated
+The `Spine` protocol encodes all possible extension actions as a discriminated
 union:
 
 ```
@@ -378,19 +376,16 @@ ActionEffect
 
 ### Routing
 
-The Cocoon tier router (`Cocoon/Source/Services/Handler/VscodeAPI/ROUTING.md`)
+The `Cocoon` tier router (`Cocoon/Source/Services/Handler/VscodeAPI/ROUTING.md`)
 decides per-call whether to:
 
-1. **Track A (Stock Node):** Handle entirely in-process via unmodified
-   `extHost*.ts` code
-2. **Track B (Rust Native):** Package as ActionEffect, send via Spine gRPC to
-   Mountain, await native execution
-3. **Track C (Cocoon Bespoke):** Hand-rolled TypeScript implementation in Cocoon
-   (last resort)
+1. **Track A (Stock Node):** Handle entirely in-process via unmodified `extHost*.ts` code
+2. **Track B (Rust Native):** Package as `ActionEffect`, send via `Spine` `gRPC` to `Mountain`, await native execution
+3. **Track C (Cocoon Bespoke):** Hand-rolled `TypeScript` implementation in `Cocoon` (last resort)
 
 ---
 
-## Connection Lifecycle
+## Connection Lifecycle 🔄
 
 ### Mountain-Cocoon Connection
 
@@ -462,19 +457,19 @@ Normal operation:
 
 ---
 
-## Health Monitoring
+## Health Monitoring 💓
 
 ### Heartbeat Protocol
 
-Both gRPC connections (Mountain-Cocoon, Mountain-Air) implement a health
+Both `gRPC` connections (`Mountain`-`Cocoon`, `Mountain`-`Air`) implement a health
 monitoring protocol:
 
-| Parameter                   | Value                                |
-| --------------------------- | ------------------------------------ |
-| Heartbeat interval          | 5 seconds                            |
-| Timeout (missed heartbeats) | 3 (15 seconds)                       |
-| Recovery                    | Automatic restart (up to 3 attempts) |
-| Exponential backoff         | 1s, 2s, 4s for consecutive failures  |
+| Parameter | Value |
+| --------- | ----- |
+| Heartbeat interval | 5 seconds |
+| Timeout (missed heartbeats) | 3 (15 seconds) |
+| Recovery | Automatic restart (up to 3 attempts) |
+| Exponential backoff | 1s, 2s, 4s for consecutive failures |
 
 ### Health Check Messages
 
@@ -509,19 +504,19 @@ All connection state changes are logged via the `@landfix` diagnostic system:
 
 ---
 
-## Protocol Buffer Definitions
+## Protocol Buffer Definitions 📁
 
 ### Current Location
 
 Protocol definitions currently reside in consuming components:
 
-| File          | Location                                                 | Purpose                                 |
-| ------------- | -------------------------------------------------------- | --------------------------------------- |
-| `Vine.proto`  | `Element/Mountain/Proto/Vine.proto`                      | Core Mountain<->Cocoon gRPC services    |
-| `Grove.proto` | `Element/Grove/Proto/Grove.proto`                        | Grove-specific WASM hosting extensions  |
-| Server impl   | `Element/Mountain/Source/Vine/`                          | Rust gRPC server (tonic)                |
-| Client impl   | `Element/Cocoon/Source/Services/Mountain/gRPC/Client.ts` | TypeScript gRPC client                  |
-| RouteManifest | `Element/Cocoon/Source/Generated/RouteManifest.ts`       | Auto-generated routing tier enumeration |
+| File | Location | Purpose |
+| ---- | -------- | ------- |
+| `Vine.proto` | `Element/Mountain/Proto/Vine.proto` | Core `Mountain`<->`Cocoon` `gRPC` services |
+| `Grove.proto` | `Element/Grove/Proto/Grove.proto` | Grove-specific WASM hosting extensions |
+| Server impl | `Element/Mountain/Source/Vine/` | Rust `gRPC` server (`tonic`) |
+| Client impl | `Element/Cocoon/Source/Services/Mountain/gRPC/Client.ts` | TypeScript `gRPC` client |
+| RouteManifest | `Element/Cocoon/Source/Generated/RouteManifest.ts` | Auto-generated routing tier enumeration |
 
 ### Code Generation
 
@@ -537,35 +532,35 @@ fn main() {
 }
 ```
 
-TypeScript types are generated using `protoc-gen-ts` and checked into the Cocoon
+TypeScript types are generated using `protoc-gen-ts` and checked into the `Cocoon`
 source tree as generated artifacts.
 
 ---
 
-## Security
+## Security 🛡️
 
-All gRPC connections are restricted to localhost only (127.0.0.1). No remote
+All `gRPC` connections are restricted to localhost only (`127.0.0.1`). No remote
 connections are accepted.
 
-| Aspect        | Implementation                             |
-| ------------- | ------------------------------------------ |
-| Transport     | TCP loopback only                          |
-| Auth          | None required (localhost-only)             |
-| Encryption    | None (localhost-only, no network exposure) |
-| Port binding  | `127.0.0.1` only, not `0.0.0.0`            |
-| DNS isolation | All non-localhost traffic blocked by Mist  |
-| Timeout       | 15-second heartbeat timeout                |
-| Backpressure  | gRPC flow control + bounded channels       |
+| Aspect | Implementation |
+| ------ | -------------- |
+| Transport | TCP loopback only |
+| Auth | None required (localhost-only) |
+| Encryption | None (localhost-only, no network exposure) |
+| Port binding | `127.0.0.1` only, not `0.0.0.0` |
+| DNS isolation | All non-localhost traffic blocked by `Mist` |
+| Timeout | 15-second heartbeat timeout |
+| Backpressure | `gRPC` flow control + bounded channels |
 
 ---
 
-## Related Documentation
+## Related Documentation 📋
 
 - [Architecture](Architecture.md) - System architecture
 - [BuildPipeline](BuildPipeline.md) - Build pipeline
 - [EditorCore](EditorCore.md) - Editor workbench
 - [Polyfills](Polyfills.md) - Compatibility shims
-- [RustInfrastructure](RustInfrastructure.md) - Rust backend components
+- [RustInfrastructure](RustInfrastructure.md) - `Rust` backend components
 - [Building](Building.md) - Build instructions
 - [Workflow/ApplicationStartupAndHandshake](Workflow/ApplicationStartupAndHandshake.md)
 - [Workflow/CreatingAndInteractingWithAWebviewPanel](Workflow/CreatingAndInteractingWithAWebviewPanel.md)

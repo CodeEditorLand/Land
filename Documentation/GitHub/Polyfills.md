@@ -1,10 +1,10 @@
 # Polyfills and Compatibility Shims
 
 This document catalogues every polyfill, shim, and compatibility layer that
-enables the VS Code workbench and extension host to function inside Land's Tauri
-WebView and Node.js sidecar architecture. These layers translate Electron and
-Node.js APIs into their Tauri and Rust equivalents without modifying upstream VS
-Code source code.
+enables the VS Code workbench and extension host to function inside **Land**'s
+`Tauri` WebView and `Node.js` sidecar architecture. These layers translate
+Electron and `Node.js` APIs into their `Tauri` and `Rust` equivalents without
+modifying upstream VS Code source code.
 
 ---
 
@@ -23,11 +23,11 @@ Code source code.
 
 ---
 
-## Wind Preload Shim
+## Wind Preload Shim 🛡️
 
 The Preload shim (`Wind/Source/Preload.ts`) establishes the VS Code workbench
-execution environment inside the Tauri WebView. It runs as the first script
-loaded by `index.html` and patches the global scope with Electron/Node.js APIs
+execution environment inside the `Tauri` WebView. It runs as the first script
+loaded by `index.html` and patches the global scope with Electron/`Node.js` APIs
 before the workbench bundle loads.
 
 ### Execution Order
@@ -53,19 +53,19 @@ The Preload shim defines the following global replacements:
 
 | VS Code Expectation         | Land Implementation                     | Mechanism                                                                      |
 | --------------------------- | --------------------------------------- | ------------------------------------------------------------------------------ |
-| `window.vscode.ipcRenderer` | Tauri `invoke()` wrapper                | Custom `IPCRenderer` interface in `Wind/Source/Types/Interface/IPCRenderer.ts` |
+| `window.vscode.ipcRenderer` | `Tauri` `invoke()` wrapper              | Custom `IPCRenderer` interface in `Wind/Source/Types/Interface/IPCRenderer.ts` |
 | `process.env`               | Object with tier-gated env vars         | Populated from `__LandTiers` at preload time                                   |
-| `process.platform`          | Static `darwin`                         | Hardcoded for macOS                                                            |
+| `process.platform`          | Static `darwin`                         | Hardcoded for `macOS`                                                          |
 | `process.versions`          | Object with `node`, `http_parser`, `v8` | Populated from navigator.userAgent                                             |
-| `process.argv`              | Array of launch arguments               | Received from Tauri IPC                                                        |
-| `process.cwd()`             | Resolved workspace root                 | Set during init from Mountain                                                  |
+| `process.argv`              | Array of launch arguments               | Received from `Tauri` IPC                                                      |
+| `process.cwd()`             | Resolved workspace root                 | Set during init from `Mountain`                                                |
 | `process.nextTick()`        | Custom microtask queue                  | Standard `queueMicrotask` + polyfill                                           |
 | `globalThis.__filename`     | Environment path `appRoot`              | Path to workbench bundle root                                                  |
 | `webFrame` (Electron)       | No-op stub                              | Methods return undefined                                                       |
 
 ### Diagnostic Tag
 
-Preload.ts emits a `preload-shim` diagnostic entry:
+`Preload.ts` emits a `preload-shim` diagnostic entry:
 
 ```
 [preload-shim] window.vscode.ipcRenderer installed
@@ -73,27 +73,27 @@ Preload.ts emits a `preload-shim` diagnostic entry:
 [preload-shim] land-preload-ready dispatched
 ```
 
-This diagnostic is visible in Mountain's dev-log when `Trace=preload-shim` is
-set. It confirms the shim is active in the real WebView (not an Astro SSR pass
+This diagnostic is visible in `Mountain`'s dev-log when `Trace=preload-shim` is
+set. It confirms the shim is active in the real WebView (not an `Astro` SSR pass
 where `window` is a Node polyfill).
 
 ---
 
-## SkyBridge
+## SkyBridge 🌐
 
-SkyBridge (`Sky/Source/SkyBridge.ts`, ~2900 lines) is the runtime event routing
-bridge between Tauri's IPC system and the VS Code workbench's internal message
-channel system. It translates between two event models:
+`SkyBridge` (`Sky/Source/SkyBridge.ts`, ~2900 lines) is the runtime event
+routing bridge between `Tauri`'s IPC system and the VS Code workbench's internal
+message channel system. It translates between two event models:
 
 ### Event Translation
 
-| Tauri Event                     | VS Code Workbench Channel  | Direction             |
-| ------------------------------- | -------------------------- | --------------------- |
-| `mountain:configurationChanged` | `onDidChangeConfiguration` | Mountain -> Workbench |
-| `mountain:extensionsChanged`    | `onDidChangeExtensions`    | Mountain -> Workbench |
-| `mountain:themeChanged`         | `onDidChangeColorTheme`    | Mountain -> Workbench |
-| `mountain:fileChanged`          | FileSystem watcher events  | Mountain -> Workbench |
-| `cocoon:commandExecuted`        | Extension command result   | Cocoon -> Workbench   |
+| Tauri Event                     | VS Code Workbench Channel  | Direction               |
+| ------------------------------- | -------------------------- | ----------------------- |
+| `mountain:configurationChanged` | `onDidChangeConfiguration` | `Mountain` -> Workbench |
+| `mountain:extensionsChanged`    | `onDidChangeExtensions`    | `Mountain` -> Workbench |
+| `mountain:themeChanged`         | `onDidChangeColorTheme`    | `Mountain` -> Workbench |
+| `mountain:fileChanged`          | FileSystem watcher events  | `Mountain` -> Workbench |
+| `cocoon:commandExecuted`        | Extension command result   | `Cocoon` -> Workbench   |
 
 ### Bridge Architecture
 
@@ -114,7 +114,7 @@ graph LR
 
 ### HTML Injection and Webview Input
 
-SkyBridge manages the lifecycle of webview content injection through
+`SkyBridge` manages the lifecycle of webview content injection through
 `first-set-html` logging. When an extension creates a webview panel, the flow
 is:
 
@@ -140,12 +140,12 @@ Sky webview sets HTML content
 
 ---
 
-## Cocoon Initialization Prelude
+## Cocoon Initialization Prelude 🚀
 
-The Cocoon initialization prelude
+The `Cocoon` initialization prelude
 (`Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts`) runs before any
 extension code executes. It establishes the execution environment for the VS
-Code Extension Host within Node.js.
+Code Extension Host within `Node.js`.
 
 ### Prelude Sequence
 
@@ -190,12 +190,12 @@ Extension host ready for use
 
 ### RequireInterceptor
 
-The `RequireInterceptor` patches Node.js's `require()` to:
+The `RequireInterceptor` patches `Node.js`'s `require()` to:
 
 1. Remap `electron` module references to local shims (empty objects with
    expected method shapes)
-2. Remap `original-fs` to `fs` (Node.js standard library)
-3. Intercept VS Code module loading to inject Land-specific patches
+2. Remap `original-fs` to `fs` (`Node.js` standard library)
+3. Intercept VS Code module loading to inject **Land**-specific patches
 4. Provide shims for native modules (`keytar`, `spdlog`,
    `vscode-windows-registry`)
 
@@ -204,20 +204,20 @@ module resolution works correctly for the unmodified `extHost*.ts` sources.
 
 ---
 
-## Output Transform Pipeline
+## Output Transform Pipeline 🔧
 
 The `Output` element applies polyfills during the compilation of VS Code
 platform code:
 
 ### Transform Categories
 
-| Transform               | Purpose                                                             | Applied By                 |
-| ----------------------- | ------------------------------------------------------------------- | -------------------------- |
-| Module resolution remap | Replace `electron` imports with Tauri stubs                         | ESBuild `alias` config     |
-| `define` substitution   | Replace `process.platform` checks with compile-time constants       | ESBuild `define` config    |
-| CSS import interception | Wrap CSS imports for runtime `<link>` injection                     | ESBuild plugin             |
-| Source map chaining     | Preserve original VS Code source maps through transforms            | ESBuild `sourcemap` config |
-| Dead code elimination   | Remove Electron-specific code paths (window management, tray, etc.) | ESBuild tree shaking       |
+| Transform               | Purpose                                                             | Applied By                   |
+| ----------------------- | ------------------------------------------------------------------- | ---------------------------- |
+| Module resolution remap | Replace `electron` imports with `Tauri` stubs                       | `ESBuild` `alias` config     |
+| `define` substitution   | Replace `process.platform` checks with compile-time constants       | `ESBuild` `define` config    |
+| CSS import interception | Wrap CSS imports for runtime `<link>` injection                     | `ESBuild` plugin             |
+| Source map chaining     | Preserve original VS Code source maps through transforms            | `ESBuild` `sourcemap` config |
+| Dead code elimination   | Remove Electron-specific code paths (window management, tray, etc.) | `ESBuild` tree shaking       |
 
 ### Platform Code Markers
 
@@ -239,7 +239,7 @@ workbench variant selection system.
 
 ---
 
-## Worker Service Worker
+## Worker Service Worker 🗂️
 
 The `Worker` element provides a service worker that enables offline support and
 optimizes asset loading:
@@ -255,7 +255,7 @@ optimizes asset loading:
 
 ### Dynamic CSS Interception
 
-A unique feature of the Worker is its dynamic CSS loading interceptor:
+A unique feature of the `Worker` is its dynamic CSS loading interceptor:
 
 ```
 JavaScript imports CSS file
@@ -290,21 +290,21 @@ cascade ordering.
 
 ---
 
-## LandFix Diagnostics
+## LandFix Diagnostics 🔬
 
 The `@landfix` system provides structured diagnostic logging across all
 processes:
 
 ### Diagnostic Tag System
 
-| Tag                | Source          | Purpose                               |
-| ------------------ | --------------- | ------------------------------------- |
-| `preload-shim`     | Wind Preload.ts | Confirms shim installation success    |
-| `landfix:layer`    | Wind Layer      | Service layer composition diagnostics |
-| `landfix:tier`     | All processes   | Runtime tier banner                   |
-| `landfix:bridge`   | SkyBridge       | Event bridge state changes            |
-| `landfix:cocoon`   | Cocoon          | Extension host lifecycle              |
-| `landfix:mountain` | Mountain        | Backend service initialization        |
+| Tag                | Source              | Purpose                               |
+| ------------------ | ------------------- | ------------------------------------- |
+| `preload-shim`     | `Wind` `Preload.ts` | Confirms shim installation success    |
+| `landfix:layer`    | `Wind` Layer        | Service layer composition diagnostics |
+| `landfix:tier`     | All processes       | Runtime tier banner                   |
+| `landfix:bridge`   | `SkyBridge`         | Event bridge state changes            |
+| `landfix:cocoon`   | `Cocoon`            | Extension host lifecycle              |
+| `landfix:mountain` | `Mountain`          | Backend service initialization        |
 
 ### Runtime Tier Banner
 
@@ -316,13 +316,13 @@ Every process emits a tier banner at startup showing the resolved tier values:
 [LandFix:Tier] TierExtensionActivation=Layer3 TierExtensionScan=Layer3 TierModuleCache=Layer2
 ```
 
-The three banners (Mountain, Cocoon, Wind) must agree. A mismatch indicates env
-propagation drift.
+The three banners (`Mountain`, `Cocoon`, `Wind`) must agree. A mismatch
+indicates env propagation drift.
 
 ### Dev-Log File Sink
 
-Mountain writes diagnostic output to a structured dev-log file when `Trace=all`
-is set:
+`Mountain` writes diagnostic output to a structured dev-log file when
+`Trace=all` is set:
 
 ```
 ~/.land/logs/dev-<timestamp>.log
@@ -332,19 +332,20 @@ The dev-log captures:
 
 - Process lifecycle events (spawn, crash, exit)
 - Service initialization sequence
-- gRPC connection state changes
+- `gRPC` connection state changes
 - Diagnostic tags from all processes
 - Unhandled errors with stack traces
 
 ---
 
-## Telemetry Bridge
+## Telemetry Bridge 📊
 
-Land implements a dual-pipe telemetry system through the PostHog+OTEL bridge:
+**Land** implements a dual-pipe telemetry system through the PostHog+OTEL
+bridge:
 
 ### Wind PostHog Bridge
 
-The Wind PostHog bridge (`Wind/Source/Telemetry/PostHogBridge.ts`) reuses an
+The `Wind` PostHog bridge (`Wind/Source/Telemetry/PostHogBridge.ts`) reuses an
 in-webview `window.posthog` client:
 
 ```
@@ -361,8 +362,8 @@ Wind PostHogBridge.ts
 
 ### Mountain Telemetry
 
-Mountain's telemetry layer sends events from Rust directly to both PostHog (via
-`posthog-rs` crate) and OTLP (via `opentelemetry` crate).
+`Mountain`'s telemetry layer sends events from `Rust` directly to both PostHog
+(via `posthog-rs` crate) and OTLP (via `opentelemetry` crate).
 
 ### Telemetry Kill Switch
 
@@ -372,7 +373,7 @@ binary -- no runtime toggle.
 
 ---
 
-## Polyfill Lifecycle
+## Polyfill Lifecycle 🔄
 
 The startup sequence coordinates all polyfill layers:
 
@@ -415,11 +416,11 @@ layers, useful for diagnosing polyfill-related issues:
 - `Disable=true` - All polyfills skipped
 - `Disable=false` (default) - Normal polyfill installation
 - `Disable=preload` - Skip only Preload shim
-- `Disable=bridge` - Skip only SkyBridge
+- `Disable=bridge` - Skip only `SkyBridge`
 
 ---
 
-## Global Namespace Cleanup
+## Global Namespace Cleanup 🧹
 
 After all shims are installed and the workbench is loaded, the Preload shim
 removes temporary globals to avoid polluting the workbench's global namespace:
@@ -434,13 +435,13 @@ Only essential globals remain on `window.vscode` and `globalThis.__LandTiers`.
 
 ---
 
-## Related Documentation
+## Related Documentation 📋
 
 - [Architecture](Architecture.md) - System architecture
-- [EditorCore](EditorCore.md) - Wind service layer and workbench adaptation
+- [EditorCore](EditorCore.md) - `Wind` service layer and workbench adaptation
 - [BuildPipeline](BuildPipeline.md) - Build pipeline
-- [RustInfrastructure](RustInfrastructure.md) - Rust backend components
-- [InterComponentProtocol](InterComponentProtocol.md) - gRPC protocol
+- [RustInfrastructure](RustInfrastructure.md) - `Rust` backend components
+- [InterComponentProtocol](InterComponentProtocol.md) - `gRPC` protocol
 - [VSCode-API-Coverage-Matrix](VSCode-API-Coverage-Matrix.md) - API support
   status
 - [Workflow/CreatingAndInteractingWithAWebviewPanel](Workflow/CreatingAndInteractingWithAWebviewPanel.md)

@@ -1,9 +1,9 @@
 # Editor Core: Workbench Adaptation
 
-This document describes how Land adapts the VS Code workbench to run inside a
-Tauri WebView. It covers the Wind service layer architecture, workbench variant
-system, command dispatch, and the VS Code API coverage split across Mountain,
-Cocoon, and Sky/Wind.
+This document describes how **Land** adapts the VS Code workbench to run inside
+a `Tauri` WebView. It covers the `Wind` service layer architecture, workbench
+variant system, command dispatch, and the VS Code API coverage split across
+`Mountain`, `Cocoon`, and `Sky`/`Wind`.
 
 ---
 
@@ -20,26 +20,26 @@ Cocoon, and Sky/Wind.
 
 ---
 
-## Workbench Architecture
+## Workbench Architecture 🏗️
 
 The VS Code workbench is the core UI framework that renders the editor
 interface. In VS Code's Electron architecture, the workbench runs in the
-renderer process and communicates with the main process via Electron IPC. Land
-replaces this IPC layer with Tauri commands and events while keeping the
-workbench UI code substantially unchanged.
+renderer process and communicates with the main process via Electron IPC.
+**Land** replaces this IPC layer with `Tauri` commands and events while keeping
+the workbench UI code substantially unchanged.
 
 ### Architecture Comparison
 
-| Aspect            | VS Code (Electron)           | Land (Tauri)                   |
-| ----------------- | ---------------------------- | ------------------------------ |
-| Main process      | Electron Main                | Mountain (Rust)                |
-| Renderer process  | Electron Renderer            | Tauri WebView                  |
-| IPC mechanism     | Electron ipcRenderer/ipcMain | Tauri invoke/event             |
-| Preload           | electron preload.js          | Wind Preload.ts                |
-| Extension host    | Child Node process           | Cocoon (Node sidecar via gRPC) |
-| File system       | Node.js fs module            | Mountain native Rust fs        |
-| Native dialogs    | Electron dialog API          | Tauri dialog plugin            |
-| Window management | Electron BrowserWindow       | Tauri Window                   |
+| Aspect            | VS Code (Electron)           | Land (Tauri)                       |
+| ----------------- | ---------------------------- | ---------------------------------- |
+| Main process      | Electron Main                | `Mountain` (`Rust`)                |
+| Renderer process  | Electron Renderer            | `Tauri` WebView                    |
+| IPC mechanism     | Electron ipcRenderer/ipcMain | `Tauri` invoke/event               |
+| Preload           | electron preload.js          | `Wind` `Preload.ts`                |
+| Extension host    | Child Node process           | `Cocoon` (Node sidecar via `gRPC`) |
+| File system       | Node.js fs module            | `Mountain` native `Rust` fs        |
+| Native dialogs    | Electron dialog API          | `Tauri` dialog plugin              |
+| Window management | Electron BrowserWindow       | `Tauri` Window                     |
 
 ### Workbench Loading Sequence
 
@@ -70,11 +70,11 @@ sequenceDiagram
 
 ---
 
-## Wind Service Layer
+## Wind Service Layer 🧩
 
-Wind provides ~40 Effect-TS services that replace the VS Code workbench service
-implementations. Each service follows a consistent module structure with three
-files:
+`Wind` provides ~40 `Effect-TS` services that replace the VS Code workbench
+service implementations. Each service follows a consistent module structure with
+three files:
 
 ```
 Wind/Source/Effect/<Service>/
@@ -87,14 +87,14 @@ Wind/Source/Effect/<Service>/
 
 #### Core Infrastructure
 
-| Service       | Tag             | Purpose                                         |
-| ------------- | --------------- | ----------------------------------------------- |
-| IPC           | `IPC`           | Tauri command invocation and event subscription |
-| Configuration | `Configuration` | Read/write settings via Mountain                |
-| Environment   | `Environment`   | OS environment variables and paths              |
-| Mountain      | `Mountain`      | gRPC-level communication with Mountain backend  |
-| MountainSync  | `MountainSync`  | Synchronous state snapshot from Mountain        |
-| Log           | `Log`           | Structured logging                              |
+| Service       | Tag             | Purpose                                            |
+| ------------- | --------------- | -------------------------------------------------- |
+| IPC           | `IPC`           | `Tauri` command invocation and event subscription  |
+| Configuration | `Configuration` | Read/write settings via `Mountain`                 |
+| Environment   | `Environment`   | OS environment variables and paths                 |
+| Mountain      | `Mountain`      | `gRPC`-level communication with `Mountain` backend |
+| MountainSync  | `MountainSync`  | Synchronous state snapshot from `Mountain`         |
+| Log           | `Log`           | Structured logging                                 |
 
 #### Editor Services
 
@@ -112,8 +112,8 @@ Wind/Source/Effect/<Service>/
 
 | Service     | Tag           | Purpose                                         |
 | ----------- | ------------- | ----------------------------------------------- |
-| FileService | `FileService` | File read/write/delete/copy/move via Mountain   |
-| FileDialog  | `FileDialog`  | Native OS file dialogs via Tauri                |
+| FileService | `FileService` | File read/write/delete/copy/move via `Mountain` |
+| FileDialog  | `FileDialog`  | Native OS file dialogs via `Tauri`              |
 | Workspace   | `Workspace`   | Workspace root resolution and folder management |
 
 #### Window and UI Services
@@ -121,32 +121,32 @@ Wind/Source/Effect/<Service>/
 | Service      | Tag            | Purpose                                         |
 | ------------ | -------------- | ----------------------------------------------- |
 | Window       | `Window`       | Window state (fullscreen, maximized, minimized) |
-| Dialog       | `Dialog`       | Message boxes, input boxes via Mountain         |
+| Dialog       | `Dialog`       | Message boxes, input boxes via `Mountain`       |
 | Notification | `Notification` | Toast notifications and progress indicators     |
 | Progress     | `Progress`     | Long-running operation progress UI              |
 | Views        | `Views`        | View container management (sidebar, panel)      |
 
 #### Clipboard Services
 
-| Service       | Tag             | Purpose                                  |
-| ------------- | --------------- | ---------------------------------------- |
-| Clipboard     | `Clipboard`     | System clipboard read/write via Mountain |
-| LiveClipboard | `LiveClipboard` | Real-time clipboard monitoring           |
+| Service       | Tag             | Purpose                                    |
+| ------------- | --------------- | ------------------------------------------ |
+| Clipboard     | `Clipboard`     | System clipboard read/write via `Mountain` |
+| LiveClipboard | `LiveClipboard` | Real-time clipboard monitoring             |
 
 #### Terminal Services
 
 | Service         | Tag               | Purpose                                     |
 | --------------- | ----------------- | ------------------------------------------- |
 | Terminal        | `Terminal`        | Integrated terminal creation and management |
-| TerminalProcess | `TerminalProcess` | PTY process lifecycle via Mountain          |
+| TerminalProcess | `TerminalProcess` | PTY process lifecycle via `Mountain`        |
 
 #### Extension Integration Services
 
-| Service             | Tag                   | Purpose                                       |
-| ------------------- | --------------------- | --------------------------------------------- |
-| ExtensionManagement | `ExtensionManagement` | Extension install/uninstall/list via Mountain |
-| ExtensionScanner    | `ExtensionScanner`    | Scan filesystem for installed extensions      |
-| ExtensionsWorkbench | `ExtensionsWorkbench` | Extensions view in sidebar                    |
+| Service             | Tag                   | Purpose                                         |
+| ------------------- | --------------------- | ----------------------------------------------- |
+| ExtensionManagement | `ExtensionManagement` | Extension install/uninstall/list via `Mountain` |
+| ExtensionScanner    | `ExtensionScanner`    | Scan filesystem for installed extensions        |
+| ExtensionsWorkbench | `ExtensionsWorkbench` | Extensions view in sidebar                      |
 
 #### Storage Services
 
@@ -158,25 +158,25 @@ Wind/Source/Effect/<Service>/
 
 #### Other Services
 
-| Service       | Tag             | Purpose                                  |
-| ------------- | --------------- | ---------------------------------------- |
-| CustomEditor  | `CustomEditor`  | Custom (webview-based) editor support    |
-| Keybinding    | `Keybinding`    | Keyboard shortcut resolution             |
-| SCM           | `SCM`           | Source Control Management integration    |
-| Search        | `Search`        | File search and text search via Mountain |
-| Task          | `Task`          | Task execution and management            |
-| Timeline      | `Timeline`      | File timeline (local history)            |
-| Webview       | `Webview`       | Webview panel management                 |
-| Accessibility | `Accessibility` | Screen reader support via OS APIs        |
-| Lifecycle     | `Lifecycle`     | Application lifecycle events             |
+| Service       | Tag             | Purpose                                    |
+| ------------- | --------------- | ------------------------------------------ |
+| CustomEditor  | `CustomEditor`  | Custom (webview-based) editor support      |
+| Keybinding    | `Keybinding`    | Keyboard shortcut resolution               |
+| SCM           | `SCM`           | Source Control Management integration      |
+| Search        | `Search`        | File search and text search via `Mountain` |
+| Task          | `Task`          | Task execution and management              |
+| Timeline      | `Timeline`      | File timeline (local history)              |
+| Webview       | `Webview`       | Webview panel management                   |
+| Accessibility | `Accessibility` | Screen reader support via OS APIs          |
+| Lifecycle     | `Lifecycle`     | Application lifecycle events               |
 
 ---
 
-## Service Composition and Layer Stacks
+## Service Composition and Layer Stacks 🧩
 
-Wind services compose into Layer stacks using Effect-TS's Layer system. Each
+`Wind` services compose into Layer stacks using `Effect-TS`'s Layer system. Each
 Layer is a collection of service implementations wired together through
-Effect-TS's dependency injection.
+`Effect-TS`'s dependency injection.
 
 ### Layer Stack Architecture
 
@@ -217,8 +217,8 @@ Wind/Source/Function/Install/index.ts
     +---> Provides Runtime to Sky UI components
 ```
 
-Each Layer wire uses the Effect-TS `Layer.merge` combinator to compose services
-with their explicit dependency graphs:
+Each Layer wire uses the `Effect-TS` `Layer.merge` combinator to compose
+services with their explicit dependency graphs:
 
 ```typescript
 export const TauriLiveLayer: Layer<...> = Layer.mergeAll(
@@ -231,29 +231,29 @@ export const TauriLiveLayer: Layer<...> = Layer.mergeAll(
 );
 ```
 
-Effect-TS's compile-time dependency tracking ensures that no service can be used
-without its dependencies being satisfied by the Layer stack. A missing
-dependency produces a TypeScript type error.
+`Effect-TS`'s compile-time dependency tracking ensures that no service can be
+used without its dependencies being satisfied by the Layer stack. A missing
+dependency produces a `TypeScript` type error.
 
 ---
 
-## Workbench Variants
+## Workbench Variants 🚀
 
-Land supports multiple workbench variants selected at build time:
+**Land** supports multiple workbench variants selected at build time:
 
 | Variant              | Feature Coverage          | Build Profile             | Use Case                                   |
 | -------------------- | ------------------------- | ------------------------- | ------------------------------------------ |
 | **Browser**          | 70-80%                    | `debug`                   | Quick development, limited native features |
-| **Mountain**         | 80-90%                    | `debug-mountain`          | Daily development, Tauri native features   |
+| **Mountain**         | 80-90%                    | `debug-mountain`          | Daily development, `Tauri` native features |
 | **Electron**         | 95%+                      | `debug-electron`          | Maximum VS Code compatibility              |
-| **Electron+Rest**    | 95%+                      | `debug-electron-rest`     | Same as Electron + OXC compiler            |
+| **Electron+Rest**    | 95%+                      | `debug-electron-rest`     | Same as Electron + `OXC` compiler          |
 | **Electron Minimal** | No built-in extensions    | `debug-electron-minimal`  | Minimal footprint debugging                |
 | **Sessions**         | Window/Session management | `debug-sessions-bundled`  | Multi-window session support               |
 | **Workbench**        | Base workbench only       | `debug-workbench-bundled` | Minimal UI for testing                     |
 
 ### Variant Selection Logic
 
-Sky's `index.astro` entry point selects the active workbench at build time:
+`Sky`'s `index.astro` entry point selects the active workbench at build time:
 
 ```typescript
 // Pseudo-code from Sky's build-time conditional imports
@@ -267,14 +267,14 @@ const workbench: WorkbenchVariant =
 				: BaseWorkbench;
 ```
 
-Unused variants are tree-shaken by Vite and do not enter the production module
+Unused variants are tree-shaken by `Vite` and do not enter the production module
 graph.
 
 ---
 
-## Command Dispatch System
+## Command Dispatch System 🎮
 
-Land implements the VS Code command system across all three layers:
+**Land** implements the VS Code command system across all three layers:
 
 ### Command Registry Structure
 
@@ -320,17 +320,17 @@ sequenceDiagram
 
 | Category        | Registered In | Examples                                                                     |
 | --------------- | ------------- | ---------------------------------------------------------------------------- |
-| Native editor   | Wind          | `cursorMove`, `type`, `replacePreviousChar`                                  |
-| Window/UI       | Mountain      | `workbench.action.toggleSidebar`, `workbench.action.terminal.toggleTerminal` |
-| File operations | Mountain      | `workbench.action.files.save`, `workbench.action.files.openFile`             |
-| Extension       | Cocoon        | `editor.action.formatDocument`, `git.commit`                                 |
+| Native editor   | `Wind`        | `cursorMove`, `type`, `replacePreviousChar`                                  |
+| Window/UI       | `Mountain`    | `workbench.action.toggleSidebar`, `workbench.action.terminal.toggleTerminal` |
+| File operations | `Mountain`    | `workbench.action.files.save`, `workbench.action.files.openFile`             |
+| Extension       | `Cocoon`      | `editor.action.formatDocument`, `git.commit`                                 |
 
 ---
 
-## Editor Service Architecture
+## Editor Service Architecture ✏️
 
-The editor service in Wind integrates the VS Code CodeEditor widget (based on
-Monaco) with Tauri's WebView and Mountain's native capabilities:
+The editor service in `Wind` integrates the VS Code CodeEditor widget (based on
+Monaco) with `Tauri`'s WebView and `Mountain`'s native capabilities:
 
 ### Text Model Management
 
@@ -371,27 +371,27 @@ Dirty state propagates to:
 
 ---
 
-## VS Code API Coverage Strategy
+## VS Code API Coverage Strategy 🔬
 
-Land uses a dual-track strategy for VS Code API coverage:
+**Land** uses a dual-track strategy for VS Code API coverage:
 
 ### Track A: Stock Node (Maximum Compatibility)
 
-The Cocoon extension host loads unmodified VS Code `extHost*.ts` source files.
-The ExtHostContext/MainContext RPC glue that normally runs in Electron's main
-process is shimmed by Cocoon to work over gRPC.
+The `Cocoon` extension host loads unmodified VS Code `extHost*.ts` source files.
+The `ExtHostContext`/`MainContext` RPC glue that normally runs in Electron's
+main process is shimmed by `Cocoon` to work over `gRPC`.
 
 Coverage: All APIs that the stock implementation handles in-process are
 immediately compatible.
 
 ### Track B: Rust Native (Performance)
 
-For I/O-heavy APIs, the Cocoon `vscode` shim routes operations through gRPC to
-Mountain for native Rust execution. This provides:
+For I/O-heavy APIs, the `Cocoon` `vscode` shim routes operations through `gRPC`
+to `Mountain` for native `Rust` execution. This provides:
 
 - Faster filesystem operations (native syscalls vs Node.js fs)
 - Direct OS integration (clipboard, dialogs, keychain)
-- Native terminal PTY (portable-pty crate vs node-pty)
+- Native terminal PTY (`portable-pty` crate vs `node-pty`)
 - Zero-copy buffer handling
 
 ### Coverage Matrix
@@ -409,13 +409,13 @@ The authoritative coverage matrix is at
 
 ---
 
-## Related Documentation
+## Related Documentation 📋
 
 - [Architecture](Architecture.md) - System architecture overview
 - [BuildPipeline](BuildPipeline.md) - Build pipeline
 - [Polyfills](Polyfills.md) - Compatibility shims and initialization layers
-- [RustInfrastructure](RustInfrastructure.md) - Rust backend components
-- [InterComponentProtocol](InterComponentProtocol.md) - gRPC protocol
+- [RustInfrastructure](RustInfrastructure.md) - `Rust` backend components
+- [InterComponentProtocol](InterComponentProtocol.md) - `gRPC` protocol
   specification
 - [VSCode-API-Coverage-Matrix](VSCode-API-Coverage-Matrix.md) - Comprehensive
   API status
