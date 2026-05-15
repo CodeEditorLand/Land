@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-TypeScript.py — Insert blank lines after ;  }  ,  and { in TypeScript/JavaScript source files.
+TypeScript.py - Insert blank lines after ;  }  ,  and { in TypeScript/JavaScript source files.
 
 Matches the Mountain project's convention: every statement boundary and block
 boundary should be visually separated by a blank line.
@@ -20,7 +20,7 @@ Rules (state-machine, line-by-line):
   • Same as above, but the paren guard is relaxed: commas inside direct
     function-call arguments DO get a blank line after them.
   • "Direct args" means ParenDepth > 0 AND the net brace depth since the
-    enclosing paren opened is 0 — i.e., we have not entered an object
+    enclosing paren opened is 0 - i.e., we have not entered an object
     literal or arrow-function body inside the call.
   • Commas inside object literals or closures within a call (e.g.
     foo({ key: val, }) or .catch((E) => { field = x, })) are left alone
@@ -30,7 +30,7 @@ Rules (state-machine, line-by-line):
 
   After {
   ───────
-  • Insert a blank line only for top-level block openings — class, function,
+  • Insert a blank line only for top-level block openings - class, function,
     interface, enum, namespace (brace depth becomes <= OpenBraceMaxDepth).
   • Deeply nested { (if/for/arrow bodies) are intentionally left alone.
 
@@ -92,14 +92,14 @@ def _scan_line(
 
     Returns
     -------
-    paren_delta            : int  — net parenthesis depth change
-    brace_delta            : int  — net brace depth change
-    last_char              : str|None — last non-whitespace code char
-    ends_in_block          : bool — line ends with unclosed /*
-    ends_in_string_single   : bool — line ends mid-single-quoted string
-    ends_in_string_double   : bool — line ends mid-double-quoted string
-    ends_in_string_template : bool — line ends mid-template literal
-    ends_in_string          : bool — any of the above three
+    paren_delta            : int  - net parenthesis depth change
+    brace_delta            : int  - net brace depth change
+    last_char              : str|None - last non-whitespace code char
+    ends_in_block          : bool - line ends with unclosed /*
+    ends_in_string_single   : bool - line ends mid-single-quoted string
+    ends_in_string_double   : bool - line ends mid-double-quoted string
+    ends_in_string_template : bool - line ends mid-template literal
+    ends_in_string          : bool - any of the above three
     """
     paren_delta = 0
     brace_delta = 0

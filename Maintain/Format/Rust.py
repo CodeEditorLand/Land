@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Rust.py — Insert blank lines after ;  }  ,  and { in Rust source files.
+Rust.py - Insert blank lines after ;  }  ,  and { in Rust source files.
 
 Matches the Mountain project's convention: every statement boundary and block
 boundary should be visually separated by a blank line.
@@ -21,7 +21,7 @@ Rules (state-machine, line-by-line):
     macro arguments (e.g. dev_log!("ch", "fmt", Arg1, Arg2)) DO get a
     blank line after them.
   • "Direct macro args" means ParenDepth > 0 AND the net brace depth since
-    the enclosing paren opened is 0 — i.e., we have not entered a struct
+    the enclosing paren opened is 0 - i.e., we have not entered a struct
     literal or closure body inside the macro call.
   • Commas inside struct literals or closure bodies within a macro call
     (e.g. json!({ "k": V, }) or .map_err(|E| { Field: x, })) are left alone
@@ -29,7 +29,7 @@ Rules (state-machine, line-by-line):
 
   After {
   ───────
-  • Insert a blank line only for top-level block openings — impl, enum,
+  • Insert a blank line only for top-level block openings - impl, enum,
     struct, mod (brace depth becomes <= OpenBraceMaxDepth after the line).
   • Deeply nested { (if/for/match arms) are intentionally left alone.
 
@@ -78,11 +78,11 @@ def _scan_line(line: str, mid_block_comment: bool = False) -> dict:
 
     Returns
     -------
-    paren_delta   : int  — net parenthesis depth change
-    brace_delta   : int  — net brace depth change
-    last_char     : str|None — last non-whitespace code character on the line
-    ends_in_block : bool — the line ends with an unclosed /*
-    ends_in_str   : bool — the line ends mid-string / mid-char / mid-raw-str
+    paren_delta   : int  - net parenthesis depth change
+    brace_delta   : int  - net brace depth change
+    last_char     : str|None - last non-whitespace code character on the line
+    ends_in_block : bool - the line ends with an unclosed /*
+    ends_in_str   : bool - the line ends mid-string / mid-char / mid-raw-str
     """
     paren_delta = 0
     brace_delta = 0
@@ -175,7 +175,7 @@ def _scan_line(line: str, mid_block_comment: bool = False) -> dict:
             pos += 1
             continue
 
-        # Char literal open — in Rust, ' followed by a single char (or escape)
+        # Char literal open - in Rust, ' followed by a single char (or escape)
         # and then ' is a char literal. If the next ' is far away it's likely
         # a lifetime annotation (e.g. &'static), which is code, not a string.
         if ch == "'":
@@ -198,7 +198,7 @@ def _scan_line(line: str, mid_block_comment: bool = False) -> dict:
                         pos += 1
                         continue
                 # else: single quote followed by quote => byte string or empty
-            # Not a char literal — treat ' as a code char
+            # Not a char literal - treat ' as a code char
             if ch not in (" ", "\t", "\r", "\n"):
                 last_char = ch
             pos += 1

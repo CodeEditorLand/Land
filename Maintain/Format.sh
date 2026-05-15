@@ -67,7 +67,7 @@ FormatShell() {
 	#                            **/.swc/, **/.parcel-cache/,
 	#                            **/.eslintcache/, **/.cache/, **/dist/
 	#   Generated codegen        **/Generated/, **/.generated/, **/gen/
-	#                            (Vine.proto → tonic, Sky channel
+	#                            (Vine.proto -> tonic, Sky channel
 	#                            codegen, Wind effect bridges)
 	#   Tauri codegen-assets     **/tauri-codegen-assets/ (binary payloads
 	#                            staged with `.sh` extensions)
@@ -98,6 +98,7 @@ FormatShell() {
 		-not -path "*/Generated/*" \
 		-not -path "*/.generated/*" \
 		-not -path "*/gen/*" \
+		-not -path "*/bin/*" \
 		| xargs shfmt -w
 
 	echo ""

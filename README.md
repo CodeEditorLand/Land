@@ -298,7 +298,7 @@ graph LR
 
 ---
 
-## Getting Started 🚀
+## Getting Started 🚀
 
 > [!IMPORTANT]
 >

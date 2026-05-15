@@ -160,8 +160,8 @@ sequenceDiagram
 3.  **Dispatch patterns**
     - **Static dispatch (preferred):**
       `export default Tier.Glob === "Native" ? CompileNative : CompileJavaScript;`
-      - esbuild's `define` substitutions dead-code-eliminate the inactive arm in
-      production bundles.
+        - esbuild's `define` substitutions dead-code-eliminate the inactive arm
+          in production bundles.
     - **Runtime branch:** `if (Tier.FileSystem === "Layer3") { … } else { … }` -
       used when two arms must coexist in the same bundle.
     - **Async memoisation:** when an upgraded tier needs one-time async setup

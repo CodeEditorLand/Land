@@ -30,6 +30,7 @@ nvm install 22
 ## Build Overview 📋
 
 The Land build is a **two-step linear flow**. Do NOT pull submodules recursively
+
 - each submodule is managed independently on its own branch.
 
 1. **Compile VS Code Source** - Build the VS Code platform code that `Cocoon`
@@ -252,13 +253,13 @@ variables via `.env.Land.CI` and use `--profile production-electron-bundled`.
 ## Further Reading 📖
 
 - [`Documentation/GitHub/Workflow/`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow)
-  - Detailed component interaction workflows
+    - Detailed component interaction workflows
 - [`Documentation/GitHub/BuildMatrix.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/BuildMatrix.md)
-  - Full build variant matrix
+    - Full build variant matrix
 - [`Documentation/GitHub/EnvironmentVariables.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/EnvironmentVariables.md)
-  - Complete env var reference
+    - Complete env var reference
 - [`Land/README.md`](https://github.com/CodeEditorLand/Land/tree/Current/README.md)
-  - Project overview and quick start
+    - Project overview and quick start
 
 ---
 

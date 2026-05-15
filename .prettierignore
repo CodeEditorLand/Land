@@ -85,6 +85,10 @@ dist
 **/Element/SideCar/*/NODE
 **/Element/SideCar/*/NODE/**
 
+# Built executables and generated companion scripts (build artifacts).
+**/bin/
+**/bin/**
+
 # ===========================================================================
 # Pre-existing ignores (kept verbatim).
 # ===========================================================================
