@@ -109,3 +109,42 @@ documentation.
     - _Explains how tasks defined in `tasks.json` or by extensions are
       discovered and executed, including how their output is piped to a terminal
       view._
+
+---
+
+## System Documentation
+
+The following documents provide in-depth system-level documentation
+complementing these workflows:
+
+| Document                                            | Topics Covered                                                                 |
+| --------------------------------------------------- | ------------------------------------------------------------------------------ |
+| [Architecture](Architecture.md)                     | System architecture, process model, IPC architecture, service layer design     |
+| [BuildPipeline](BuildPipeline.md)                   | Build stages, env propagation, profile system, artifact layout                 |
+| [EditorCore](EditorCore.md)                         | Workbench adaptation, Wind service layer, command dispatch, workbench variants |
+| [Polyfills](Polyfills.md)                           | Preload shim, SkyBridge, Cocoon prelude, Output transforms, Worker SW          |
+| [RustInfrastructure](RustInfrastructure.md)         | Common traits, Echo scheduler, Mountain, Mist DNS, Air daemon, Rest OXC        |
+| [InterComponentProtocol](InterComponentProtocol.md) | Tauri IPC, Vine gRPC, Spine protocol, connection lifecycle, health monitoring  |
+
+### Per-Element Architecture
+
+Each Element has an `Architecture.md` in its `Documentation/GitHub/` directory
+covering its internal module structure, data flow, and component-specific
+implementation details:
+
+| Element      | Language   | Role                      | Doc                                                                   |
+| ------------ | ---------- | ------------------------- | --------------------------------------------------------------------- |
+| **Air**      | Rust       | Background daemon         | [Architecture](Element/Air/Documentation/GitHub/Architecture.md)      |
+| **Cocoon**   | TypeScript | Node.js extension host    | [Architecture](Element/Cocoon/Documentation/GitHub/Architecture.md)   |
+| **Common**   | Rust       | Abstract core library     | [Architecture](Element/Common/Documentation/GitHub/Architecture.md)   |
+| **Echo**     | Rust       | Work-stealing scheduler   | [Architecture](Element/Echo/Documentation/GitHub/Architecture.md)     |
+| **Grove**    | Rust       | WASM extension host       | [Architecture](Element/Grove/Documentation/GitHub/Architecture.md)    |
+| **Mist**     | Rust       | DNS isolation server      | [Architecture](Element/Mist/Documentation/GitHub/Architecture.md)     |
+| **Mountain** | Rust       | Native backend (Tauri)    | [Architecture](Element/Mountain/Documentation/GitHub/Architecture.md) |
+| **Output**   | TypeScript | Build artifact management | [Architecture](Element/Output/Documentation/GitHub/Architecture.md)   |
+| **Rest**     | Rust       | OXC TypeScript compiler   | [Architecture](Element/Rest/Documentation/GitHub/Architecture.md)     |
+| **SideCar**  | Rust       | Vendored runtime manager  | [Architecture](Element/SideCar/Documentation/GitHub/Architecture.md)  |
+| **Sky**      | TypeScript | UI component layer        | [Architecture](Element/Sky/Documentation/GitHub/Architecture.md)      |
+| **Vine**     | Protocol   | gRPC protocol definitions | [Architecture](Element/Vine/Documentation/GitHub/Architecture.md)     |
+| **Wind**     | TypeScript | Frontend service layer    | [Architecture](Element/Wind/Documentation/GitHub/Architecture.md)     |
+| **Worker**   | TypeScript | Service worker            | [Architecture](Element/Worker/Documentation/GitHub/Architecture.md)   |
