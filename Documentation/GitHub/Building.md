@@ -166,15 +166,15 @@ building:
 Each Element may have additional build details. Refer to the specific README for
 element-specific workflows:
 
-| Element   | Build Instructions                                                                                                                                |
-| :-------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Grove`   | [`Element/Grove/README.md`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Grove/README.md) - Native Rust/WASM extension host build  |
-| `Mist`    | [`Element/Mist/README.md`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Mist/README.md) - DNS server build & testing               |
-| `Rest`    | [`Element/Rest/README.md`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Rest/README.md) - CLI compiler usage                       |
-| `SideCar` | [`Element/SideCar/README.md`](https://github.com/CodeEditorLand/Land/tree/Current/Element/SideCar/README.md) - Download tool for runtime binaries |
-| `Sky`     | [`Element/Sky/README.md`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Sky/README.md) - Astro UI development                       |
-| `Wind`    | [`Element/Wind/README.md`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Wind/README.md) - Effect-TS service layer                  |
-| `Cocoon`  | [`Element/Cocoon/README.md`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Cocoon/README.md) - Extension host details               |
+| Element   | Build Instructions                                                                                                                   |
+| :-------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| `Grove`   | [`Element/Grove/README.md`](https://github.com/CodeEditorLand/Grove/tree/Current/README.md) - Native Rust/WASM extension host build  |
+| `Mist`    | [`Element/Mist/README.md`](https://github.com/CodeEditorLand/Mist/tree/Current/README.md) - DNS server build & testing               |
+| `Rest`    | [`Element/Rest/README.md`](https://github.com/CodeEditorLand/Rest/tree/Current/README.md) - CLI compiler usage                       |
+| `SideCar` | [`Element/SideCar/README.md`](https://github.com/CodeEditorLand/SideCar/tree/Current/README.md) - Download tool for runtime binaries |
+| `Sky`     | [`Element/Sky/README.md`](https://github.com/CodeEditorLand/Sky/tree/Current/README.md) - Astro UI development                       |
+| `Wind`    | [`Element/Wind/README.md`](https://github.com/CodeEditorLand/Wind/tree/Current/README.md) - Effect-TS service layer                  |
+| `Cocoon`  | [`Element/Cocoon/README.md`](https://github.com/CodeEditorLand/Cocoon/tree/Current/README.md) - Extension host details               |
 
 ---
 
