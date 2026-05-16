@@ -115,7 +115,8 @@ documentation.
 ## System Documentation
 
 The following documents provide in-depth system-level documentation
-complementing these workflows:
+complementing these workflows. A comprehensive master index is available at
+[`README.md`](README.md).
 
 | Document                                            | Topics Covered                                                                 |
 | --------------------------------------------------- | ------------------------------------------------------------------------------ |

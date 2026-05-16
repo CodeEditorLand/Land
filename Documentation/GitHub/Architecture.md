@@ -19,7 +19,7 @@ operation on `macOS`.
 
 ---
 
-## Process Model 🏗️
+## Process Model 🏗️
 
 **Land** operates as a multi-process application with three concurrent
 processes:
@@ -66,7 +66,7 @@ graph TB
     Wind --> Sky
 ```
 
-## Component Map 🗺️
+## Component Map 🗺️
 
 ### Rust Components (Native)
 
@@ -93,7 +93,7 @@ graph TB
 
 ---
 
-## IPC Architecture 🔌
+## IPC Architecture 🔌
 
 ### Inter-Process Communication Matrix
 
@@ -158,7 +158,7 @@ sequenceDiagram
 
 ---
 
-## Service Layer Design 🧩
+## Service Layer Design 🧩
 
 ### Common Trait Architecture (Rust side)
 
@@ -246,7 +246,7 @@ which track to use.
 
 ---
 
-## Tier-Gated Implementation ⚙️
+## Tier-Gated Implementation ⚙️
 
 **Land** uses a configuration-driven selection mechanism for capabilities that
 have multiple implementation strategies. Each capability is assigned a tier
@@ -268,7 +268,7 @@ for the full propagation workflow.
 
 ---
 
-## Data Flow Patterns 📊
+## Data Flow Patterns 📊
 
 ### Read Request (File Open)
 
@@ -337,7 +337,7 @@ sequenceDiagram
 
 ---
 
-## Related Documentation 📋
+## Related Documentation 📋
 
 - [BuildPipeline](BuildPipeline.md) - Full build pipeline from env files to
   binary artifacts

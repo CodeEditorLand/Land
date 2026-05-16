@@ -115,7 +115,7 @@ sequenceDiagram
       waits.
 
 5.  **`Mountain` Responds to Handshake**
-    ([`ProcessManagement`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/ProcessManagement))**
+    ([`ProcessManagement`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/ProcessManagement))\*\*
     - **Action:** `Mountain`'s gRPC server receives the `$initialHandshake`.
     - This signals `Mountain` to proceed. It calls
       [`InitializationData`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/ProcessManagement/InitializationData.rs),
@@ -160,8 +160,8 @@ sequenceDiagram
     - **Action:** The main UI script runs.
     - It waits for the DOM to be ready.
     - It creates the master
-      **[`AppLayer`](https://github.com/CodeEditorLand/Wind)**,
-      which composes all `Wind` services (e.g.,
+      **[`AppLayer`](https://github.com/CodeEditorLand/Wind)**, which composes
+      all `Wind` services (e.g.,
       [`LiveClipboardService`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Clipboard/Live.ts),
       [`LiveDialogService`](https://github.com/CodeEditorLand/Wind),
       [`LiveEditorService`](https://github.com/CodeEditorLand/Wind)).

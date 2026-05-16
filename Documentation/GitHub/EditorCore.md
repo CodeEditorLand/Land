@@ -20,7 +20,7 @@ variant system, command dispatch, and the VS Code API coverage split across
 
 ---
 
-## Workbench Architecture 🏗️
+## Workbench Architecture 🏗️
 
 The VS Code workbench is the core UI framework that renders the editor
 interface. In VS Code's Electron architecture, the workbench runs in the
@@ -70,7 +70,7 @@ sequenceDiagram
 
 ---
 
-## Wind Service Layer 🧩
+## Wind Service Layer 🧩
 
 `Wind` provides ~40 `Effect-TS` services that replace the VS Code workbench
 service implementations. Each service follows a consistent module structure with
@@ -172,7 +172,7 @@ Wind/Source/Effect/<Service>/
 
 ---
 
-## Service Composition and Layer Stacks 🧩
+## Service Composition and Layer Stacks 🧩
 
 `Wind` services compose into Layer stacks using `Effect-TS`'s Layer system. Each
 Layer is a collection of service implementations wired together through
@@ -237,7 +237,7 @@ dependency produces a `TypeScript` type error.
 
 ---
 
-## Workbench Variants 🚀
+## Workbench Variants 🚀
 
 **Land** supports multiple workbench variants selected at build time:
 
@@ -272,7 +272,7 @@ graph.
 
 ---
 
-## Command Dispatch System 🎮
+## Command Dispatch System 🎮
 
 **Land** implements the VS Code command system across all three layers:
 
@@ -327,7 +327,7 @@ sequenceDiagram
 
 ---
 
-## Editor Service Architecture ✏️
+## Editor Service Architecture ✏️
 
 The editor service in `Wind` integrates the VS Code CodeEditor widget (based on
 Monaco) with `Tauri`'s WebView and `Mountain`'s native capabilities:
@@ -371,7 +371,7 @@ Dirty state propagates to:
 
 ---
 
-## VS Code API Coverage Strategy 🔬
+## VS Code API Coverage Strategy 🔬
 
 **Land** uses a dual-track strategy for VS Code API coverage:
 
@@ -409,7 +409,7 @@ The authoritative coverage matrix is at
 
 ---
 
-## Related Documentation 📋
+## Related Documentation 📋
 
 - [Architecture](Architecture.md) - System architecture overview
 - [BuildPipeline](BuildPipeline.md) - Build pipeline

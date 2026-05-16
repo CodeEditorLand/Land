@@ -23,7 +23,7 @@ modifying upstream VS Code source code.
 
 ---
 
-## Wind Preload Shim 🛡️
+## Wind Preload Shim 🛡️
 
 The Preload shim (`Wind/Source/Preload.ts`) establishes the VS Code workbench
 execution environment inside the `Tauri` WebView. It runs as the first script
@@ -79,7 +79,7 @@ where `window` is a Node polyfill).
 
 ---
 
-## SkyBridge 🌐
+## SkyBridge 🌐
 
 `SkyBridge` (`Sky/Source/SkyBridge.ts`, ~2900 lines) is the runtime event
 routing bridge between `Tauri`'s IPC system and the VS Code workbench's internal
@@ -140,7 +140,7 @@ Sky webview sets HTML content
 
 ---
 
-## Cocoon Initialization Prelude 🚀
+## Cocoon Initialization Prelude 🚀
 
 The `Cocoon` initialization prelude
 (`Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts`) runs before any
@@ -204,7 +204,7 @@ module resolution works correctly for the unmodified `extHost*.ts` sources.
 
 ---
 
-## Output Transform Pipeline 🔧
+## Output Transform Pipeline 🔧
 
 The `Output` element applies polyfills during the compilation of VS Code
 platform code:
@@ -239,7 +239,7 @@ workbench variant selection system.
 
 ---
 
-## Worker Service Worker 🗂️
+## Worker Service Worker 🗂️
 
 The `Worker` element provides a service worker that enables offline support and
 optimizes asset loading:
@@ -290,7 +290,7 @@ cascade ordering.
 
 ---
 
-## LandFix Diagnostics 🔬
+## LandFix Diagnostics 🔬
 
 The `@landfix` system provides structured diagnostic logging across all
 processes:
@@ -338,7 +338,7 @@ The dev-log captures:
 
 ---
 
-## Telemetry Bridge 📊
+## Telemetry Bridge 📊
 
 **Land** implements a dual-pipe telemetry system through the PostHog+OTEL
 bridge:
@@ -373,7 +373,7 @@ binary -- no runtime toggle.
 
 ---
 
-## Polyfill Lifecycle 🔄
+## Polyfill Lifecycle 🔄
 
 The startup sequence coordinates all polyfill layers:
 
@@ -420,7 +420,7 @@ layers, useful for diagnosing polyfill-related issues:
 
 ---
 
-## Global Namespace Cleanup 🧹
+## Global Namespace Cleanup 🧹
 
 After all shims are installed and the workbench is loaded, the Preload shim
 removes temporary globals to avoid polluting the workbench's global namespace:
@@ -435,7 +435,7 @@ Only essential globals remain on `window.vscode` and `globalThis.__LandTiers`.
 
 ---
 
-## Related Documentation 📋
+## Related Documentation 📋
 
 - [Architecture](Architecture.md) - System architecture
 - [EditorCore](EditorCore.md) - `Wind` service layer and workbench adaptation

@@ -92,7 +92,7 @@ sequenceDiagram
       replacement token serialised into `$CocoonEsbuildDefine` (a JSON string
       node serialises before export).
     - Cocoon's
-      [`TargetConfig.ts`](https://github.com/CodeEditorLand/Land/tree/Current/Element/Cocoon/Source/Configuration/ESBuild/Config/TargetConfig.ts)
+      [`TargetConfig.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Configuration/ESBuild/Config/TargetConfig.ts)
       merges this blob into esbuild's `define` map so every reference to
       `__LandTier_FileSystem__` (etc.) is substituted at bundle time.
 
@@ -234,10 +234,10 @@ sequenceDiagram
 
 #### **Related Source Files**
 
-| Element   | Path                                                                                                                                                                                           | Role                                    |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| Repo root | [`.env.Land.Sample`](https://github.com/CodeEditorLand/Land/tree/Current/.env.Land.Sample)                                                                                                     | Canonical default tier set              |
-| Maintain  | [`Maintain/Debug/Build.sh`](https://github.com/CodeEditorLand/Land/tree/Current/Maintain/Debug/Build.sh)                                                                                       | Env fan-out for every downstream tool   |
+| Element   | Path                                                                                                                                                                              | Role                                    |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Repo root | [`.env.Land.Sample`](https://github.com/CodeEditorLand/Land/tree/Current/.env.Land.Sample)                                                                                        | Canonical default tier set              |
+| Maintain  | [`Maintain/Debug/Build.sh`](https://github.com/CodeEditorLand/Land/tree/Current/Maintain/Debug/Build.sh)                                                                          | Env fan-out for every downstream tool   |
 | Mountain  | [`Element/Mountain/build.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/build.rs)                                                                                   | Cargo feature + `rustc-env` propagation |
 | Mountain  | [`Element/Mountain/Source/LandFixTier.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/LandFixTier.rs)                                                         | Runtime banner                          |
 | Cocoon    | [`Element/Cocoon/Source/Utility/Tier.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Utility/Tier.ts)                                                           | Node-side dispatcher                    |

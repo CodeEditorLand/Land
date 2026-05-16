@@ -24,7 +24,7 @@ The pipeline is a multi-stage, multi-language process that coordinates `Rust`,
 
 ---
 
-## Pipeline Overview 📋
+## Pipeline Overview 📋
 
 The **Land** build is a two-stage linear flow:
 
@@ -96,7 +96,7 @@ The build script invokes, in sequence:
 
 ---
 
-## Environment Variable System ⚙️
+## Environment Variable System ⚙️
 
 **Land** uses a multi-file `.env` system with 18 files across 6 domains:
 
@@ -146,7 +146,7 @@ Each build profile loads a specific combination of env files:
 
 ---
 
-## Profile System 📋
+## Profile System 📋
 
 ### Available Build Profiles
 
@@ -182,7 +182,7 @@ The build script supports additional runtime flags:
 
 ---
 
-## Env Propagation to Each Element 📡
+## Env Propagation to Each Element 📡
 
 Each Element reads the resolved environment variables through its own build
 system path:
@@ -287,7 +287,7 @@ A mismatch indicates one build tool read a different env file.
 
 ---
 
-## Rust Build Process 🔧
+## Rust Build Process 🔧
 
 ### Workspace Structure
 
@@ -336,7 +336,7 @@ features, keeping the baseline compilation lean.
 
 ---
 
-## TypeScript Build Process 📦
+## TypeScript Build Process 📦
 
 ### ESBuild Compilation (Cocoon, Output, Worker)
 
@@ -358,7 +358,7 @@ features, keeping the baseline compilation lean.
 
 ---
 
-## Artifact Layout 📁
+## Artifact Layout 📁
 
 After a successful build, artifacts are placed in per-Element target
 directories:
@@ -393,7 +393,7 @@ graph TB
 
 ---
 
-## Output Transform Pipeline 🔧
+## Output Transform Pipeline 🔧
 
 The `Output` element manages the compilation of VS Code platform source code
 through two parallel compiler paths:
@@ -420,7 +420,7 @@ through two parallel compiler paths:
 
 ---
 
-## Worker Build Process 🗂️
+## Worker Build Process 🗂️
 
 The `Worker` element compiles independently through `ESBuild` with no runtime
 dependencies:
@@ -440,7 +440,7 @@ and `Cache` APIs.
 
 ---
 
-## SideCar Binary Management 📦
+## SideCar Binary Management 📦
 
 The `SideCar` element manages vendored `Node.js` runtime binaries:
 
@@ -463,7 +463,7 @@ Target triples supported:
 
 ---
 
-## Related Documentation 📋
+## Related Documentation 📋
 
 - [Architecture](Architecture.md) - System architecture overview
 - [EditorCore](EditorCore.md) - Editor workbench adaptation

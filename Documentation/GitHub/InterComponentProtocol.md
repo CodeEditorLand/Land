@@ -21,7 +21,7 @@ connection lifecycle management.
 
 ---
 
-## Protocol Overview 🔌
+## Protocol Overview 🔌
 
 **Land** uses three communication protocols operating at different abstraction
 levels:
@@ -66,7 +66,7 @@ graph BT
 
 ---
 
-## Tauri IPC 🎮
+## Tauri IPC 🎮
 
 ### Commands (Request-Response)
 
@@ -162,7 +162,7 @@ const unlisten = await listen("configuration-changed", (event) => {
 
 ---
 
-## Vine gRPC Protocol 🔌
+## Vine gRPC Protocol 🔌
 
 `Vine` defines the `gRPC` service contracts for `Mountain`-`Cocoon` and
 `Mountain`-`Air` communication. The protocol is defined in `.proto` files
@@ -311,7 +311,7 @@ environment variables.
 
 ---
 
-## Spine Extension Protocol 🔄
+## Spine Extension Protocol 🔄
 
 The `Spine` protocol is the extension host coordination layer built on top of
 `Vine` `gRPC`. It implements an action/response pattern for extension-to-backend
@@ -390,7 +390,7 @@ decides per-call whether to:
 
 ---
 
-## Connection Lifecycle 🔄
+## Connection Lifecycle 🔄
 
 ### Mountain-Cocoon Connection
 
@@ -462,7 +462,7 @@ Normal operation:
 
 ---
 
-## Health Monitoring 💓
+## Health Monitoring 💓
 
 ### Heartbeat Protocol
 
@@ -509,7 +509,7 @@ All connection state changes are logged via the `@landfix` diagnostic system:
 
 ---
 
-## Protocol Buffer Definitions 📁
+## Protocol Buffer Definitions 📁
 
 ### Current Location
 
@@ -542,7 +542,7 @@ TypeScript types are generated using `protoc-gen-ts` and checked into the
 
 ---
 
-## Security 🛡️
+## Security 🛡️
 
 All `gRPC` connections are restricted to localhost only (`127.0.0.1`). No remote
 connections are accepted.
@@ -559,7 +559,7 @@ connections are accepted.
 
 ---
 
-## Related Documentation 📋
+## Related Documentation 📋
 
 - [Architecture](Architecture.md) - System architecture
 - [BuildPipeline](BuildPipeline.md) - Build pipeline
