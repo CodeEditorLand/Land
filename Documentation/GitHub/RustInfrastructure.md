@@ -30,7 +30,7 @@ the entire editor is built upon.
 | `Common`   | Library        | 2024    | tauri, async-trait, serde, thiserror                 | Abstract trait definitions, `ActionEffect` system, DTOs |
 | `Echo`     | Library        | 2024    | tokio, crossbeam-deque, `Common`                     | Priority work-stealing task scheduler                   |
 | `Mountain` | Binary         | 2024    | `Common`, `Echo`, `Mist`, tauri, tonic, portable-pty | Primary `Tauri` application, `gRPC` server              |
-| `Mist`     | Library+Binary | 2024    | hickory-server, ring, tokio, `Common`                | Local DNS server for `*.editor.land`                    |
+| `Mist`     | Library+Binary | 2024    | hickory-server, ring, tokio, `Common`                | Local DNS server for `*.land.playform.cloud`            |
 | `Air`      | Binary         | 2024    | tokio, tonic, reqwest, `Common`, `Mist`              | Background daemon (updates, indexing, crypto)           |
 | `Rest`     | Binary+Library | 2024    | oxc_allocator, oxc_parser, oxc_transformer, `Common` | `OXC`-based `TypeScript` compiler                       |
 | `SideCar`  | Library        | 2024    | tokio, reqwest, zip, `Common`, `Mist`                | Vendored `Node.js` binary manager                       |
@@ -329,13 +329,13 @@ async fn read_file(path: String, state: State<'_, AppState>) -> Result<Vec<u8>, 
 
 ## Mist: DNS Isolation Server 🌐
 
-`Mist` runs a local Hickory DNS server authoritative for the `editor.land` zone.
-It provides network isolation for sidecar processes.
+`Mist` runs a local Hickory DNS server authoritative for the
+`land.playform.cloud` zone. It provides network isolation for sidecar processes.
 
 ### DNS Zone Configuration
 
 ```
-editor.land.  IN SOA  localhost. root.editor.land. (
+land.playform.cloud.  IN SOA  localhost. root.land.playform.cloud. (
     2026010100 ; serial
     3600       ; refresh
     900        ; retry
@@ -343,27 +343,27 @@ editor.land.  IN SOA  localhost. root.editor.land. (
     60         ; minimum TTL
 )
 
-*.editor.land.  IN A  127.0.0.1
+*.land.playform.cloud.  IN A  127.0.0.1
 ```
 
-All `*.editor.land` subdomains resolve to `127.0.0.1`, ensuring sidecar
+All `*.land.playform.cloud` subdomains resolve to `127.0.0.1`, ensuring sidecar
 processes communicate only over localhost.
 
 ### Forward Allowlisting
 
 `Mist` maintains a configurable allowlist of trusted external domains:
 
-| Domain                         | Purpose                | Status          |
-| ------------------------------ | ---------------------- | --------------- |
-| `marketplace.visualstudio.com` | Extension downloads    | Allowlisted     |
-| `update.codeeditor.land`       | Application updates    | Allowlisted     |
-| `api.posthog.com`              | Telemetry (if enabled) | Allowlisted     |
-| All others                     | Blocked (NXDOMAIN)     | Default blocked |
+| Domain                           | Purpose                | Status          |
+| -------------------------------- | ---------------------- | --------------- |
+| `marketplace.visualstudio.com`   | Extension downloads    | Allowlisted     |
+| `update.codeland.playform.cloud` | Application updates    | Allowlisted     |
+| `api.posthog.com`                | Telemetry (if enabled) | Allowlisted     |
+| All others                       | Blocked (NXDOMAIN)     | Default blocked |
 
 ### DNSSEC
 
-`Mist` supports DNSSEC with ECDSA P-256 signing for the `editor.land` zone.
-Signing keys are generated on first run and cached in the application data
+`Mist` supports DNSSEC with ECDSA P-256 signing for the `land.playform.cloud`
+zone. Signing keys are generated on first run and cached in the application data
 directory.
 
 ---
@@ -608,6 +608,6 @@ edition 2021 for WASM compatibility.
 ---
 
 **Project Maintainers:** Source Open
-([Source/Open@Editor.Land](mailto:Source/Open@Editor.Land)) |
+([Source/Open@Land.PlayForm.Cloud](mailto:Source/Open@Land.PlayForm.Cloud)) |
 [GitHub Repository](https://github.com/CodeEditorLand/Land) |
 [Report an Issue](https://github.com/CodeEditorLand/Land/issues)

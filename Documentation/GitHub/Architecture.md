@@ -75,7 +75,7 @@ graph TB
 | **Common**   | Library          | Abstract trait definitions, `ActionEffect` system, DTOs, error types. Foundation layer with zero concrete implementations. All service interfaces (`IFileService`, `IConfigurationService`, etc.) are defined here as async traits.                                                                  |
 | **Echo**     | Library          | Bounded work-stealing task scheduler. Implements priority-based scheduling (`High`/`Normal`/`Low`) with lock-free deques (`crossbeam-deque`). Core execution engine for `Mountain`'s async workloads.                                                                                                |
 | **Mountain** | Binary (`Tauri`) | Primary native application. Implements every trait from `Common`. Hosts the `gRPC` server (`Vine` protocol), manages `AppState`, dispatches `Tauri` commands, orchestrates sidecar lifecycle, owns OS-level capabilities (file system, terminal PTY, clipboard, dialogs).                            |
-| **Mist**     | Library + Binary | Local DNS server for `*.editor.land` resolution. Authoritative DNS for the private zone, resolves all subdomains to `127.0.0.1`. Implements forward allowlisting for controlled external domain access. Used by `Mountain` and `Air` for network isolation.                                          |
+| **Mist**     | Library + Binary | Local DNS server for `*.land.playform.cloud` resolution. Authoritative DNS for the private zone, resolves all subdomains to `127.0.0.1`. Implements forward allowlisting for controlled external domain access. Used by `Mountain` and `Air` for network isolation.                                  |
 | **Air**      | Binary           | Background daemon. Runs as a persistent sidecar managed by `Mountain`. Handles: update downloads and verification, file indexing and search, cryptographic signing and authentication, background asset downloading, health monitoring, metrics collection. Communicates via `gRPC` on port `50053`. |
 | **Rest**     | Binary + Library | High-performance `TypeScript` compiler built on `OXC` (Oxidation Compiler). Replaces `esbuild`'s `TypeScript` loader with a `Rust`-powered `OXC` pipeline, producing VS Code-compatible output at 2-3x speed improvement. Handles decorators, class field transformations, `JSX`.                    |
 | **Grove**    | Library + Binary | Native `Rust`/`WASM` extension host. Provides a sandboxed environment via `WASMtime` for running `WASM`-compiled VS Code extensions. Shares the same VS Code API surface as `Cocoon`. Supports `gRPC`, IPC, and `WASM` host function transport strategies.                                           |
@@ -356,6 +356,6 @@ sequenceDiagram
 ---
 
 **Project Maintainers:** Source Open
-([Source/Open@Editor.Land](mailto:Source/Open@Editor.Land)) |
+([Source/Open@Land.PlayForm.Cloud](mailto:Source/Open@Land.PlayForm.Cloud)) |
 [GitHub Repository](https://github.com/CodeEditorLand/Land) |
 [Report an Issue](https://github.com/CodeEditorLand/Land/issues)

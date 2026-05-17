@@ -173,7 +173,7 @@ located at `Element/Mountain/Proto/Vine.proto`.
 ```protobuf
 syntax = "proto3";
 
-package editor.land.vine;
+package land.playform.cloud.vine;
 
 service ExtensionHost {
     // Lifecycle
@@ -573,6 +573,6 @@ connections are accepted.
 ---
 
 **Project Maintainers:** Source Open
-([Source/Open@Editor.Land](mailto:Source/Open@Editor.Land)) |
+([Source/Open@Land.PlayForm.Cloud](mailto:Source/Open@Land.PlayForm.Cloud)) |
 [GitHub Repository](https://github.com/CodeEditorLand/Land) |
 [Report an Issue](https://github.com/CodeEditorLand/Land/issues)
