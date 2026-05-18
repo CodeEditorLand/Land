@@ -228,7 +228,7 @@ async function Main() {
 				Handlers,
 			},
 			null,
-			"\t",
+			"	",
 		) + "\n";
 
 	const HandlerPath = join(
@@ -245,15 +245,15 @@ async function Main() {
 export type SkyChannelName =
 ${
 	Channels.length === 0
-		? "\t| string"
-		: Channels.map((C) => `\t| "${C.Name}"`).join("\n")
+		? "	| string"
+		: Channels.map((C) => `	| "${C.Name}"`).join("\n")
 };
 
 export const SkyChannels: ReadonlyArray<{
-\tName: SkyChannelName;
-\tEmittedFrom: ReadonlyArray<string>;
-\tListenedFromSky: boolean;
-}> = ${JSON.stringify(Channels, null, "\t")} as const;
+	Name: SkyChannelName;
+	EmittedFrom: ReadonlyArray<string>;
+	ListenedFromSky: boolean;
+}> = ${JSON.stringify(Channels, null, "	")} as const;
 
 export const SkyChannelCount = ${Channels.length};
 `;

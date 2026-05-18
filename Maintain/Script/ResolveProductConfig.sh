@@ -21,13 +21,13 @@ LandRoot="$(cd "$ScriptDir/../.." && pwd)"
 ProductVersion="${ProductVersion:-1.118.0}"
 ProductCommit="${ProductCommit:-dev}"
 ProductQuality="${ProductQuality:-development}"
-ProductNameShort="${ProductNameShort:-Land}"
-ProductNameLong="${ProductNameLong:-Land Editor}"
-ProductApplicationName="${ProductApplicationName:-land}"
-ProductDataFolderName="${ProductDataFolderName:-.land}"
-ProductUrlProtocol="${ProductUrlProtocol:-land}"
-ProductServerApplicationName="${ProductServerApplicationName:-land-server}"
-ProductEmbedderIdentifier="${ProductEmbedderIdentifier:-land-desktop}"
+ProductNameShort="${ProductNameShort:-FIDDEE}"
+ProductNameLong="${ProductNameLong:-FIDDEE}"
+ProductApplicationName="${ProductApplicationName:-fiddee}"
+ProductDataFolderName="${ProductDataFolderName:-.fiddee}"
+ProductUrlProtocol="${ProductUrlProtocol:-fiddee}"
+ProductServerApplicationName="${ProductServerApplicationName:-fiddee-server}"
+ProductEmbedderIdentifier="${ProductEmbedderIdentifier:-fiddee-desktop}"
 
 export ProductVersion ProductCommit ProductQuality ProductNameShort \
 	ProductNameLong ProductApplicationName ProductDataFolderName \
@@ -70,6 +70,6 @@ for (const Key of Object.keys(Overlay)) {
 	if (Overlay[Key] === undefined) delete Overlay[Key];
 }
 const Merged = { ...Existing, ...Overlay };
-fs.writeFileSync(Target, JSON.stringify(Merged, null, "\t") + "\n");
+fs.writeFileSync(Target, JSON.stringify(Merged, null, "	") + "\n");
 console.log("[ResolveProductConfig] merged " + Target + " version=" + Merged.version + " name=" + Merged.nameShort);
 '

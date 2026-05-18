@@ -88,7 +88,7 @@ _LandJsonProperties() {
 		Val="$2"
 		shift 2
 		# Minimal JSON-escape: backslash, double-quote, control chars.
-		Val=$(printf "%s" "$Val" | awk 'BEGIN{ORS=""} {gsub(/\\/, "\\\\"); gsub(/"/, "\\\""); gsub(/\t/, "\\t"); gsub(/\r/, "\\r"); gsub(/\n/, "\\n"); print}')
+		Val=$(printf "%s" "$Val" | awk 'BEGIN{ORS=""} {gsub(/\\/, "\\\\"); gsub(/"/, "\\\""); gsub(/	/, "\	"); gsub(/\r/, "\\r"); gsub(/\n/, "\\n"); print}')
 		Output="$Output,\"$Key\":\"$Val\""
 	done
 	printf "%s" "$Output"
@@ -102,7 +102,7 @@ _LandOTLPAttributes() {
 		Key="$1"
 		Val="$2"
 		shift 2
-		Val=$(printf "%s" "$Val" | awk 'BEGIN{ORS=""} {gsub(/\\/, "\\\\"); gsub(/"/, "\\\""); gsub(/\t/, "\\t"); gsub(/\r/, "\\r"); gsub(/\n/, "\\n"); print}')
+		Val=$(printf "%s" "$Val" | awk 'BEGIN{ORS=""} {gsub(/\\/, "\\\\"); gsub(/"/, "\\\""); gsub(/	/, "\	"); gsub(/\r/, "\\r"); gsub(/\n/, "\\n"); print}')
 		if [ $First -eq 1 ]; then
 			Output="{\"key\":\"$Key\",\"value\":{\"stringValue\":\"$Val\"}}"
 			First=0
