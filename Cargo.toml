@@ -325,19 +325,19 @@ lto = true
 
 [patch.crates-io]
 # --- Tauri/crates ---------------------------------------------------------
-tauri = { version = "=2.10.3", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri" }
-tauri-build = { version = "=2.5.6", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-build" }
-tauri-bundler = { version = "=2.8.1", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-bundler" }
-tauri-cli = { version = "=2.10.1", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-cli" }
-tauri-codegen = { version = "=2.5.5", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-codegen" }
-tauri-driver = { version = "=2.0.5", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-driver" }
-tauri-macos-sign = { version = "=2.3.3", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-macos-sign" }
-tauri-macros = { version = "=2.5.5", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-macros" }
-tauri-plugin = { version = "=2.5.4", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-plugin" }
-tauri-runtime = { version = "=2.10.1", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-runtime" }
-tauri-runtime-wry = { version = "=2.10.1", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-runtime-wry" }
+tauri = { version = "=2.11.2", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri" }
+tauri-build = { version = "=2.6.2", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-build" }
+tauri-bundler = { version = "=2.9.2", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-bundler" }
+tauri-cli = { version = "=2.11.2", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-cli" }
+tauri-codegen = { version = "=2.6.2", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-codegen" }
+tauri-driver = { version = "=2.0.6", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-driver" }
+tauri-macos-sign = { version = "=2.3.4", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-macos-sign" }
+tauri-macros = { version = "=2.6.2", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-macros" }
+tauri-plugin = { version = "=2.6.2", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-plugin" }
+tauri-runtime = { version = "=2.11.2", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-runtime" }
+tauri-runtime-wry = { version = "=2.11.2", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-runtime-wry" }
 tauri-schema-generator = { version = "=0.0.0", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-schema-generator" }
-tauri-utils = { version = "=2.8.3", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-utils" }
+tauri-utils = { version = "=2.9.2", path = "Dependency/Tauri/Dependency/Tauri/crates/tauri-utils" }
 
 # --- PluginsWorkspace/plugins -------------------------------------------
 tauri-plugin-autostart = { version = "=2.5.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/autostart" }
@@ -345,26 +345,26 @@ tauri-plugin-barcode-scanner = { version = "=2.4.4", path = "Dependency/Tauri/De
 tauri-plugin-biometric = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/biometric" }
 tauri-plugin-cli = { version = "=2.4.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/cli" }
 tauri-plugin-clipboard-manager = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/clipboard-manager" }
-tauri-plugin-deep-link = { version = "=2.4.8", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/deep-link" }
-tauri-plugin-dialog = { version = "=2.7.0", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/dialog" }
-tauri-plugin-fs = { version = "=2.5.0", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/fs" }
+tauri-plugin-deep-link = { version = "=2.4.9", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/deep-link" }
+tauri-plugin-dialog = { version = "=2.7.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/dialog" }
+tauri-plugin-fs = { version = "=2.5.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/fs" }
 tauri-plugin-geolocation = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/geolocation" }
 tauri-plugin-global-shortcut = { version = "=2.3.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/global-shortcut" }
 tauri-plugin-haptics = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/haptics" }
-tauri-plugin-http = { version = "=2.5.8", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/http" }
+tauri-plugin-http = { version = "=2.5.9", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/http" }
 tauri-plugin-localhost = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/localhost" }
 tauri-plugin-log = { version = "=2.8.0", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/log" }
 tauri-plugin-nfc = { version = "=2.3.5", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/nfc" }
 tauri-plugin-notification = { version = "=2.3.3", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/notification" }
-tauri-plugin-opener = { version = "=2.5.3", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/opener" }
+tauri-plugin-opener = { version = "=2.5.4", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/opener" }
 tauri-plugin-os = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/os" }
-tauri-plugin-persisted-scope = { version = "=2.3.6", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/persisted-scope" }
+tauri-plugin-persisted-scope = { version = "=2.3.7", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/persisted-scope" }
 tauri-plugin-positioner = { version = "=2.3.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/positioner" }
 tauri-plugin-process = { version = "=2.3.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/process" }
 tauri-plugin-shell = { version = "=2.3.5", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/shell" }
-tauri-plugin-single-instance = { version = "=2.4.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/single-instance" }
+tauri-plugin-single-instance = { version = "=2.4.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/single-instance" }
 tauri-plugin-sql = { version = "=2.4.0", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/sql" }
-tauri-plugin-store = { version = "=2.4.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/store" }
+tauri-plugin-store = { version = "=2.4.3", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/store" }
 tauri-plugin-stronghold = { version = "=2.3.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/stronghold" }
 tauri-plugin-updater = { version = "=2.10.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/updater" }
 tauri-plugin-upload = { version = "=2.4.0", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/upload" }
@@ -372,11 +372,11 @@ tauri-plugin-websocket = { version = "=2.4.2", path = "Dependency/Tauri/Dependen
 tauri-plugin-window-state = { version = "=2.4.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/window-state" }
 
 # --- Standalone repos ----------------------------------------------------
-wry = { version = "=0.55.0", path = "Dependency/Tauri/Dependency/Wry" }
-tao = { version = "=0.35.0", path = "Dependency/Tauri/Dependency/Tao" }
+wry = { version = "=0.55.1", path = "Dependency/Tauri/Dependency/Wry" }
+tao = { version = "=0.35.2", path = "Dependency/Tauri/Dependency/Tao" }
 tao-macros = { version = "=0.1.3", path = "Dependency/Tauri/Dependency/Tao/tao-macros" }
-muda = { version = "=0.18.0", path = "Dependency/Tauri/Dependency/Muda" }
-tray-icon = { version = "=0.22.1", path = "Dependency/Tauri/Dependency/TrayIcon" }
+muda = { version = "=0.19.1", path = "Dependency/Tauri/Dependency/Muda" }
+tray-icon = { version = "=0.24.0", path = "Dependency/Tauri/Dependency/TrayIcon" }
 window-vibrancy = { version = "=0.7.1", path = "Dependency/Tauri/Dependency/WindowVibrancy" }
 window-shadows = { version = "=0.2.2", path = "Dependency/Tauri/Dependency/WindowShadows" }
-global-hotkey = { version = "=0.7.0", path = "Dependency/Tauri/Dependency/GlobalHotKey" }
+global-hotkey = { version = "=0.8.0", path = "Dependency/Tauri/Dependency/GlobalHotKey" }

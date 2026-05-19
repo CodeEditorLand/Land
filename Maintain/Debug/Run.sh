@@ -4,9 +4,6 @@
 # Debug/Run.sh - Development Run Script with Hot-Reload Support
 #===============================================================================
 #
-# This script starts the development server with hot-reload enabled.
-# It reads configuration from .vscode/land-config.json.
-#
 # Usage:
 #   sh Maintain/Debug/Run.sh                    # Default debug profile
 #   sh Maintain/Debug/Run.sh --profile mountain # Run with Mountain workbench
@@ -17,34 +14,32 @@
 #   debug-mountain - Mountain workbench with hot-reload [RECOMMENDED]
 #   debug-electron - Electron workbench with hot-reload
 #
-# Features:
-#   - Hot-reload enabled by default
-#   - Watch mode for file changes
-#   - Live-reload server on port 3001
-#   - Profile-based configuration
-#
+# Env vars (PascalCase):
+#   HotReload      true/false (default true)
+#   Watch          true/false (default true)
+#   LiveReloadPort port number (default 3001)
 #===============================================================================
 
 set -e
 
-PROFILE="debug"
+Profile="debug"
 
 while [ $# -gt 0 ]; do
 	case $1 in
 		--profile | -p)
-			PROFILE="$2"
+			Profile="$2"
 			shift 2
 			;;
 		--no-hot-reload)
-			export HOT_RELOAD=false
+			export HotReload=false
 			shift
 			;;
 		--no-watch)
-			export WATCH=false
+			export Watch=false
 			shift
 			;;
 		--port)
-			export LIVE_RELOAD_PORT="$2"
+			export LiveReloadPort="$2"
 			shift 2
 			;;
 		--help | -h)
@@ -61,11 +56,6 @@ while [ $# -gt 0 ]; do
 			echo "  debug          - Browser workbench with hot-reload"
 			echo "  debug-mountain - Mountain workbench with hot-reload [RECOMMENDED]"
 			echo "  debug-electron - Electron workbench with hot-reload"
-			echo ""
-			echo "Features:"
-			echo "  - Hot-reload: Automatically reload on file changes"
-			echo "  - Watch mode: Watch for file changes and trigger rebuilds"
-			echo "  - Live-reload: Development server with live-reload support"
 			exit 0
 			;;
 		*)
@@ -79,13 +69,13 @@ done
 echo "========================================"
 echo "Land Development Run"
 echo "========================================"
-echo "Profile: $PROFILE"
-echo "Hot-reload: ${HOT_RELOAD:-true}"
-echo "Watch mode: ${WATCH:-true}"
-echo "Live-reload port: ${LIVE_RELOAD_PORT:-3001}"
+echo "Profile: $Profile"
+echo "Hot-reload: ${HotReload:-true}"
+echo "Watch mode: ${Watch:-true}"
+echo "Live-reload port: ${LiveReloadPort:-3001}"
 echo "========================================"
 
-case $PROFILE in
+case $Profile in
 	debug)
 		echo "Using Browser workbench (default debug)"
 		export Browser=true
@@ -126,7 +116,7 @@ case $PROFILE in
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		;;
 	*)
-		echo "Unknown profile: $PROFILE"
+		echo "Unknown profile: $Profile"
 		echo "Available profiles: debug, debug-mountain, debug-electron"
 		exit 1
 		;;
@@ -136,4 +126,4 @@ echo ""
 echo "Starting development server with hot-reload..."
 echo ""
 
-./Target/release/Maintain run --profile "$PROFILE"
+./Target/release/Maintain run --profile "$Profile"

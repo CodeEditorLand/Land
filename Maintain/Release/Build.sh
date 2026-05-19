@@ -459,3 +459,10 @@ echo "Starting release build..."
 echo ""
 
 ./Target/release/Maintain -- pnpm tauri build
+
+# Re-sign the release .app. When a real Apple Developer ID is present
+# `pnpm tauri build` already applies entitlements; re-signing with ad-hoc
+# here is a no-op on notarised builds but ensures CI / unsigned dev machines
+# still produce a working bundle (file pickers, JIT, extension helpers).
+# shellcheck disable=SC1091
+BundleLevel=release sh Maintain/Script/SignBundle.sh

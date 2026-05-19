@@ -472,3 +472,8 @@ else
 		"exit_code" "$BUILD_EXIT"
 	exit "$BUILD_EXIT"
 fi
+
+# Re-sign the debug .app with the correct entitlements so file pickers,
+# Cocoon JIT, and extension helper spawns work when launching from Finder.
+# shellcheck disable=SC1091
+BundleLevel=debug sh Maintain/Script/SignBundle.sh
