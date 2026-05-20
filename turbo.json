@@ -225,6 +225,7 @@
 		"TierGlob",
 		"TierHTTPProxy",
 		"TierLogger",
+		"TierIPC",
 		"TierModuleCache",
 		"TierOpenExternal",
 		"TierRemoteProcedureCall",
