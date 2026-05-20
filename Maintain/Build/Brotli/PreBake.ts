@@ -173,8 +173,6 @@ async function Main() {
 		try {
 			await Filesystem.access(Root);
 		} catch {
-			console.log(`[brotli] skip: ${Root} (not present)`);
-
 			continue;
 		}
 
@@ -194,21 +192,16 @@ async function Main() {
 			TotalOriginal += Result.OriginalBytes;
 
 			TotalCompressed += Result.CompressedBytes;
-
-			console.log(
-				`[brotli] ${relative(Root, Result.Path)} ${Result.OriginalBytes} -> ${Result.CompressedBytes} (${
-					((1 - Result.CompressedBytes / Result.OriginalBytes) *
-						100) |
-					0
-				}%)`,
-			);
 		}
 	}
 
-	console.log("---");
+	const Pct =
+		TotalOriginal > 0
+			? ((1 - TotalCompressed / TotalOriginal) * 100) | 0
+			: 0;
 
 	console.log(
-		`[brotli] wrote=${Wrote} skipped=${Skipped} total ${TotalOriginal} -> ${TotalCompressed} bytes`,
+		`[Brotli] wrote=${Wrote} skipped=${Skipped} ${TotalOriginal} -> ${TotalCompressed} bytes (${Pct}% reduction)`,
 	);
 }
 

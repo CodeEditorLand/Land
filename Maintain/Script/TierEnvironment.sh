@@ -13,10 +13,38 @@
 #                          and __LandNetwork_*__ replacements that Cocoon's
 #                          TargetConfig.ts merges into esbuild
 #
+# OVERRIDE PRECEDENCE (highest → lowest):
+#   1. Caller's exported env vars  (export TierIPC=Node before the build)
+#   2. .env.Land.Production.*      (production overlays, when active)
+#   3. .env.Land.*                 (domain overlays: Node, Extensions, …)
+#   4. .env.Land                   (root tier + product identity)
+#
 # Every Element (Mountain, Wind, Cocoon, Sky, Echo, Air, Rest) sees the same
-# tier + product set so no Element can drift from the others. Atom I5 added
-# Product* and Network* propagation on top of the original Tier-only fan-out.
+# tier + product set so no Element can drift from the others.
 #===============================================================================
+
+# ---------------------------------------------------------------------------
+# Step 1: snapshot any vars the caller already exported BEFORE we source
+# anything. These take final precedence over every .env file.
+# We write to a temp file so values containing spaces/special chars survive.
+# ---------------------------------------------------------------------------
+_LandUserOverrides=$(mktemp 2> /dev/null || echo "/tmp/land_user_overrides_$$")
+
+_LandSnapshotKeys="Tier Product Network Disable DisableUIFixes Trace Record Inspect Smoke Pack Boot Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand OTLPEndpoint OTLPEnabled Capture LandIsProduction"
+
+# Capture Tier*/Product*/Network* prefix vars
+for _k in $(env | cut -d= -f1 | grep -E '^(Tier|Product|Network)'); do
+	printf '%s=%s\n' "$_k" "$(printenv "$_k")" >> "$_LandUserOverrides"
+done
+
+# Capture known runtime keys
+for _k in Disable DisableUIFixes Trace Record Inspect Smoke Pack Boot Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand OTLPEndpoint OTLPEnabled Capture LandIsProduction; do
+	if printenv "$_k" > /dev/null 2>&1; then
+		printf '%s=%s\n' "$_k" "$(printenv "$_k")" >> "$_LandUserOverrides"
+	fi
+done
+
+# ---------------------------------------------------------------------------
 
 TierEnvFile="${Land_Env_File:-}"
 if [ -z "$TierEnvFile" ]; then
@@ -58,13 +86,6 @@ fi
 #   .env.Land.Extensions     → .env.Land.Production.Extensions
 #   .env.Land.PostHog        → .env.Land.Production.PostHog
 #   .env.Land.Diagnostics    → .env.Land.Production.Diagnostics
-# Each `.env.Land.Production.<Domain>` overlay declares one purpose: telemetry off
-# (`Capture=false`), polyfills on (`Disable=false`), bundled layouts
-# packed (`Pack="electron browser sessions workbench"`, `Boot=true`),
-# diagnostic knobs off (`Trace=`, `Record=0`), `phc_` key + `Brand`
-# distinct-id stripped from the build env. Belt-and-braces alongside
-# the per-element `cfg!(debug_assertions)` / `import.meta.env.DEV` /
-# `process.env.NODE_ENV` tree-shake gates.
 # ---------------------------------------------------------------------------
 TierEnvDirectory=""
 if [ -n "$TierEnvFile" ]; then
@@ -173,22 +194,22 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	SourceOverlayIfPresent ".env.Land.Bundled"
 	SourceProductionOverlayIfActive ".env.Land.Production.Bundled"
 
+	# -----------------------------------------------------------------------
+	# Step 2: Re-apply the caller's pre-export snapshot so it wins over
+	# every .env file. This is what makes `export TierIPC=Node` work.
+	# -----------------------------------------------------------------------
+	if [ -s "$_LandUserOverrides" ]; then
+		set -a
+		# shellcheck disable=SC1090
+		. "$_LandUserOverrides"
+		set +a
+	fi
+
 	# Display the resolved runtime overlays - the single-word PascalCase
 	# verbs the .env.Land.{Node,Extensions,PostHog} overlays own. Pinned
 	# allow-list (not a regex sweep) so unrelated PascalCase env vars
 	# the OS / dev environment exports don't pollute the diagnostic
-	# block. The legacy `^LAND_*` sweep was retired together with the
-	# LAND_ → PascalCase migration of the overlay files.
-	#
-	# `if [ -n ... ]; then ... fi` instead of `[ -z ] && continue` -
-	# Build.sh runs under `set -e` and the `&&`-form trips errexit on
-	# the iteration where Value is empty (`printenv` exits non-zero
-	# when the var is unset, the command substitution captures empty,
-	# `[ -z "" ]` returns 0, `&&` reaches `continue`, `continue` does
-	# its thing, and the iteration's exit status becomes the inverted
-	# test outcome - which dash interprets as a failure under -e and
-	# silently aborts the sourced script. The if-form avoids the
-	# &&-chain entirely.
+	# block.
 	LandRuntimeKeys="Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand OTLPEndpoint OTLPEnabled Capture Inspect Smoke Trace Record Disable DisableUIFixes Pack Boot LandIsProduction"
 	LandRuntimeVars=""
 	for Key in $LandRuntimeKeys; do
@@ -226,8 +247,7 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	# Cocoon esbuild `define` blob: every Tier*, Product*, Network* env
 	# var becomes a `__Land<Section>_<Capability>__` replacement token.
 	# Cocoon's TargetConfig.ts reads CocoonEsbuildDefine and merges it
-	# into its esbuild options. Atom I5 extended this from Tier-only to
-	# include product identity + version and network ports.
+	# into its esbuild options.
 	if command -v node > /dev/null 2>&1; then
 		CocoonEsbuildDefine=$(node -e "
 const prefixes = [
@@ -260,3 +280,5 @@ process.stdout.write(JSON.stringify(e));
 else
 	echo "No .env.Land or .env.Land.Sample found - using compiled defaults."
 fi
+
+rm -f "$_LandUserOverrides"
