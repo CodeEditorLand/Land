@@ -3,9 +3,7 @@
 	"files": {
 		"ignoreUnknown": true,
 		"maxSize": 10000000,
-		"ignore": [
-			"Element/*/Configuration/**"
-		]
+		"ignore": ["Element/*/Configuration/**"]
 	},
 	"formatter": {
 		"enabled": true,
