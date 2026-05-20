@@ -79,6 +79,12 @@ dist
 **/gen
 **/gen/**
 
+# @playform/build output directories. Each Element package writes compiled
+# .js files to `Element/<Name>/Configuration/`, mirroring the `Source/`
+# tree. Built artefacts - not source - must not be reformatted. The pattern
+# deliberately omits `Source/Configuration/` (those are real source files).
+Element/*/Configuration/
+
 # SideCar's vendored Node distribution per platform/version.
 **/SideCar/*/NODE
 **/SideCar/*/NODE/**
