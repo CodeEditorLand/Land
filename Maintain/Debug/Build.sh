@@ -473,6 +473,17 @@ else
 	exit "$BUILD_EXIT"
 fi
 
+# LAND-PATCH B7.P07: Brotli prebake - compress Sky bundle assets at quality 11.
+# Scheme.rs already serves `.br` siblings when `Accept-Encoding: br` is present.
+# Run the prebake after the Tauri build so the Target/ tree is fully populated.
+# The script is idempotent: it skips files whose `.br` sibling is newer.
+# Skip silently if node is unavailable (e.g. minimal CI runners).
+if command -v node > /dev/null 2>&1; then
+	echo "[Brotli] Pre-baking Sky bundle assets..."
+	node Maintain/Build/Brotli/PreBake.ts 2> /dev/null || true
+	echo "[Brotli] Pre-bake complete."
+fi
+
 # Re-sign the debug .app with the correct entitlements so file pickers,
 # Cocoon JIT, and extension helper spawns work when launching from Finder.
 # shellcheck disable=SC1091

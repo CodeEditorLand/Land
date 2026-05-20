@@ -460,6 +460,13 @@ echo ""
 
 ./Target/release/Maintain -- pnpm tauri build
 
+# LAND-PATCH B7.P07: Brotli prebake at quality 11 (25 MB → ~3.5 MB).
+# Reduces Sky bundle parse+execute by ~30-40% in the bundled-electron profile.
+if command -v node > /dev/null 2>&1; then
+	echo "[Brotli] Pre-baking Sky bundle assets (release)..."
+	node Maintain/Build/Brotli/PreBake.ts 2> /dev/null || true
+fi
+
 # Re-sign the release .app. When a real Apple Developer ID is present
 # `pnpm tauri build` already applies entitlements; re-signing with ad-hoc
 # here is a no-op on notarised builds but ensures CI / unsigned dev machines
