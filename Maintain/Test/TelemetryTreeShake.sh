@@ -38,7 +38,7 @@
 
 set -e
 
-Current=$(cd -- "$(dirname -- "$0")" > /dev/null 2>&1 && pwd)
+Current=$(cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd)
 Root="$Current/../.."
 cd "$Root"
 
@@ -68,13 +68,13 @@ ProbeBinary() {
 		return 0
 	fi
 	TotalChecked=$((TotalChecked + 1))
-	Hits=$(strings "$Path" 2> /dev/null | grep -E -- "$ForbiddenPatterns" | head -20)
+	Hits=$(strings "$Path" 2>/dev/null | grep -E -- "$ForbiddenPatterns" | head -20)
 	if [ -n "$Hits" ]; then
 		echo "  [FAIL] $Name contains forbidden symbols:"
 		printf '%s\n' "$Hits" | sed 's/^/         /'
 		Failed=$((Failed + 1))
 	else
-		Size=$(wc -c < "$Path" | tr -d ' ')
+		Size=$(wc -c <"$Path" | tr -d ' ')
 		echo "  [pass] $Name ($Path, ${Size} B) clean"
 	fi
 }
@@ -96,20 +96,20 @@ ProbeBundle() {
 		-not -name "*.map" \
 		-not -path "*/node_modules/*" \
 		-not -path "*/Documentation/*" \
-		2> /dev/null \
-		| xargs grep -E -l -- "$ForbiddenPatterns" 2> /dev/null \
-		| head -5)
+		2>/dev/null |
+		xargs grep -E -l -- "$ForbiddenPatterns" 2>/dev/null |
+		head -5)
 	if [ -n "$Hits" ]; then
 		echo "  [FAIL] $Name contains forbidden symbols. Files:"
 		printf '%s\n' "$Hits" | sed 's/^/         /'
 		# Show the first 3 lines per offending file.
 		printf '%s\n' "$Hits" | while IFS= read -r File; do
 			echo "         --- $File ---"
-			grep -E -n -- "$ForbiddenPatterns" "$File" 2> /dev/null | head -3 | sed 's/^/             /'
+			grep -E -n -- "$ForbiddenPatterns" "$File" 2>/dev/null | head -3 | sed 's/^/             /'
 		done
 		Failed=$((Failed + 1))
 	else
-		FileCount=$(find "$Dir" -type f -name "$Glob" -not -name "*.map" 2> /dev/null | wc -l | tr -d ' ')
+		FileCount=$(find "$Dir" -type f -name "$Glob" -not -name "*.map" 2>/dev/null | wc -l | tr -d ' ')
 		echo "  [pass] $Name ($Dir, ${FileCount} files matching $Glob) clean"
 	fi
 }
@@ -129,37 +129,37 @@ Targets="${*:-mountain cocoon sky output worker}"
 
 for Target in $Targets; do
 	case "$Target" in
-		mountain | Mountain)
-			echo "Mountain (Rust release binary):"
-			ProbeBinary "Mountain" "$MountainBinary"
-			# Air / Rest / Grove / SideCar release binaries land in their
-			# own crate Target/release/ - probe all known sidecars.
-			for Sidecar in Air Rest Grove SideCar Download; do
-				BinPath="Element/$Sidecar/Target/release/$Sidecar"
-				[ "$Sidecar" = "Download" ] && BinPath="Element/SideCar/Target/release/Download"
-				ProbeBinary "$Sidecar" "$BinPath"
-			done
-			;;
-		cocoon | Cocoon)
-			echo "Cocoon (Node ESM bundle):"
-			ProbeBundle "Cocoon" "$CocoonBundle" "*.js"
-			;;
-		sky | Sky)
-			echo "Sky (Astro static + bundled):"
-			# Astro emits hashed `_astro/*.js` chunks; grep them.
-			ProbeBundle "Sky/_astro" "$SkyBundle" "*.js"
-			;;
-		output | Output)
-			echo "Output (esbuild config + plugins):"
-			ProbeBundle "Output" "$OutputBundle" "*.js"
-			;;
-		worker | Worker)
-			echo "Worker (service worker):"
-			ProbeBundle "Worker" "$WorkerBundle" "*.js"
-			;;
-		*)
-			echo "  [warn] unknown target: $Target"
-			;;
+	mountain | Mountain)
+		echo "Mountain (Rust release binary):"
+		ProbeBinary "Mountain" "$MountainBinary"
+		# Air / Rest / Grove / SideCar release binaries land in their
+		# own crate Target/release/ - probe all known sidecars.
+		for Sidecar in Air Rest Grove SideCar Download; do
+			BinPath="Element/$Sidecar/Target/release/$Sidecar"
+			[ "$Sidecar" = "Download" ] && BinPath="Element/SideCar/Target/release/Download"
+			ProbeBinary "$Sidecar" "$BinPath"
+		done
+		;;
+	cocoon | Cocoon)
+		echo "Cocoon (Node ESM bundle):"
+		ProbeBundle "Cocoon" "$CocoonBundle" "*.js"
+		;;
+	sky | Sky)
+		echo "Sky (Astro static + bundled):"
+		# Astro emits hashed `_astro/*.js` chunks; grep them.
+		ProbeBundle "Sky/_astro" "$SkyBundle" "*.js"
+		;;
+	output | Output)
+		echo "Output (esbuild config + plugins):"
+		ProbeBundle "Output" "$OutputBundle" "*.js"
+		;;
+	worker | Worker)
+		echo "Worker (service worker):"
+		ProbeBundle "Worker" "$WorkerBundle" "*.js"
+		;;
+	*)
+		echo "  [warn] unknown target: $Target"
+		;;
 	esac
 	echo ""
 done

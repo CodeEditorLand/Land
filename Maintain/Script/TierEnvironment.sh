@@ -82,7 +82,7 @@ if [ "${NODE_ENV:-}" = "production" ]; then
 	LandIsProduction="true"
 fi
 case "${Profile:-}" in
-	*release* | *Release*) LandIsProduction="true" ;;
+*release* | *Release*) LandIsProduction="true" ;;
 esac
 export LandIsProduction
 
@@ -192,7 +192,7 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	LandRuntimeKeys="Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand OTLPEndpoint OTLPEnabled Capture Inspect Smoke Trace Record Disable DisableUIFixes Pack Boot LandIsProduction"
 	LandRuntimeVars=""
 	for Key in $LandRuntimeKeys; do
-		Value=$(printenv "$Key" 2> /dev/null || true)
+		Value=$(printenv "$Key" 2>/dev/null || true)
 		if [ -n "$Value" ]; then
 			LandRuntimeVars="${LandRuntimeVars}${Key}=${Value}
 "
@@ -228,7 +228,7 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	# Cocoon's TargetConfig.ts reads CocoonEsbuildDefine and merges it
 	# into its esbuild options. Atom I5 extended this from Tier-only to
 	# include product identity + version and network ports.
-	if command -v node > /dev/null 2>&1; then
+	if command -v node >/dev/null 2>&1; then
 		CocoonEsbuildDefine=$(node -e "
 const prefixes = [
 	{ src: 'Tier', token: 'Tier' },

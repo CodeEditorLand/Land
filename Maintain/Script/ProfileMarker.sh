@@ -28,14 +28,14 @@
 
 ProfileMarker=Element/Output/Target/.LastProfile
 LastProfile=""
-[ -f "$ProfileMarker" ] && LastProfile=$(cat "$ProfileMarker" 2> /dev/null)
+[ -f "$ProfileMarker" ] && LastProfile=$(cat "$ProfileMarker" 2>/dev/null)
 CurrentProfileKey="$PROFILE"
 
 if [ "$LastProfile" != "$CurrentProfileKey" ]; then
 	echo "Output profile changed ($LastProfile → $CurrentProfileKey); cleaning Output cache..."
 	rm -rf Element/Output/Configuration Element/Output/Target/Microsoft
 	mkdir -p Element/Output/Target
-	echo "$CurrentProfileKey" > "$ProfileMarker"
+	echo "$CurrentProfileKey" >"$ProfileMarker"
 fi
 
 # Belt-and-braces: Electron requires workbench.desktop.main.js on disk.
