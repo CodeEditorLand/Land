@@ -347,7 +347,7 @@ def Transform(source: str, open_brace_max_depth: int = 1) -> str:
         if next_blank or next_closing or next_chain:
             continue
 
-        if last in (";", "}") and paren_depth == 0:
+        if last in (";", "}", ")") and paren_depth == 0:
             output.append("")
 
         elif last == ",":

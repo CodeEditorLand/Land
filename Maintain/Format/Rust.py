@@ -124,21 +124,16 @@ def _scan_line(line: str, mid_block_comment: bool = False) -> dict:
         if in_raw:
             if ch == '"':
                 hashes = 0
-                while True:
-                    nh = pos + 1 + hashes
-                    if nh >= length or line[nh] != "#":
-                        break
+                nh = pos + 1
+                while nh < length and line[nh] == "#":
                     hashes += 1
-                    if hashes == raw_hash_count:
-                        in_raw = False
-                        pos = nh + 1
-                        break
-                if in_raw and hashes < raw_hash_count:
-                    # Still inside the raw string (no matching close found)
-                    pos += 1
-                    continue
+                    nh += 1
+                if hashes >= raw_hash_count:
+                    in_raw = False
+                    pos = pos + 1 + raw_hash_count
                 else:
-                    continue
+                    pos += 1
+                continue
             pos += 1
             continue
 
@@ -304,7 +299,7 @@ def Transform(source: str, open_brace_max_depth: int = 1) -> str:
         if next_blank or next_closing or next_chain:
             continue
 
-        if last in (";", "}") and paren_depth == 0:
+        if last in (";", "}", ")") and paren_depth == 0:
             output.append("")
 
         elif last == ",":

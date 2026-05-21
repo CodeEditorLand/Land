@@ -49,16 +49,7 @@ Documentation/Rust/.rustc_info.json
 Documentation/Rust/.rustdoc_fingerprint.json
 Documentation/Rust/CACHEDIR.TAG
 
-context_portal/
-
-# Temporary build directories
-/Temp/
-
-# VS Code build output
-Dependency/Microsoft/Dependency/Editor/out/
-Dependency/Microsoft/Dependency/Editor/build/
-
-Maintain/Integration/MemoryAudit.sh
+Maintain/Format/__pycache__
 
 .env.Land
 .env.Land.Bundled
