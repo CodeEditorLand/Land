@@ -38,9 +38,19 @@ const ExtensionRoots: string[] = [
 	join(Home, ".vscode/extensions"),
 ];
 
+// Primary output alongside the dev binary (raw repo runs).
 const OutputPath = join(
 	RepoRoot,
 	"Element/Mountain/Target/debug/extensions.manifest.json",
+);
+
+// Secondary output staged into Sky/Target so tauri.conf.json can bundle it
+// at Contents/Resources/extensions.manifest.json. LoadFromCache.rs probes
+// ../Resources/extensions.manifest.json relative to the MacOS binary dir,
+// which resolves to this location inside the .app.
+const BundleOutputPath = join(
+	RepoRoot,
+	"Element/Sky/Target/extensions.manifest.json",
 );
 
 interface ExtManifest {
@@ -68,37 +78,44 @@ interface CachedExtension {
 	manifest: ExtManifest;
 }
 
-const LoadNLS = async (ExtPath: string): Promise<Record<string, string>> => {
+type NLSMap = Record<string, string>;
+
+const LoadNLS = async (ExtPath: string): Promise<NLSMap> => {
 	try {
-		const Raw = await Fs.readFile(join(ExtPath, "package.nls.json"), "utf8");
-		const Parsed = JSON.parse(Raw) as Record<string, unknown>;
-		const Result: Record<string, string> = {};
-		for (const [Key, Val] of Object.entries(Parsed)) {
-			if (typeof Val === "string") Result[Key] = Val;
-			else if (Val && typeof Val === "object" && "message" in Val && typeof (Val as { message: unknown }).message === "string")
-				Result[Key] = (Val as { message: string }).message;
-		}
-		return Result;
+		const Parsed = JSON.parse(
+			await Fs.readFile(join(ExtPath, "package.nls.json"), "utf8"),
+		) as Record<string, unknown>;
+		return Object.fromEntries(
+			Object.entries(Parsed).flatMap(([K, V]) => {
+				const Msg =
+					typeof V === "string"
+						? V
+						: typeof (V as { message?: unknown })?.message ===
+							  "string"
+							? ((V as { message: string }).message)
+							: null;
+				return Msg !== null ? [[K, Msg]] : [];
+			}),
+		);
 	} catch {
 		return {};
 	}
 };
 
-const ResolveNLS = (Value: unknown, NLS: Record<string, string>): unknown => {
+const ResolveNLS = (Value: unknown, NLS: NLSMap): unknown => {
 	if (typeof Value === "string") {
-		if (Value.startsWith("%") && Value.endsWith("%") && Value.length > 2) {
-			const Key = Value.slice(1, -1);
-			return NLS[Key] ?? Value;
-		}
-		return Value;
+		const IsPlaceholder =
+			Value.length > 2 && Value[0] === "%" && Value.at(-1) === "%";
+		return IsPlaceholder ? (NLS[Value.slice(1, -1)] ?? Value) : Value;
 	}
 	if (Array.isArray(Value)) return Value.map((V) => ResolveNLS(V, NLS));
-	if (Value && typeof Value === "object") {
-		const Out: Record<string, unknown> = {};
-		for (const [K, V] of Object.entries(Value as Record<string, unknown>))
-			Out[K] = ResolveNLS(V, NLS);
-		return Out;
-	}
+	if (Value && typeof Value === "object")
+		return Object.fromEntries(
+			Object.entries(Value as Record<string, unknown>).map(([K, V]) => [
+				K,
+				ResolveNLS(V, NLS),
+			]),
+		);
 	return Value;
 };
 
@@ -205,9 +222,13 @@ const Run = async (): Promise<void> => {
 	await Fs.mkdir(dirname(OutputPath), { recursive: true });
 	await Fs.writeFile(OutputPath, Blob, "utf8");
 
+	// Mirror into Sky/Target so tauri.conf.json bundles it for .app launches.
+	await Fs.mkdir(dirname(BundleOutputPath), { recursive: true });
+	await Fs.writeFile(BundleOutputPath, Blob, "utf8");
+
 	const Elapsed = Date.now() - Start;
 	process.stdout.write(
-		`[Manifest:PreBake] Wrote ${All.length} extensions to ${OutputPath} in ${Elapsed}ms.\n`,
+		`[Manifest:PreBake] Wrote ${All.length} extensions to ${OutputPath} (+ bundle copy) in ${Elapsed}ms.\n`,
 	);
 };
 
