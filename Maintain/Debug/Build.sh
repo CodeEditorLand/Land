@@ -473,6 +473,15 @@ else
 	exit "$BUILD_EXIT"
 fi
 
+# B7.P08: Pre-bake extension manifests into a single compact JSON cache so
+# Mountain's startup scan (~1200 ms) is replaced by a <50 ms mmap read.
+# The cache is written to Element/Mountain/Target/debug/extensions.manifest.json
+# which LoadFromCache.rs tries first before falling back to the live scan.
+echo "Pre-baking extension manifests..."
+node --loader tsx/esm Maintain/Build/Manifest/PreBake.ts 2>/dev/null \
+  || npx --yes tsx Maintain/Build/Manifest/PreBake.ts 2>/dev/null \
+  || echo "[Manifest:PreBake] Skipped (tsx not available; Mountain will use live scan)"
+
 # Re-sign the debug .app with the correct entitlements so file pickers,
 # Cocoon JIT, and extension helper spawns work when launching from Finder.
 # shellcheck disable=SC1091
