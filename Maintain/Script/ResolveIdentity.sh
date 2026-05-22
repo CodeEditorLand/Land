@@ -30,7 +30,7 @@ if [ ! -f "$CodegenScript" ]; then
 	exit 0
 fi
 
-if ! command -v node >/dev/null 2>&1; then
+if ! command -v node > /dev/null 2>&1; then
 	echo "[ResolveIdentity] node unavailable — skipping."
 	exit 0
 fi

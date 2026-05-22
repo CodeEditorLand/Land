@@ -21,9 +21,10 @@
 #   sh Maintain/Repository/AbsorbGitDirs.sh
 #===============================================================================
 
-Current=$(cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd)
-Root=$(cd -- "$Current/../.." >/dev/null 2>&1 && pwd)
+Current=$(cd -- "$(dirname -- "$0")" > /dev/null 2>&1 && pwd)
+Root=$(cd -- "$Current/../.." > /dev/null 2>&1 && pwd)
 
+# shellcheck disable=SC2164
 cd "$Root"
 
 echo "[Repository/AbsorbGitDirs] Absorbing submodule .git dirs into parent"

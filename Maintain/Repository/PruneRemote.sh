@@ -17,9 +17,10 @@
 #   sh Maintain/Repository/PruneRemote.sh
 #===============================================================================
 
-Current=$(cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd)
-Root=$(cd -- "$Current/../.." >/dev/null 2>&1 && pwd)
+Current=$(cd -- "$(dirname -- "$0")" > /dev/null 2>&1 && pwd)
+Root=$(cd -- "$Current/../.." > /dev/null 2>&1 && pwd)
 
+# shellcheck disable=SC2164
 cd "$Root"
 
 echo "[Repository/PruneRemote] Pruning stale remote-tracking branches in root"
