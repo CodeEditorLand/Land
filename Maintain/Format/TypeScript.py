@@ -278,9 +278,9 @@ def Transform(source: str, open_brace_max_depth: int = 1) -> str:
     brace_depth = 0
     brace_depth_import = 0
     in_import_block = False
-    in_single_quote = False   # carried multi-line single-quoted string
+    in_single_quote = False  # carried multi-line single-quoted string
     in_double_quote = False  # carried multi-line double-quoted string
-    in_template_text = False # carried multi-line template literal
+    in_template_text = False  # carried multi-line template literal
 
     # Stack: brace depth snapshot at each '(' open, for RelativeBraceDepth.
     paren_open_brace_stack: list[int] = []
@@ -437,9 +437,7 @@ def main() -> None:
     target: list[Path] = []
 
     if args.All:
-        target = sorted(
-            fp for fp in Path(".").rglob("*") if fp.suffix in extensions
-        )
+        target = sorted(fp for fp in Path(".").rglob("*") if fp.suffix in extensions)
     else:
         for pattern in args.files:
             candidate = Path(pattern)
@@ -461,9 +459,7 @@ def main() -> None:
         parser.print_help()
         sys.exit(1)
 
-    changed = sum(
-        process_file(fp, args.DryRun, args.OpenBraceDepth) for fp in target
-    )
+    changed = sum(process_file(fp, args.DryRun, args.OpenBraceDepth) for fp in target)
     total = len(target)
     verb = "would change" if args.DryRun else "changed"
     print(f"\nDone - {verb} {changed}/{total} file(s).")

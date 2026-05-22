@@ -177,7 +177,7 @@ def _scan_line(line: str, mid_block_comment: bool = False) -> dict:
             # Peek ahead: is this a valid char literal?
             peek_pos = pos + 1
             if peek_pos < length:
-                if line[peek_pos] == '\\':
+                if line[peek_pos] == "\\":
                     # Escaped char: look for closing ' after the escape
                     peek_pos += 2
                     if peek_pos < length and line[peek_pos] == "'":
@@ -405,9 +405,7 @@ def main() -> None:
         parser.print_help()
         sys.exit(1)
 
-    changed = sum(
-        process_file(fp, args.DryRun, args.OpenBraceDepth) for fp in target
-    )
+    changed = sum(process_file(fp, args.DryRun, args.OpenBraceDepth) for fp in target)
     total = len(target)
     verb = "would change" if args.DryRun else "changed"
     print(f"\nDone - {verb} {changed}/{total} file(s).")

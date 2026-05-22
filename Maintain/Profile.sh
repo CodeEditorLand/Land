@@ -79,108 +79,108 @@ show_profile() {
 	print_header "Profile: $ProfileName"
 
 	case $ProfileName in
-		debug)
-			echo "Description: Debug build with Browser workbench"
-			echo "Workbench: Browser"
-			echo "Coverage: 70-80%"
-			echo "Complexity: Low"
-			echo ""
-			echo "Environment Variables:"
-			echo "  Debug=true, Browser=true, Bundle=true"
-			echo "  NODE_ENV=development"
-			echo ""
-			echo "Features:"
-			echo "  tauri_ipc: true"
-			echo "  wind_services: false"
-			echo "  mountain_providers: false"
-			;;
-		debug-mountain)
-			echo "Description: Debug build with Mountain workbench (RECOMMENDED)"
-			echo "Workbench: Mountain"
-			echo "Coverage: 80-90%"
-			echo "Complexity: Medium"
-			echo ""
-			echo "Environment Variables:"
-			echo "  Debug=true, Mountain=true, Bundle=true"
-			echo "  NODE_ENV=development"
-			echo ""
-			echo "Features:"
-			echo "  tauri_ipc: true"
-			echo "  wind_services: true"
-			echo "  mountain_providers: true"
-			;;
-		debug-electron)
-			echo "Description: Debug build with Electron workbench"
-			echo "Workbench: Electron"
-			echo "Coverage: 95%+"
-			echo "Complexity: High"
-			echo ""
-			echo "Environment Variables:"
-			echo "  Debug=true, Electron=true, Bundle=true"
-			echo "  NODE_ENV=development"
-			echo ""
-			echo "Features:"
-			echo "  tauri_ipc: true"
-			echo "  electron_polyfills: true"
-			echo "  wind_services: true"
-			;;
-		debug-electron-compiled)
-			echo "Description: Electron workbench + embedded-resource single binary (debug)"
-			echo "Workbench: Electron"
-			echo "Coverage: 95%+"
-			echo "Complexity: High"
-			echo ""
-			echo "Environment Variables:"
-			echo "  Debug=true, Electron=true, Bundle=true, Compile=true"
-			echo "  Compiler=esbuild, Level=debug"
-			echo "  NODE_ENV=development"
-			echo ""
-			echo "Output shape:"
-			echo "  Every Sky/Output asset embedded in the Tauri resource table."
-			echo "  Binary runs without the Mountain set_static_application_root"
-			echo "  fallback - /Static/Application/** resolves from the embedded"
-			echo "  resource map. debug_assertions + dev-log tags stay on, so the"
-			echo "  binary behaves like release-electron but with the full debug"
-			echo "  diagnostic surface."
-			;;
-		debug-mountain-compiled)
-			echo "Description: Mountain workbench + embedded-resource single binary (debug)"
-			echo "Workbench: Mountain"
-			echo "Coverage: 80-90%"
-			echo "Complexity: Medium"
-			echo ""
-			echo "Environment Variables:"
-			echo "  Debug=true, Mountain=true, Bundle=true, Compile=true"
-			echo "  Compiler=esbuild, Level=debug"
-			echo "  NODE_ENV=development"
-			echo ""
-			echo "Output shape:"
-			echo "  Same single-binary embedded layout as debug-electron-compiled"
-			echo "  but on the lighter Mountain workbench. Use for the smallest"
-			echo "  debug artifact that still ships the full Sky tree."
-			;;
-		production)
-			echo "Description: Production build with Mountain workbench"
-			echo "Workbench: Mountain"
-			echo "Coverage: 80-90%"
-			echo ""
-			echo "Environment Variables:"
-			echo "  Debug=false, Mountain=true, Compile=true"
-			echo "  NODE_ENV=production"
-			;;
-		release)
-			echo "Description: Full release with packaging and signing"
-			echo "Workbench: Mountain"
-			echo ""
-			echo "Environment Variables:"
-			echo "  Debug=false, Mountain=true, Compile=true"
-			echo "  NODE_ENV=production"
-			echo "  RUST_LOG=warn"
-			;;
-		*)
-			echo "Profile '$ProfileName' not found in predefined list"
-			echo "Check $CONFIG_FILE for custom profiles"
-			;;
+	debug)
+		echo "Description: Debug build with Browser workbench"
+		echo "Workbench: Browser"
+		echo "Coverage: 70-80%"
+		echo "Complexity: Low"
+		echo ""
+		echo "Environment Variables:"
+		echo "  Debug=true, Browser=true, Bundle=true"
+		echo "  NODE_ENV=development"
+		echo ""
+		echo "Features:"
+		echo "  tauri_ipc: true"
+		echo "  wind_services: false"
+		echo "  mountain_providers: false"
+		;;
+	debug-mountain)
+		echo "Description: Debug build with Mountain workbench (RECOMMENDED)"
+		echo "Workbench: Mountain"
+		echo "Coverage: 80-90%"
+		echo "Complexity: Medium"
+		echo ""
+		echo "Environment Variables:"
+		echo "  Debug=true, Mountain=true, Bundle=true"
+		echo "  NODE_ENV=development"
+		echo ""
+		echo "Features:"
+		echo "  tauri_ipc: true"
+		echo "  wind_services: true"
+		echo "  mountain_providers: true"
+		;;
+	debug-electron)
+		echo "Description: Debug build with Electron workbench"
+		echo "Workbench: Electron"
+		echo "Coverage: 95%+"
+		echo "Complexity: High"
+		echo ""
+		echo "Environment Variables:"
+		echo "  Debug=true, Electron=true, Bundle=true"
+		echo "  NODE_ENV=development"
+		echo ""
+		echo "Features:"
+		echo "  tauri_ipc: true"
+		echo "  electron_polyfills: true"
+		echo "  wind_services: true"
+		;;
+	debug-electron-compiled)
+		echo "Description: Electron workbench + embedded-resource single binary (debug)"
+		echo "Workbench: Electron"
+		echo "Coverage: 95%+"
+		echo "Complexity: High"
+		echo ""
+		echo "Environment Variables:"
+		echo "  Debug=true, Electron=true, Bundle=true, Compile=true"
+		echo "  Compiler=esbuild, Level=debug"
+		echo "  NODE_ENV=development"
+		echo ""
+		echo "Output shape:"
+		echo "  Every Sky/Output asset embedded in the Tauri resource table."
+		echo "  Binary runs without the Mountain set_static_application_root"
+		echo "  fallback - /Static/Application/** resolves from the embedded"
+		echo "  resource map. debug_assertions + dev-log tags stay on, so the"
+		echo "  binary behaves like release-electron but with the full debug"
+		echo "  diagnostic surface."
+		;;
+	debug-mountain-compiled)
+		echo "Description: Mountain workbench + embedded-resource single binary (debug)"
+		echo "Workbench: Mountain"
+		echo "Coverage: 80-90%"
+		echo "Complexity: Medium"
+		echo ""
+		echo "Environment Variables:"
+		echo "  Debug=true, Mountain=true, Bundle=true, Compile=true"
+		echo "  Compiler=esbuild, Level=debug"
+		echo "  NODE_ENV=development"
+		echo ""
+		echo "Output shape:"
+		echo "  Same single-binary embedded layout as debug-electron-compiled"
+		echo "  but on the lighter Mountain workbench. Use for the smallest"
+		echo "  debug artifact that still ships the full Sky tree."
+		;;
+	production)
+		echo "Description: Production build with Mountain workbench"
+		echo "Workbench: Mountain"
+		echo "Coverage: 80-90%"
+		echo ""
+		echo "Environment Variables:"
+		echo "  Debug=false, Mountain=true, Compile=true"
+		echo "  NODE_ENV=production"
+		;;
+	release)
+		echo "Description: Full release with packaging and signing"
+		echo "Workbench: Mountain"
+		echo ""
+		echo "Environment Variables:"
+		echo "  Debug=false, Mountain=true, Compile=true"
+		echo "  NODE_ENV=production"
+		echo "  RUST_LOG=warn"
+		;;
+	*)
+		echo "Profile '$ProfileName' not found in predefined list"
+		echo "Check $CONFIG_FILE for custom profiles"
+		;;
 	esac
 }
 
@@ -196,17 +196,17 @@ validate_profile() {
 	print_header "Validating Profile: $ProfileName"
 
 	case $ProfileName in
-		debug | debug-mountain | debug-electron | debug-electron-compiled | debug-mountain-compiled | production | release | web-browser | bundler-preparation | swc-bundle | oxc-bundle)
-			echo "Profile '$ProfileName' is valid"
-			echo ""
-			show_profile "$ProfileName"
-			;;
-		*)
-			echo "Profile '$ProfileName' is not recognized"
-			echo ""
-			echo "Known profiles: debug debug-mountain debug-electron debug-electron-compiled debug-mountain-compiled production release web-browser bundler-preparation swc-bundle oxc-bundle"
-			exit 1
-			;;
+	debug | debug-mountain | debug-electron | debug-electron-compiled | debug-mountain-compiled | production | release | web-browser | bundler-preparation | swc-bundle | oxc-bundle)
+		echo "Profile '$ProfileName' is valid"
+		echo ""
+		show_profile "$ProfileName"
+		;;
+	*)
+		echo "Profile '$ProfileName' is not recognized"
+		echo ""
+		echo "Known profiles: debug debug-mountain debug-electron debug-electron-compiled debug-mountain-compiled production release web-browser bundler-preparation swc-bundle oxc-bundle"
+		exit 1
+		;;
 	esac
 }
 
@@ -278,40 +278,40 @@ list_features() {
 #===============================================================================
 
 case "${1:-}" in
-	list)
-		list_profiles
-		;;
-	show)
-		show_profile "$2"
-		;;
-	validate)
-		validate_profile "$2"
-		;;
-	workbenches)
-		list_workbenches
-		;;
-	features)
-		list_features
-		;;
-	--help | -h)
-		echo "Usage: $0 <command> [options]"
-		echo ""
-		echo "Commands:"
-		echo "  list              List all available profiles"
-		echo "  show <name>       Show profile details"
-		echo "  validate <name>   Validate a profile"
-		echo "  workbenches       List available workbenches"
-		echo "  features          List available features"
-		echo ""
-		echo "Examples:"
-		echo "  $0 list"
-		echo "  $0 show debug-mountain"
-		echo "  $0 validate production"
-		echo "  $0 workbenches"
-		;;
-	*)
-		echo "Usage: $0 <command> [options]"
-		echo "Use --help for more information"
-		exit 1
-		;;
+list)
+	list_profiles
+	;;
+show)
+	show_profile "$2"
+	;;
+validate)
+	validate_profile "$2"
+	;;
+workbenches)
+	list_workbenches
+	;;
+features)
+	list_features
+	;;
+--help | -h)
+	echo "Usage: $0 <command> [options]"
+	echo ""
+	echo "Commands:"
+	echo "  list              List all available profiles"
+	echo "  show <name>       Show profile details"
+	echo "  validate <name>   Validate a profile"
+	echo "  workbenches       List available workbenches"
+	echo "  features          List available features"
+	echo ""
+	echo "Examples:"
+	echo "  $0 list"
+	echo "  $0 show debug-mountain"
+	echo "  $0 validate production"
+	echo "  $0 workbenches"
+	;;
+*)
+	echo "Usage: $0 <command> [options]"
+	echo "Use --help for more information"
+	exit 1
+	;;
 esac
