@@ -68,6 +68,40 @@ interface CachedExtension {
 	manifest: ExtManifest;
 }
 
+const LoadNLS = async (ExtPath: string): Promise<Record<string, string>> => {
+	try {
+		const Raw = await Fs.readFile(join(ExtPath, "package.nls.json"), "utf8");
+		const Parsed = JSON.parse(Raw) as Record<string, unknown>;
+		const Result: Record<string, string> = {};
+		for (const [Key, Val] of Object.entries(Parsed)) {
+			if (typeof Val === "string") Result[Key] = Val;
+			else if (Val && typeof Val === "object" && "message" in Val && typeof (Val as { message: unknown }).message === "string")
+				Result[Key] = (Val as { message: string }).message;
+		}
+		return Result;
+	} catch {
+		return {};
+	}
+};
+
+const ResolveNLS = (Value: unknown, NLS: Record<string, string>): unknown => {
+	if (typeof Value === "string") {
+		if (Value.startsWith("%") && Value.endsWith("%") && Value.length > 2) {
+			const Key = Value.slice(1, -1);
+			return NLS[Key] ?? Value;
+		}
+		return Value;
+	}
+	if (Array.isArray(Value)) return Value.map((V) => ResolveNLS(V, NLS));
+	if (Value && typeof Value === "object") {
+		const Out: Record<string, unknown> = {};
+		for (const [K, V] of Object.entries(Value as Record<string, unknown>))
+			Out[K] = ResolveNLS(V, NLS);
+		return Out;
+	}
+	return Value;
+};
+
 const ScanRoot = async (Root: string): Promise<CachedExtension[]> => {
 	let Entries: string[] = [];
 	try {
@@ -84,7 +118,12 @@ const ScanRoot = async (Root: string): Promise<CachedExtension[]> => {
 		const ManifestPath = join(ExtPath, "package.json");
 		try {
 			const Raw = await Fs.readFile(ManifestPath, "utf8");
-			const Manifest = JSON.parse(Raw) as ExtManifest;
+			let Manifest = JSON.parse(Raw) as ExtManifest;
+
+			// Resolve NLS placeholders (%key%) against package.nls.json
+			const NLS = await LoadNLS(ExtPath);
+			if (Object.keys(NLS).length > 0)
+				Manifest = ResolveNLS(Manifest, NLS) as ExtManifest;
 
 			const Publisher = Manifest.publisher ?? Entry.split(".")[0] ?? "unknown";
 			const Name =
