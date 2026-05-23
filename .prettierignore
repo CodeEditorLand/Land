@@ -79,6 +79,11 @@ dist
 **/gen
 **/gen/**
 
+# Wind codegen: BridgeShape types generated from upstream VS Code schemas.
+# These live in Source/Effect/*/Implementation/ (not in a Generated/ dir)
+# but carry "Generated" in their filename and must not be reformatted.
+Element/Wind/Source/Effect/*/Implementation/*Generated.ts
+
 # @playform/build output directories. Each Element package writes compiled
 # .js files to `Element/<Name>/Configuration/`, mirroring the `Source/`
 # tree. Built artefacts - not source - must not be reformatted. The patterns
