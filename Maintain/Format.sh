@@ -27,7 +27,7 @@
 
 set -e
 
-Current=$(cd -- "$(dirname -- "$0")" > /dev/null 2>&1 && pwd)
+Current=$(cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd)
 
 Root="$Current/.."
 
@@ -98,8 +98,8 @@ FormatShell() {
 		-not -path "*/Generated/*" \
 		-not -path "*/.generated/*" \
 		-not -path "*/gen/*" \
-		-not -path "*/bin/*" \
-		| xargs shfmt -w
+		-not -path "*/bin/*" |
+		xargs shfmt -w
 
 	echo ""
 	echo "Shell formatting complete."
@@ -149,31 +149,31 @@ FormatRust() {
 #===============================================================================
 
 case "${1:-}" in
-	shell)
-		FormatShell
-		;;
-	prettier)
-		FormatTypeScript
-		;;
-	rust)
-		FormatRust
-		;;
-	"")
-		FormatShell
-		FormatTypeScript
-		FormatRust
-		;;
-	--help | -h)
-		echo "Usage: $0 [shell|prettier|rust]"
-		echo ""
-		echo "  shell     Format shell scripts with shfmt"
-		echo "  prettier  Format TS/JS/Astro/CSS/JSON/MD with Prettier"
-		echo "  rust      Format Rust files with rustfmt (nightly)"
-		echo "  (no arg)  Format all three"
-		;;
-	*)
-		echo "Unknown target: $1"
-		echo "Use --help for usage information"
-		exit 1
-		;;
+shell)
+	FormatShell
+	;;
+prettier)
+	FormatTypeScript
+	;;
+rust)
+	FormatRust
+	;;
+"")
+	FormatShell
+	FormatTypeScript
+	FormatRust
+	;;
+--help | -h)
+	echo "Usage: $0 [shell|prettier|rust]"
+	echo ""
+	echo "  shell     Format shell scripts with shfmt"
+	echo "  prettier  Format TS/JS/Astro/CSS/JSON/MD with Prettier"
+	echo "  rust      Format Rust files with rustfmt (nightly)"
+	echo "  (no arg)  Format all three"
+	;;
+*)
+	echo "Unknown target: $1"
+	echo "Use --help for usage information"
+	exit 1
+	;;
 esac
