@@ -56,7 +56,7 @@ _LandDistinctId() {
 	if [ -n "${Brand:-}" ]; then
 		printf "%s" "$Brand"
 	else
-		printf "land-dev-%s-%s" "${USER:-unknown}" "$(uname -n 2>/dev/null || echo host)"
+		printf "land-dev-%s-%s" "${USER:-unknown}" "$(uname -n 2> /dev/null || echo host)"
 	fi
 }
 
@@ -65,9 +65,9 @@ _LandDistinctId() {
 _LandTraceId() {
 	if [ -z "${_LandTraceIdCached:-}" ]; then
 		# 16 random bytes (32 hex). /dev/urandom is POSIX-portable enough.
-		_LandTraceIdCached=$(od -An -N16 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n' | head -c32)
+		_LandTraceIdCached=$(od -An -N16 -tx1 /dev/urandom 2> /dev/null | tr -d ' \n' | head -c32)
 		if [ -z "$_LandTraceIdCached" ]; then
-			_LandTraceIdCached=$(printf "%s%s" "$$" "$(date +%s%N 2>/dev/null || date +%s)" | awk '{printf "%032x", $0}' | head -c32)
+			_LandTraceIdCached=$(printf "%s%s" "$$" "$(date +%s%N 2> /dev/null || date +%s)" | awk '{printf "%032x", $0}' | head -c32)
 		fi
 		export _LandTraceIdCached
 	fi
@@ -76,7 +76,7 @@ _LandTraceId() {
 
 # Random 8-byte span_id (16 hex). Per call, never cached.
 _LandSpanId() {
-	od -An -N8 -tx1 /dev/urandom 2>/dev/null | tr -d ' \n' | head -c16
+	od -An -N8 -tx1 /dev/urandom 2> /dev/null | tr -d ' \n' | head -c16
 }
 
 # Build a JSON property bag from positional k1 v1 k2 v2 ... pairs.
@@ -117,12 +117,12 @@ _LandOTLPAttributes() {
 _LandRecord() {
 	if [ "${Record:-0}" != "1" ]; then return 0; fi
 	BuildLogDirectory="${MAINTAIN_TELEMETRY_LOG_DIRECTORY:-Element/Maintain/Target/debug/Telemetry}"
-	mkdir -p "$BuildLogDirectory" 2>/dev/null || return 0
+	mkdir -p "$BuildLogDirectory" 2> /dev/null || return 0
 	if [ -z "${_LandRecordSession:-}" ]; then
-		_LandRecordSession="$(date -u +%Y%m%dT%H%M%SZ 2>/dev/null || date +%s)-$$"
+		_LandRecordSession="$(date -u +%Y%m%dT%H%M%SZ 2> /dev/null || date +%s)-$$"
 		export _LandRecordSession
 	fi
-	printf "%s\n" "$1" >>"$BuildLogDirectory/$_LandRecordSession.ndjson"
+	printf "%s\n" "$1" >> "$BuildLogDirectory/$_LandRecordSession.ndjson"
 }
 
 # ---------------------------------------------------------------------------
@@ -138,7 +138,7 @@ PostHogCapture() {
 	Key="${Authorize:-}"
 	Host="${Beam:-https://eu.i.posthog.com}"
 	DistinctId=$(_LandDistinctId)
-	Timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%FT%T%z)"
+	Timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ 2> /dev/null || date +%FT%T%z)"
 	TraceId=$(_LandTraceId)
 
 	ExtraProperties=$(_LandJsonProperties "$@")
@@ -151,7 +151,7 @@ PostHogCapture() {
 		-H "Content-Type: application/json" \
 		-d "$Payload" \
 		"$Host/capture/" \
-		>/dev/null 2>&1 &
+		> /dev/null 2>&1 &
 }
 
 # ---------------------------------------------------------------------------
@@ -183,7 +183,7 @@ OTLPCapture() {
 		-H "Content-Type: application/json" \
 		-d "$Payload" \
 		"$OTLPHost/v1/traces" \
-		>/dev/null 2>&1 &
+		> /dev/null 2>&1 &
 }
 
 # ---------------------------------------------------------------------------
@@ -197,7 +197,7 @@ LandCapture() {
 	[ -z "$Event" ] && return 0
 	shift
 
-	NowNano=$(date +%s%N 2>/dev/null)
+	NowNano=$(date +%s%N 2> /dev/null)
 	if [ -z "$NowNano" ] || [ "$NowNano" = "%s%N" ]; then
 		# BSD date has no %N - fall back to seconds * 1e9.
 		NowNano=$(date +%s)000000000
@@ -211,7 +211,7 @@ LandCapture() {
 
 # Stamp the start of a phase. Pair with LandCapturePhaseEnd.
 LandCapturePhaseBegin() {
-	NowNano=$(date +%s%N 2>/dev/null)
+	NowNano=$(date +%s%N 2> /dev/null)
 	[ -z "$NowNano" ] || [ "$NowNano" = "%s%N" ] && NowNano=$(date +%s)000000000
 	LandCaptureStart="$NowNano"
 	export LandCaptureStart
@@ -226,7 +226,7 @@ LandCapturePhaseBegin() {
 LandCapturePhaseEnd() {
 	Phase="$1"
 	shift
-	NowNano=$(date +%s%N 2>/dev/null)
+	NowNano=$(date +%s%N 2> /dev/null)
 	[ -z "$NowNano" ] || [ "$NowNano" = "%s%N" ] && NowNano=$(date +%s)000000000
 	StartNano="${LandCaptureStart:-$NowNano}"
 	# duration_ms = (NowNano - StartNano) / 1e6 ; pure shell arithmetic
@@ -241,5 +241,5 @@ LandCapturePhaseEnd() {
 # 1-property signature. Keep working unchanged.
 # shellcheck disable=SC3045
 if [ -n "${BASH_VERSION:-}" ]; then
-	export -f PostHogCapture OTLPCapture LandCapture LandCapturePhaseBegin LandCapturePhaseEnd 2>/dev/null || true
+	export -f PostHogCapture OTLPCapture LandCapture LandCapturePhaseBegin LandCapturePhaseEnd 2> /dev/null || true
 fi

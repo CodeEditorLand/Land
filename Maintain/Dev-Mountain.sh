@@ -31,38 +31,38 @@ PROFILE="mountain"
 
 while [ $# -gt 0 ]; do
 	case $1 in
-	--profile | -p)
-		PROFILE="$2"
-		shift 2
-		;;
-	--help | -h)
-		echo "Usage: $0 [OPTIONS]"
-		echo ""
-		echo "Options:"
-		echo "  --profile, -p <name>  Workbench profile to use"
-		echo "  --help, -h            Show this help message"
-		echo ""
-		echo "Available profiles:"
-		echo "  mountain - Mountain workbench (80-90% features) [DEFAULT]"
-		echo "  electron - Electron workbench (95%+ features)"
-		echo "  browser  - Browser workbench (70-80% features)"
-		echo ""
-		echo "Environment Variables:"
-		echo "  Mountain=true  Enable Mountain workbench"
-		echo "  Electron=true  Enable Electron workbench"
-		echo "  Browser=true   Enable Browser workbench"
-		echo ""
-		echo "Examples:"
-		echo "  $0                    # Default Mountain dev"
-		echo "  $0 --profile browser  # Browser workbench dev"
-		echo "  $0 --profile electron # Electron workbench dev"
-		exit 0
-		;;
-	*)
-		echo "Unknown option: $1"
-		echo "Use --help for usage information"
-		exit 1
-		;;
+		--profile | -p)
+			PROFILE="$2"
+			shift 2
+			;;
+		--help | -h)
+			echo "Usage: $0 [OPTIONS]"
+			echo ""
+			echo "Options:"
+			echo "  --profile, -p <name>  Workbench profile to use"
+			echo "  --help, -h            Show this help message"
+			echo ""
+			echo "Available profiles:"
+			echo "  mountain - Mountain workbench (80-90% features) [DEFAULT]"
+			echo "  electron - Electron workbench (95%+ features)"
+			echo "  browser  - Browser workbench (70-80% features)"
+			echo ""
+			echo "Environment Variables:"
+			echo "  Mountain=true  Enable Mountain workbench"
+			echo "  Electron=true  Enable Electron workbench"
+			echo "  Browser=true   Enable Browser workbench"
+			echo ""
+			echo "Examples:"
+			echo "  $0                    # Default Mountain dev"
+			echo "  $0 --profile browser  # Browser workbench dev"
+			echo "  $0 --profile electron # Electron workbench dev"
+			exit 0
+			;;
+		*)
+			echo "Unknown option: $1"
+			echo "Use --help for usage information"
+			exit 1
+			;;
 	esac
 done
 
@@ -74,23 +74,23 @@ echo "========================================"
 echo ""
 
 case $PROFILE in
-mountain)
-	echo "Using Mountain workbench"
-	export Mountain=true
-	;;
-electron)
-	echo "Using Electron workbench"
-	export Electron=true
-	;;
-browser)
-	echo "Using Browser workbench"
-	export Browser=true
-	;;
-*)
-	echo "Unknown profile: $PROFILE"
-	echo "Available profiles: mountain, electron, browser"
-	exit 1
-	;;
+	mountain)
+		echo "Using Mountain workbench"
+		export Mountain=true
+		;;
+	electron)
+		echo "Using Electron workbench"
+		export Electron=true
+		;;
+	browser)
+		echo "Using Browser workbench"
+		export Browser=true
+		;;
+	*)
+		echo "Unknown profile: $PROFILE"
+		echo "Available profiles: mountain, electron, browser"
+		exit 1
+		;;
 esac
 
 export NODE_ENV=development

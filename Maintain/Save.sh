@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-Current=$(cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd)
+Current=$(cd -- "$(dirname -- "$0")" > /dev/null 2>&1 && pwd)
 
 for Dependency in \
 	"./" \
