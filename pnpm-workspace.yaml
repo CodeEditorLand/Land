@@ -10,3 +10,29 @@ packages:
     - "Element/**"
 
     - "!**/Target/**"
+
+preferWorkspacePackages: true
+linkWorkspacePackages: deep
+
+onlyBuiltDependencies:
+    - "@biomejs/biome"
+    - "@parcel/watcher"
+    - "@swc/core"
+    - esbuild
+    - msgpackr-extract
+    - protobufjs
+    - sharp
+    - workerd
+
+minimumReleaseAgeExclude:
+    - "@cloudflare/workers-types@4.20260523.1"
+
+allowBuilds:
+    "@biomejs/biome": true
+    "@parcel/watcher": true
+    "@swc/core": true
+    esbuild: true
+    msgpackr-extract: true
+    protobufjs: true
+    sharp: true
+    workerd: true

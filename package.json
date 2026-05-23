@@ -57,21 +57,9 @@
 		"turbo": "2.9.14",
 		"typescript": "6.0.3"
 	},
-	"packageManager": "pnpm@10.28.2",
+	"packageManager": "pnpm@11.2.2",
 	"publishConfig": {
 		"access": "public",
 		"provenance": true
-	},
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"@biomejs/biome",
-			"@parcel/watcher",
-			"@swc/core",
-			"esbuild",
-			"msgpackr-extract",
-			"protobufjs",
-			"sharp",
-			"workerd"
-		]
 	}
 }
