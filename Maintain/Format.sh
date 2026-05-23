@@ -119,7 +119,7 @@ FormatTypeScript() {
 	cd "$Root"
 
 	"$Root/node_modules/.bin/prettier" --write . \
-		--ignore-path "$Root/.prettierignore"
+		--ignore-path ".prettierignore"
 
 	echo ""
 	echo "Prettier formatting complete."
