@@ -86,7 +86,7 @@ Echo = { path = "Element/Echo" }
 Mist = { path = "Element/Mist" }
 
 anyhow = { version = "1.0.102" }
-arboard = { version = "3.6" }
+arboard = { version = "3.6.1" }
 async-trait = { version = "0.1.89" }
 base64 = { version = "0.22.1" }
 bincode = { version = "=2.0.1", features = [
@@ -101,13 +101,10 @@ chrono = { version = "0.4.44", default-features = false, features = [
 ] }
 clap = { version = "4.6.1", features = ["derive", "env"] }
 colored = { version = "3.1.1" }
-git2 = { version = "0.20.4" }
-itertools = { version = "0.14.0" }
-par-core = { version = "2.0.0", features = ["rayon"] }
-config = { version = "0.15.22" }
+config = { version = "0.15.23" }
 crc32fast = { version = "1.5.0" }
 crossbeam-deque = { version = "0.8.6" }
-dashmap = { version = "6.1.0" }
+dashmap = { version = "6.2.1" }
 dirs = { version = "6.0.0" }
 dunce = { version = "1.0.5" }
 env_logger = { version = "0.11.10" }
@@ -115,40 +112,43 @@ flate2 = { version = "1.1.9" }
 fs_extra = { version = "1.3.0" }
 futures = { version = "0.3.32" }
 futures-util = { version = "0.3.32" }
+git2 = { version = "0.21.0" }
 globset = { version = "0.4.18" }
 grep-matcher = { version = "0.1.8" }
 grep-regex = { version = "0.1.14" }
 grep-searcher = { version = "0.1.16" }
 hex = { version = "0.4.3" }
-hickory-client = { version = "0.25" }
-hickory-proto = { version = "0.26" }
-hickory-server = { version = "0.26" }
+hickory-client = { version = "0.25.2" }
+hickory-proto = { version = "0.26.1" }
+hickory-server = { version = "0.26.1" }
 hostname = { version = "0.4.2" }
 http = { version = "1.4.0" }
 ignore = { version = "0.4.25" }
-plist = { version = "1.9.0", features = ["serde"] }
-
+itertools = { version = "0.14.0" }
 json5 = { version = "1.3.1" }
-keyring = { version = "4.0.0" }
+keyring = { version = "4.0.1" }
 keyring-core = { version = "1.0.0" }
 lazy_static = { version = "1.5.0" }
 log = { version = "0.4.29" }
 md5 = { version = "0.8.0" }
 memmap2 = { version = "0.9.10" }
-metrics = { version = "0.24.5" }
+metrics = { version = "0.24.6" }
 moka = { version = "0.12.15", features = ["sync"] }
-prometheus = { version = "0.14.0", default-features = false, features = [
-	"protobuf",
-] }
 notify = { version = "8.2.0" }
 num_cpus = { version = "1.17.0" }
 once_cell = { version = "1.21.4" }
-open = { version = "5.3.4" }
+open = { version = "5.3.5" }
 opentelemetry = { version = "0.32.0", default-features = false }
-posthog-rs = { version = "0.7.0" }
+par-core = { version = "2.0.0", features = ["rayon"] }
 parking_lot = { version = "0.12.5" }
+plist = { version = "1.9.0", features = ["serde"] }
 portable-pty = { version = "0.9.0" }
 portpicker = { version = "0.1.1" }
+posthog-rs = { version = "0.7.1" }
+prettyplease = { version = "0.2.37" }
+prometheus = { version = "0.14.0", default-features = false, features = [
+	"protobuf",
+] }
 prost = { version = "0.14.3" }
 prost-build = { version = "0.14.3" }
 prun = { version = "0.1.9" }
@@ -158,14 +158,17 @@ reqwest = { version = "0.13.3", features = ["json", "stream", "hickory-dns"] }
 rhai = { version = "1.24.0", features = ["metadata", "serde"] }
 ring = { version = "0.17.14" }
 rustls = { version = "0.23.40" }
-rustls-pemfile = { version = "2.2" }
+rustls-pemfile = { version = "2.2.0" }
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = { version = "1.0.149" }
+serde_json = { version = "1.0.150" }
 sha2 = { version = "0.11.0" }
 subtle = { version = "2.6.1" }
-sysinfo = { version = "0.39.0" }
+syn = { version = "2.0.117", features = ["full", "visit", "visit-mut", "extra-traits"] }
+sysinfo = { version = "0.39.2" }
 systemstat = { version = "0.2.6" }
-tar = { version = "0.4.45" }
+tar = { version = "0.4.46" }
+quote = { version = "1.0.45" }
+
 tauri-build = { version = "=2.6.2" }
 tauri-bundler = { version = "=2.9.2" }
 tauri-cli = { version = "=2.11.2" }
@@ -191,7 +194,7 @@ tempfile = { version = "3.27.0" }
 thiserror = { version = "2.0.18" }
 tokio = { version = "1.52.3", features = ["full"] }
 tokio-console = { version = "0.1.14" }
-tokio-rustls = { version = "0.26" }
+tokio-rustls = { version = "0.26.4" }
 tokio-stream = { version = "0.1.18" }
 tokio-test = { version = "0.4.5" }
 tokio-tungstenite = { version = "0.29.0" }
@@ -212,18 +215,18 @@ walkdir = { version = "2.5.0" }
 zeroize = { version = "1.8.2" }
 
 # OXC dependencies for Element/Rest
-oxc_allocator = { version = "0.129.0" }
-oxc_parser = { version = "0.129.0" }
-oxc_transformer = { version = "0.129.0" }
-oxc_minifier = { version = "0.129.0" }
-oxc_codegen = { version = "0.129.0" }
-oxc_semantic = { version = "0.129.0" }
-oxc_span = { version = "0.129.0" }
-oxc_ast = { version = "0.129.0" }
+oxc_allocator = { version = "0.132.0" }
+oxc_parser = { version = "0.132.0" }
+oxc_transformer = { version = "0.132.0" }
+oxc_minifier = { version = "0.132.0" }
+oxc_codegen = { version = "0.132.0" }
+oxc_semantic = { version = "0.132.0" }
+oxc_span = { version = "0.132.0" }
+oxc_ast = { version = "0.132.0" }
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 p256 = { version = "0.13.2" }
 pem = { version = "3.0.6" }
-rcgen = { version = "0.14.7" }
+rcgen = { version = "0.14.8" }
 rustls-pki-types = { version = "1.14.1" }
 x509-parser = { version = "0.18.1" }
 
