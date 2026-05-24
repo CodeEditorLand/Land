@@ -45,13 +45,13 @@ if [ ! -f "$Entitlements" ]; then
 	exit 1
 fi
 
-if ! plutil -lint "$Entitlements" > /dev/null 2>&1; then
+if ! plutil -lint "$Entitlements" >/dev/null 2>&1; then
 	echo "[SignBundle] ERROR: $Entitlements failed plutil -lint check" >&2
 	plutil -lint "$Entitlements" >&2
 	exit 1
 fi
 
-AppPath="$(find "$BundleDir" -maxdepth 1 -name "*.app" 2> /dev/null | head -1)"
+AppPath="$(find "$BundleDir" -maxdepth 1 -name "*.app" 2>/dev/null | head -1)"
 
 if [ -z "$AppPath" ]; then
 	echo "[SignBundle] WARNING: No .app found in $BundleDir - skipping sign step"
@@ -84,7 +84,7 @@ if [ -n "${CopyToDesktop}" ]; then
 	rm -rf "$Dest"
 	cp -R "$AppPath" "$Dest"
 	xattr -cr "$Dest"
-	codesign --force --deep --sign - --entitlements "$Entitlements" "$Dest" \
-		&& echo "[SignBundle] Desktop copy signed OK" \
-		|| echo "[SignBundle] WARNING: Desktop copy re-sign failed (non-fatal)"
+	codesign --force --deep --sign - --entitlements "$Entitlements" "$Dest" &&
+		echo "[SignBundle] Desktop copy signed OK" ||
+		echo "[SignBundle] WARNING: Desktop copy re-sign failed (non-fatal)"
 fi

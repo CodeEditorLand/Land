@@ -33,13 +33,13 @@
 #===============================================================================
 
 if [ "${Clean:-false}" != "true" ]; then
-	return 0 2> /dev/null || exit 0
+	return 0 2>/dev/null || exit 0
 fi
 
 # Resolve repo root regardless of where the helper was sourced from.
 # Fallback to PWD when `BASH_SOURCE` is unavailable (POSIX `sh`).
 ScriptDir="$(dirname "${0:-./}")"
-RepoRoot="$(cd "$ScriptDir/../.." 2> /dev/null && pwd || echo "$PWD")"
+RepoRoot="$(cd "$ScriptDir/../.." 2>/dev/null && pwd || echo "$PWD")"
 
 echo "----------------------------------------"
 echo "[Clean] Wiping generated artefacts"
@@ -67,7 +67,7 @@ done
 # per service. The catalog re-emits these on every codegen run, so
 # the wipe just smooths over a half-finished prior run that left a
 # stale `<…>Generated.ts` orphaned (decorator removed upstream).
-StaleBridgeShapes=$(find "$RepoRoot/Element/Wind/Source/Effect" -type f -name "*BridgeShapeGenerated.ts" 2> /dev/null || true)
+StaleBridgeShapes=$(find "$RepoRoot/Element/Wind/Source/Effect" -type f -name "*BridgeShapeGenerated.ts" 2>/dev/null || true)
 if [ -n "$StaleBridgeShapes" ]; then
 	echo "$StaleBridgeShapes" | while IFS= read -r File; do
 		[ -z "$File" ] && continue
@@ -130,7 +130,7 @@ ProtoFiles=$(find "$RepoRoot/Element" \
 	-not -path "*/target/*" \
 	-not -path "*/Documentation/*" \
 	-not -path "*/Dependency/*" \
-	2> /dev/null || true)
+	2>/dev/null || true)
 if [ -n "$ProtoFiles" ]; then
 	echo "$ProtoFiles" | while IFS= read -r File; do
 		[ -z "$File" ] && continue
