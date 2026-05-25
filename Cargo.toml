@@ -172,6 +172,7 @@ syn = { version = "2.0.117", features = [
 sysinfo = { version = "0.39.2" }
 systemstat = { version = "0.2.6" }
 tar = { version = "0.4.46" }
+proc-macro2 = { version = "1.0.106", features = ["span-locations"] }
 quote = { version = "1.0.45" }
 
 tauri-build = { version = "=2.6.2" }

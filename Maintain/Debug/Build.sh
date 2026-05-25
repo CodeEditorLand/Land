@@ -51,44 +51,44 @@ FLAVOR=""
 
 while [ $# -gt 0 ]; do
 	case $1 in
-	--profile | -p)
-		PROFILE="$2"
-		shift 2
-		;;
-	--flavor | -f)
-		FLAVOR="$2"
-		shift 2
-		;;
-	--help | -h)
-		echo "Usage: $0 [OPTIONS]"
-		echo ""
-		echo "Options:"
-		echo "  --profile, -p <name>  Build profile to use (default: debug)"
-		echo "  --help, -h            Show this help message"
-		echo ""
-		echo "Available profiles:"
-		echo "  debug                   - Browser workbench (70-80% features)"
-		echo "  debug-mountain          - Mountain workbench (80-90% features) [RECOMMENDED]"
-		echo "  debug-electron          - Electron workbench (95%+ features)"
-		echo "  debug-electron-rest     - Electron + Rest OXC compiler (fastest TS)"
-		echo "  debug-electron-minimal  - Electron without built-in extensions (Atom J1)"
-		echo "  debug-mountain-only     - Mountain without Cocoon subprocess (Atom N3)"
-		echo "  debug-cocoon-headless   - Mountain + Cocoon, Wind preload disabled (Atom N3b)"
-		echo "  debug-kernel            - Pure Mountain: no built-ins, no Cocoon, no Wind (Atom N3c)"
-		echo "  debug-electron-compiled - Electron + single-binary embedded resources (debug symbols + Compile=true)"
-		echo "  debug-mountain-compiled - Mountain + single-binary embedded resources (debug symbols + Compile=true)"
-		echo "  debug-electron-bundled  - Electron workbench compiled through Vite/Astro"
-		echo "  debug-browser-bundled   - Browser workbench compiled through Vite/Astro"
-		echo "  debug-sessions-bundled  - Sessions workbench compiled through Vite/Astro"
-		echo "  debug-workbench-bundled - Base workbench compiled through Vite/Astro"
-		echo "  debug-bundled-all       - All four workbenches bundled in one Rollup pass"
-		exit 0
-		;;
-	*)
-		echo "Unknown option: $1"
-		echo "Use --help for usage information"
-		exit 1
-		;;
+		--profile | -p)
+			PROFILE="$2"
+			shift 2
+			;;
+		--flavor | -f)
+			FLAVOR="$2"
+			shift 2
+			;;
+		--help | -h)
+			echo "Usage: $0 [OPTIONS]"
+			echo ""
+			echo "Options:"
+			echo "  --profile, -p <name>  Build profile to use (default: debug)"
+			echo "  --help, -h            Show this help message"
+			echo ""
+			echo "Available profiles:"
+			echo "  debug                   - Browser workbench (70-80% features)"
+			echo "  debug-mountain          - Mountain workbench (80-90% features) [RECOMMENDED]"
+			echo "  debug-electron          - Electron workbench (95%+ features)"
+			echo "  debug-electron-rest     - Electron + Rest OXC compiler (fastest TS)"
+			echo "  debug-electron-minimal  - Electron without built-in extensions (Atom J1)"
+			echo "  debug-mountain-only     - Mountain without Cocoon subprocess (Atom N3)"
+			echo "  debug-cocoon-headless   - Mountain + Cocoon, Wind preload disabled (Atom N3b)"
+			echo "  debug-kernel            - Pure Mountain: no built-ins, no Cocoon, no Wind (Atom N3c)"
+			echo "  debug-electron-compiled - Electron + single-binary embedded resources (debug symbols + Compile=true)"
+			echo "  debug-mountain-compiled - Mountain + single-binary embedded resources (debug symbols + Compile=true)"
+			echo "  debug-electron-bundled  - Electron workbench compiled through Vite/Astro"
+			echo "  debug-browser-bundled   - Browser workbench compiled through Vite/Astro"
+			echo "  debug-sessions-bundled  - Sessions workbench compiled through Vite/Astro"
+			echo "  debug-workbench-bundled - Base workbench compiled through Vite/Astro"
+			echo "  debug-bundled-all       - All four workbenches bundled in one Rollup pass"
+			exit 0
+			;;
+		*)
+			echo "Unknown option: $1"
+			echo "Use --help for usage information"
+			exit 1
+			;;
 	esac
 done
 
@@ -171,288 +171,288 @@ LandCapturePhaseEnd "resolve-identity"
 unset Compiler
 
 case $PROFILE in
-debug)
-	echo "Using Browser workbench (default debug)"
-	export Browser=true
-	export Bundle=false
-	export Clean=true
-	export Compile=false
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	;;
-debug-mountain)
-	echo "Using Mountain workbench (RECOMMENDED)"
-	export Mountain=true
-	export Bundle=true
-	export Clean=true
-	export Compile=false
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	;;
-debug-electron)
-	echo "Using Electron workbench"
-	export Electron=true
-	export Bundle=true
-	export Clean=true
-	export Compile=false
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	;;
-debug-electron-rest)
-	echo "Using Electron workbench + Rest OXC compiler"
-	export Electron=true
-	export Bundle=true
-	export Clean=true
-	export Compile=false
-	# TEMP: Rest compiler disabled (see kill-switch above). Restore with
-	# `export Compiler=Rest` to re-enable the OXC transform.
-	export Compiler=esbuild
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
+	debug)
+		echo "Using Browser workbench (default debug)"
+		export Browser=true
+		export Bundle=false
+		export Clean=true
+		export Compile=false
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		;;
+	debug-mountain)
+		echo "Using Mountain workbench (RECOMMENDED)"
+		export Mountain=true
+		export Bundle=true
+		export Clean=true
+		export Compile=false
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		;;
+	debug-electron)
+		echo "Using Electron workbench"
+		export Electron=true
+		export Bundle=true
+		export Clean=true
+		export Compile=false
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		;;
+	debug-electron-rest)
+		echo "Using Electron workbench + Rest OXC compiler"
+		export Electron=true
+		export Bundle=true
+		export Clean=true
+		export Compile=false
+		# TEMP: Rest compiler disabled (see kill-switch above). Restore with
+		# `export Compiler=Rest` to re-enable the OXC transform.
+		export Compiler=esbuild
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
 
-	# Build Rest compiler if binary is missing - only needed when the
-	# Rest path is actually active. With `Compiler=esbuild` this is a
-	# no-op; gate the cargo build so the temporary kill-switch doesn't
-	# pay for an unused compiler.
-	if [ "$Compiler" = "Rest" ] && [ ! -f "Element/Rest/Target/release/Rest" ]; then
-		echo ""
-		echo "Building Rest OXC compiler (first time only)..."
-		cargo build -p Rest --release 2>&1 | tail -5
-		echo ""
-	fi
-	;;
-debug-electron-minimal)
-	# Atom J1: ship without any bundled built-in extensions.
-	# Sky's astro.config.ts Step 13 and Mountain's Scanner fallback
-	# paths both observe `Skip=true` and skip
-	# the copy + scan. Useful when embedding Land inside a host app
-	# that wants a kernel editor.
-	echo "Using Electron workbench (minimal - no built-in extensions)"
-	export Electron=true
-	export Bundle=true
-	export Clean=true
-	export Compile=false
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	export Skip=true
-	;;
-debug-mountain-only)
-	# Atom N3: Mountain without Cocoon. Extension host is never
-	# spawned; extension-related IPC calls return the empty-state
-	# envelope. Useful for integration tests that exercise the
-	# native layer in isolation.
-	echo "Using Mountain workbench without Cocoon"
-	export Mountain=true
-	export Bundle=true
-	export Clean=true
-	export Compile=false
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	export Spawn=false
-	;;
-debug-cocoon-headless)
-	# Atom N3b: Mountain + Cocoon, but the webview's Wind preload
-	# is disabled - the workbench loads native VS Code services only.
-	# Verifies Mountain↔Cocoon works without a Wind consumer; useful
-	# for isolating regressions in the Effect-TS service layer.
-	echo "Using Mountain + Cocoon, Wind preload disabled"
-	export Electron=true
-	export Bundle=true
-	export Clean=true
-	export Compile=false
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	export Render=false
-	;;
-debug-kernel)
-	# Atom J4b / N3c: smallest viable shippable surface. No built-in
-	# extensions, no Cocoon, no Wind. Pure Mountain + bare VS Code
-	# workbench. Use for the lowest-footprint embedded Land binary.
-	echo "Using Mountain kernel (no built-ins, no Cocoon, no Wind)"
-	export Electron=true
-	export Bundle=true
-	export Clean=true
-	export Compile=false
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	export Skip=true
-	export Spawn=false
-	export Render=false
-	;;
-debug-electron-compiled)
-	# Debug-symbols-and-tags binary with every Sky/Output asset embedded
-	# via Tauri's resource table. `Compile=true` flips the three
-	# downstream pipelines (Wind ESBuild target, Output plugin set,
-	# Mountain Scheme fallback) into their production-parity layout so
-	# the running binary serves `/Static/Application/**` from the bundled
-	# resource map. No `set_static_application_root` fallback is taken.
-	#
-	# Matches `release-electron` output shape but preserves:
-	#   Debug=true  → debug_assertions on, dev-log sinks wired,
-	#   Level=debug → verbose LandFix + DEV:* tag emission,
-	#   NODE_ENV=development on the JS side for readable source maps.
-	#
-	# Use when you need one-file-deploy validation (e.g. verifying
-	# resource-path resolution outside a dev workspace) without losing
-	# the debug diagnostic surface.
-	echo "Using Electron workbench + single-binary embedded resources (debug)"
-	export Electron=true
-	export Bundle=true
-	export Clean=true
-	export Compile=true
-	export Compiler=esbuild
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	;;
-debug-mountain-compiled)
-	# Mountain-workbench variant of `debug-electron-compiled`. Same
-	# embedded-resource layout, lighter workbench surface (~80-90%
-	# features instead of 95%+). Use for the smallest single-binary
-	# debug artifact that still ships the full Sky asset tree.
-	echo "Using Mountain workbench + single-binary embedded resources (debug)"
-	export Mountain=true
-	export Bundle=true
-	export Clean=true
-	export Compile=true
-	export Compiler=esbuild
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	;;
-debug-electron-bundled)
-	# Vite/Astro-native bundle of vs/code/electron-browser/workbench/.
-	# Sky reads Pack, wires the workbench module as a
-	# Rollup input, and lets Vite handle CSS extraction + chunk dedup.
-	# Output lands under Sky/Target/Static/Bundled/Electron/. The
-	# existing /Static/Application/ tree is still produced unchanged so
-	# both layouts can be benchmarked side-by-side.
-	echo "Using Electron workbench bundled through Vite/Astro (debug)"
-	export Electron=true
-	export Bundle=true
-	export Clean=true
-	export Compile=false
-	export Compiler=esbuild
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	export Pack="electron"
-	export Boot=true
-	;;
-debug-browser-bundled)
-	# Vite/Astro-native bundle of vs/code/browser/workbench/.
-	echo "Using Browser workbench bundled through Vite/Astro (debug)"
-	export Browser=true
-	export Bundle=true
-	export Clean=true
-	export Compile=false
-	export Compiler=esbuild
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	export Pack="browser"
-	export Boot=true
-	;;
-debug-sessions-bundled)
-	# Vite/Astro-native bundle of vs/sessions/browser/.
-	echo "Using Sessions workbench bundled through Vite/Astro (debug)"
-	export Mountain=true
-	export Bundle=true
-	export Clean=true
-	export Compile=false
-	export Compiler=esbuild
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	export Pack="sessions"
-	export Boot=true
-	;;
-debug-workbench-bundled)
-	# Vite/Astro-native bundle of the base vs/workbench module.
-	echo "Using base workbench bundled through Vite/Astro (debug)"
-	export Mountain=true
-	export Bundle=true
-	export Clean=true
-	export Compile=false
-	export Compiler=esbuild
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	export Pack="workbench"
-	export Boot=true
-	;;
-debug-bundled-all)
-	# Bundle all four workbench entry shapes in one Rollup pass.
-	echo "Bundling all four workbenches through Vite/Astro (debug)"
-	export Electron=true
-	export Bundle=true
-	export Clean=true
-	export Compile=false
-	export Compiler=esbuild
-	export Debug=true
-	export Level=debug
-	export Dependency=Microsoft/VSCode
-	export NODE_ENV=development
-	export NODE_VERSION=22
-	export NODE_OPTIONS="--max-old-space-size=16384"
-	export Pack="electron browser sessions workbench"
-	export Boot=true
-	;;
-*)
-	echo "Unknown profile: $PROFILE"
-	echo "Available profiles: debug, debug-mountain, debug-electron, debug-electron-rest, debug-electron-minimal, debug-mountain-only, debug-cocoon-headless, debug-kernel, debug-electron-compiled, debug-mountain-compiled, debug-electron-bundled, debug-browser-bundled, debug-sessions-bundled, debug-workbench-bundled, debug-bundled-all"
-	exit 1
-	;;
+		# Build Rest compiler if binary is missing - only needed when the
+		# Rest path is actually active. With `Compiler=esbuild` this is a
+		# no-op; gate the cargo build so the temporary kill-switch doesn't
+		# pay for an unused compiler.
+		if [ "$Compiler" = "Rest" ] && [ ! -f "Element/Rest/Target/release/Rest" ]; then
+			echo ""
+			echo "Building Rest OXC compiler (first time only)..."
+			cargo build -p Rest --release 2>&1 | tail -5
+			echo ""
+		fi
+		;;
+	debug-electron-minimal)
+		# Atom J1: ship without any bundled built-in extensions.
+		# Sky's astro.config.ts Step 13 and Mountain's Scanner fallback
+		# paths both observe `Skip=true` and skip
+		# the copy + scan. Useful when embedding Land inside a host app
+		# that wants a kernel editor.
+		echo "Using Electron workbench (minimal - no built-in extensions)"
+		export Electron=true
+		export Bundle=true
+		export Clean=true
+		export Compile=false
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		export Skip=true
+		;;
+	debug-mountain-only)
+		# Atom N3: Mountain without Cocoon. Extension host is never
+		# spawned; extension-related IPC calls return the empty-state
+		# envelope. Useful for integration tests that exercise the
+		# native layer in isolation.
+		echo "Using Mountain workbench without Cocoon"
+		export Mountain=true
+		export Bundle=true
+		export Clean=true
+		export Compile=false
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		export Spawn=false
+		;;
+	debug-cocoon-headless)
+		# Atom N3b: Mountain + Cocoon, but the webview's Wind preload
+		# is disabled - the workbench loads native VS Code services only.
+		# Verifies Mountain↔Cocoon works without a Wind consumer; useful
+		# for isolating regressions in the Effect-TS service layer.
+		echo "Using Mountain + Cocoon, Wind preload disabled"
+		export Electron=true
+		export Bundle=true
+		export Clean=true
+		export Compile=false
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		export Render=false
+		;;
+	debug-kernel)
+		# Atom J4b / N3c: smallest viable shippable surface. No built-in
+		# extensions, no Cocoon, no Wind. Pure Mountain + bare VS Code
+		# workbench. Use for the lowest-footprint embedded Land binary.
+		echo "Using Mountain kernel (no built-ins, no Cocoon, no Wind)"
+		export Electron=true
+		export Bundle=true
+		export Clean=true
+		export Compile=false
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		export Skip=true
+		export Spawn=false
+		export Render=false
+		;;
+	debug-electron-compiled)
+		# Debug-symbols-and-tags binary with every Sky/Output asset embedded
+		# via Tauri's resource table. `Compile=true` flips the three
+		# downstream pipelines (Wind ESBuild target, Output plugin set,
+		# Mountain Scheme fallback) into their production-parity layout so
+		# the running binary serves `/Static/Application/**` from the bundled
+		# resource map. No `set_static_application_root` fallback is taken.
+		#
+		# Matches `release-electron` output shape but preserves:
+		#   Debug=true  → debug_assertions on, dev-log sinks wired,
+		#   Level=debug → verbose LandFix + DEV:* tag emission,
+		#   NODE_ENV=development on the JS side for readable source maps.
+		#
+		# Use when you need one-file-deploy validation (e.g. verifying
+		# resource-path resolution outside a dev workspace) without losing
+		# the debug diagnostic surface.
+		echo "Using Electron workbench + single-binary embedded resources (debug)"
+		export Electron=true
+		export Bundle=true
+		export Clean=true
+		export Compile=true
+		export Compiler=esbuild
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		;;
+	debug-mountain-compiled)
+		# Mountain-workbench variant of `debug-electron-compiled`. Same
+		# embedded-resource layout, lighter workbench surface (~80-90%
+		# features instead of 95%+). Use for the smallest single-binary
+		# debug artifact that still ships the full Sky asset tree.
+		echo "Using Mountain workbench + single-binary embedded resources (debug)"
+		export Mountain=true
+		export Bundle=true
+		export Clean=true
+		export Compile=true
+		export Compiler=esbuild
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		;;
+	debug-electron-bundled)
+		# Vite/Astro-native bundle of vs/code/electron-browser/workbench/.
+		# Sky reads Pack, wires the workbench module as a
+		# Rollup input, and lets Vite handle CSS extraction + chunk dedup.
+		# Output lands under Sky/Target/Static/Bundled/Electron/. The
+		# existing /Static/Application/ tree is still produced unchanged so
+		# both layouts can be benchmarked side-by-side.
+		echo "Using Electron workbench bundled through Vite/Astro (debug)"
+		export Electron=true
+		export Bundle=true
+		export Clean=true
+		export Compile=false
+		export Compiler=esbuild
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		export Pack="electron"
+		export Boot=true
+		;;
+	debug-browser-bundled)
+		# Vite/Astro-native bundle of vs/code/browser/workbench/.
+		echo "Using Browser workbench bundled through Vite/Astro (debug)"
+		export Browser=true
+		export Bundle=true
+		export Clean=true
+		export Compile=false
+		export Compiler=esbuild
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		export Pack="browser"
+		export Boot=true
+		;;
+	debug-sessions-bundled)
+		# Vite/Astro-native bundle of vs/sessions/browser/.
+		echo "Using Sessions workbench bundled through Vite/Astro (debug)"
+		export Mountain=true
+		export Bundle=true
+		export Clean=true
+		export Compile=false
+		export Compiler=esbuild
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		export Pack="sessions"
+		export Boot=true
+		;;
+	debug-workbench-bundled)
+		# Vite/Astro-native bundle of the base vs/workbench module.
+		echo "Using base workbench bundled through Vite/Astro (debug)"
+		export Mountain=true
+		export Bundle=true
+		export Clean=true
+		export Compile=false
+		export Compiler=esbuild
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		export Pack="workbench"
+		export Boot=true
+		;;
+	debug-bundled-all)
+		# Bundle all four workbench entry shapes in one Rollup pass.
+		echo "Bundling all four workbenches through Vite/Astro (debug)"
+		export Electron=true
+		export Bundle=true
+		export Clean=true
+		export Compile=false
+		export Compiler=esbuild
+		export Debug=true
+		export Level=debug
+		export Dependency=Microsoft/VSCode
+		export NODE_ENV=development
+		export NODE_VERSION=22
+		export NODE_OPTIONS="--max-old-space-size=16384"
+		export Pack="electron browser sessions workbench"
+		export Boot=true
+		;;
+	*)
+		echo "Unknown profile: $PROFILE"
+		echo "Available profiles: debug, debug-mountain, debug-electron, debug-electron-rest, debug-electron-minimal, debug-mountain-only, debug-cocoon-headless, debug-kernel, debug-electron-compiled, debug-mountain-compiled, debug-electron-bundled, debug-browser-bundled, debug-sessions-bundled, debug-workbench-bundled, debug-bundled-all"
+		exit 1
+		;;
 esac
 
 # Profile-flip Output-cache cleanup - shared helper.

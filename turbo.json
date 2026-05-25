@@ -140,6 +140,8 @@
 		"MOUNTAIN_TLS_ENABLED",
 		"MOUNTAIN_USE_TLS",
 		"MOUNTAIN_VERIFY_CERTS",
+		"MountainWebSocketPort",
+		"MountainWebSocketSecret",
 		"Mend",
 		"Meta",
 		"Mountain",
