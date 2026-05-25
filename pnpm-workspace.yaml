@@ -12,6 +12,7 @@ packages:
     - "!**/Target/**"
 
 preferWorkspacePackages: true
+
 linkWorkspacePackages: deep
 
 onlyBuiltDependencies:
@@ -24,8 +25,7 @@ onlyBuiltDependencies:
     - sharp
     - workerd
 
-minimumReleaseAgeExclude:
-    - "@cloudflare/workers-types@4.20260523.1"
+minimumReleaseAge: 0
 
 allowBuilds:
     "@biomejs/biome": true
