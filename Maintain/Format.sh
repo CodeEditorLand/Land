@@ -27,7 +27,7 @@
 
 set -e
 
-Current=$(cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd)
+Current=$(cd -- "$(dirname -- "$0")" > /dev/null 2>&1 && pwd)
 
 Root="$Current/.."
 
@@ -98,8 +98,8 @@ FormatShell() {
 		-not -path "*/Generated/*" \
 		-not -path "*/.generated/*" \
 		-not -path "*/gen/*" \
-		-not -path "*/bin/*" |
-		xargs shfmt -w
+		-not -path "*/bin/*" \
+		| xargs shfmt -w
 
 	echo ""
 	echo "Shell formatting complete."
@@ -130,14 +130,49 @@ FormatRust() {
 	echo "========================================"
 	echo "Format Rust"
 	echo "========================================"
-	echo "Tooling: cargo +nightly fmt"
+	echo "Tooling: cargo +nightly fmt  (module tree)"
+	echo "         rustfmt direct pass (orphan files)"
 	echo "Config:  rustfmt.toml (incl. ignore = [...])"
 	echo "========================================"
 	echo ""
 
 	cd "$Root"
 
+	# Pass 1: cargo fmt - formats every .rs file reachable via `mod`
+	# declarations from a crate root.  Respects the rustfmt.toml `ignore`
+	# list automatically.
 	cargo +nightly fmt
+
+	# Pass 2: direct rustfmt - catches any .rs files that are NOT part of
+	# any crate's module graph (orphan files, partially-wired refactoring
+	# directories, planned modules not yet `mod`-declared in a crate root).
+	# These files are invisible to `cargo fmt` because the Rust compiler
+	# never parses them; `rustfmt` called with an explicit path always
+	# formats them regardless of module membership.
+	#
+	# Exclusion list mirrors rustfmt.toml `ignore = [...]` and the same
+	# categories used in FormatShell above.
+	# shellcheck disable=SC2038
+	find . -name "*.rs" \
+		-not -path "*/Dependency/*" \
+		-not -path "*/node_modules/*" \
+		-not -path "*/.git/*" \
+		-not -path "*/Target/*" \
+		-not -path "*/target/*" \
+		-not -path "*/.fingerprint/*" \
+		-not -path "*/incremental/*" \
+		-not -path "*/deps/*" \
+		-not -path "*/tauri-codegen-assets/*" \
+		-not -path "*/Documentation/Rust/doc/*" \
+		-not -path "*/Documentation/Rust/debug/*" \
+		-not -path "*/Documentation/Rust/release/*" \
+		-not -path "*/Generated/*" \
+		-not -path "*/.generated/*" \
+		-not -path "*/gen/*" \
+		-not -path "*/SideCar/*/NODE/*" \
+		| xargs -I {} sh -c \
+			'rustup run nightly rustfmt --config-path rustfmt.toml "$1" 2>/dev/null || true' \
+			-- {}
 
 	echo ""
 	echo "Rust formatting complete."
@@ -149,31 +184,31 @@ FormatRust() {
 #===============================================================================
 
 case "${1:-}" in
-shell)
-	FormatShell
-	;;
-prettier)
-	FormatTypeScript
-	;;
-rust)
-	FormatRust
-	;;
-"")
-	FormatShell
-	FormatTypeScript
-	FormatRust
-	;;
---help | -h)
-	echo "Usage: $0 [shell|prettier|rust]"
-	echo ""
-	echo "  shell     Format shell scripts with shfmt"
-	echo "  prettier  Format TS/JS/Astro/CSS/JSON/MD with Prettier"
-	echo "  rust      Format Rust files with rustfmt (nightly)"
-	echo "  (no arg)  Format all three"
-	;;
-*)
-	echo "Unknown target: $1"
-	echo "Use --help for usage information"
-	exit 1
-	;;
+	shell)
+		FormatShell
+		;;
+	prettier)
+		FormatTypeScript
+		;;
+	rust)
+		FormatRust
+		;;
+	"")
+		FormatShell
+		FormatTypeScript
+		FormatRust
+		;;
+	--help | -h)
+		echo "Usage: $0 [shell|prettier|rust]"
+		echo ""
+		echo "  shell     Format shell scripts with shfmt"
+		echo "  prettier  Format TS/JS/Astro/CSS/JSON/MD with Prettier"
+		echo "  rust      Format Rust files with rustfmt (nightly)"
+		echo "  (no arg)  Format all three"
+		;;
+	*)
+		echo "Unknown target: $1"
+		echo "Use --help for usage information"
+		exit 1
+		;;
 esac
