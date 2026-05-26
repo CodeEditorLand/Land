@@ -247,6 +247,7 @@
 		"TierSearch",
 		"TierStorage",
 		"TierTasks",
+		"TierCommandEventBroadcast",
 		"TierTelemetry",
 		"TierTerminal",
 		"TierTreeView",

@@ -122,14 +122,14 @@ hickory-client = { version = "0.25.2" }
 hickory-proto = { version = "0.26.1" }
 hickory-server = { version = "0.26.1" }
 hostname = { version = "0.4.2" }
-http = { version = "1.4.0" }
+http = { version = "1.4.1" }
 ignore = { version = "0.4.25" }
 itertools = { version = "0.14.0" }
 json5 = { version = "1.3.1" }
 keyring = { version = "4.0.1" }
 keyring-core = { version = "1.0.0" }
 lazy_static = { version = "1.5.0" }
-log = { version = "0.4.29" }
+log = { version = "0.4.30" }
 md5 = { version = "0.8.0" }
 memmap2 = { version = "0.9.10" }
 metrics = { version = "0.24.6" }
@@ -154,8 +154,8 @@ prost-build = { version = "0.14.3" }
 prun = { version = "0.1.9" }
 rand = { version = "0.10.1" }
 regex = { version = "1.12.3" }
-reqwest = { version = "0.13.3", features = ["json", "stream", "hickory-dns"] }
-rhai = { version = "1.24.0", features = ["metadata", "serde"] }
+reqwest = { version = "0.13.4", features = ["json", "stream", "hickory-dns"] }
+rhai = { version = "1.25.0", features = ["metadata", "serde"] }
 ring = { version = "0.17.14" }
 rustls = { version = "0.23.40" }
 rustls-pemfile = { version = "2.2.0" }
@@ -221,14 +221,14 @@ walkdir = { version = "2.5.0" }
 zeroize = { version = "1.8.2" }
 
 # OXC dependencies for Element/Rest
-oxc_allocator = { version = "0.132.0" }
-oxc_parser = { version = "0.132.0" }
-oxc_transformer = { version = "0.132.0" }
-oxc_minifier = { version = "0.132.0" }
-oxc_codegen = { version = "0.132.0" }
-oxc_semantic = { version = "0.132.0" }
-oxc_span = { version = "0.132.0" }
-oxc_ast = { version = "0.132.0" }
+oxc_allocator = { version = "0.133.0" }
+oxc_parser = { version = "0.133.0" }
+oxc_transformer = { version = "0.133.0" }
+oxc_minifier = { version = "0.133.0" }
+oxc_codegen = { version = "0.133.0" }
+oxc_semantic = { version = "0.133.0" }
+oxc_span = { version = "0.133.0" }
+oxc_ast = { version = "0.133.0" }
 zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
 p256 = { version = "0.13.2" }
 pem = { version = "3.0.6" }
