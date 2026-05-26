@@ -30,7 +30,7 @@
 # ---------------------------------------------------------------------------
 _LandUserOverrides=$(mktemp 2> /dev/null || echo "/tmp/land_user_overrides_$$")
 
-_LandSnapshotKeys="Tier Product Network Disable DisableUIFixes Trace Record Inspect Smoke Pack Boot Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand OTLPEndpoint OTLPEnabled Capture LandIsProduction"
+_LandSnapshotKeys="Tier Product Network Disable DisableUIFixes Trace Record Inspect Smoke Pack Boot Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand Pipe Emit Capture LandIsProduction"
 
 # Capture Tier*/Product*/Network* prefix vars
 for _k in $(env | cut -d= -f1 | grep -E '^(Tier|Product|Network)'); do
@@ -38,7 +38,7 @@ for _k in $(env | cut -d= -f1 | grep -E '^(Tier|Product|Network)'); do
 done
 
 # Capture known runtime keys
-for _k in Disable DisableUIFixes Trace Record Inspect Smoke Pack Boot Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand OTLPEndpoint OTLPEnabled Capture LandIsProduction; do
+for _k in Disable DisableUIFixes Trace Record Inspect Smoke Pack Boot Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand Pipe Emit Capture LandIsProduction; do
 	if printenv "$_k" > /dev/null 2>&1; then
 		printf '%s=%s\n' "$_k" "$(printenv "$_k")" >> "$_LandUserOverrides"
 	fi
@@ -66,8 +66,8 @@ fi
 #   .env.Land.Extensions  - Ship, Lodge, Extend, Probe, Skip, Mute, Wire,
 #                           Install
 #   .env.Land.PostHog     - Authorize, Beam, Report, Throttle, Buffer,
-#                           Batch, Cap, Replay, Ask, Brand, OTLPEndpoint,
-#                           OTLPEnabled, Capture, Trace, Record
+#                           Batch, Cap, Replay, Ask, Brand, Pipe,
+#                           Emit, Capture, Trace, Record
 #   .env.Land.Diagnostics - Inspect, Smoke, Trace, Record (debug-only
 #                           knobs - DevTools auto-open, the smoke-test
 #                           harness gate, dev-log tag selection, and
@@ -210,7 +210,7 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	# allow-list (not a regex sweep) so unrelated PascalCase env vars
 	# the OS / dev environment exports don't pollute the diagnostic
 	# block.
-	LandRuntimeKeys="Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand OTLPEndpoint OTLPEnabled Capture Inspect Smoke Trace Record Disable DisableUIFixes Pack Boot LandIsProduction"
+	LandRuntimeKeys="Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand Pipe Emit Capture Inspect Smoke Trace Record Disable DisableUIFixes Pack Boot LandIsProduction"
 	LandRuntimeVars=""
 	for Key in $LandRuntimeKeys; do
 		Value=$(printenv "$Key" 2> /dev/null || true)

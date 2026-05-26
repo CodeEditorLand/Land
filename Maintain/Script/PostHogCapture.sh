@@ -14,7 +14,7 @@
 #
 #   OTLPCapture <span_name> <start_unix_nano> <end_unix_nano> [k1] [v1] ...
 #       Posts a single-span `/v1/traces` payload to the OTLP HTTP collector
-#       at `$OTLPEndpoint`. The same `$Trace_Id` is reused across every
+#       at `$Pipe`. The same `$Trace_Id` is reused across every
 #       call within one shell invocation so build phases roll up into a
 #       single trace in Jaeger.
 #
@@ -22,8 +22,8 @@
 #   Authorize        PostHog project key
 #   Beam             PostHog endpoint (default: https://eu.i.posthog.com)
 #   Report           false → skip PostHog
-#   OTLPEndpoint     OTLP HTTP collector (default: http://127.0.0.1:4318)
-#   OTLPEnabled      false → skip Jaeger
+#   Pipe     OTLP HTTP collector (default: http://127.0.0.1:4318)
+#   Emit      false → skip Jaeger
 #   Capture          false → skip BOTH (master telemetry kill switch -
 #                            distinct from .env.Land.Diagnostics's `Disable`,
 #                            which kills polyfills/shims, not telemetry)
@@ -163,10 +163,10 @@ OTLPCapture() {
 	EndNano="$3"
 	[ -z "$SpanName" ] && return 0
 	_LandCaptureAllowed || return 0
-	[ "${OTLPEnabled:-true}" = "false" ] && return 0
+	[ "${Emit:-true}" = "false" ] && return 0
 	shift 3
 
-	OTLPHost="${OTLPEndpoint:-http://127.0.0.1:4318}"
+	OTLPHost="${Pipe:-http://127.0.0.1:4318}"
 	TraceId=$(_LandTraceId)
 	SpanId=$(_LandSpanId)
 	Attributes=$(_LandOTLPAttributes "$@")
