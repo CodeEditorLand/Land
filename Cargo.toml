@@ -15,6 +15,7 @@ members = [
 	"Element/Mist",
 	"Element/Rest",
 	"Element/SideCar",
+	"Element/Vine",
 ]
 resolver = "2"
 
@@ -84,6 +85,7 @@ Air = { path = "Element/Air" }
 Common = { path = "Element/Common" }
 Echo = { path = "Element/Echo" }
 Mist = { path = "Element/Mist" }
+Vine = { path = "Element/Vine" }
 
 anyhow = { version = "1.0.102" }
 arboard = { version = "3.6.1" }
