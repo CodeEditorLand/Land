@@ -1,33 +1,28 @@
 #!/usr/bin/env sh
 
 #===============================================================================
-# Format.sh - Format shell, Prettier, and Rust source code
+# Format.sh - Format shell, Prettier, and Rust source code.
 #===============================================================================
-#
-# This script formats all source code using the configured tooling.
-# shfmt handles shell scripts (.sh).
-# Prettier handles TS/JS/Astro/CSS/JSON/MD (with Tailwind class ordering).
-# rustfmt (nightly) handles Rust.
 #
 # Usage:
-#   sh Maintain/Format.sh             # Format shell + Prettier + Rust
-#   sh Maintain/Format.sh shell       # Format shell scripts only
-#   sh Maintain/Format.sh prettier    # Format Prettier only
-#   sh Maintain/Format.sh rust        # Format Rust only
+#   sh Maintain/Format.sh               # Run all formatters
+#   sh Maintain/Format.sh dos2unix      # Normalize line endings only
+#   sh Maintain/Format.sh shell         # Format shell scripts only
+#   sh Maintain/Format.sh prettier      # Format TS/JS/JSON/MD only
+#   sh Maintain/Format.sh rust          # Format Rust only
 #
 # Configuration:
-#   .editorconfig       - Shared indent/newline rules (shfmt reads this)
-#   prettier.config.js  - Prettier options and plugins (incl. tailwindcss)
-#   tailwind.config.js  - Tailwind class ordering reference
-#   .prettierignore     - Paths excluded from Prettier formatting
-#   rustfmt.toml        - rustfmt options (nightly, edition 2024)
-#                         includes `ignore = [...]` for per-path exclusions
+#   .editorconfig      - Shared indent/newline rules (shfmt reads this)
+#   prettier.config.js - Prettier options and plugins
+#   .prettierignore    - Paths excluded from Prettier formatting
+#   rustfmt.toml       - rustfmt options (nightly, edition 2024)
+#                        includes `ignore = [...]` for per-path exclusions
 #
 #===============================================================================
 
-set -e
+\set -e
 
-Current=$(cd -- "$(dirname -- "$0")" > /dev/null 2>&1 && pwd)
+Current=$(\cd -- "$(\dirname -- "$0")" > /dev/null 2>&1 && \pwd)
 
 Root="$Current/.."
 
@@ -35,45 +30,85 @@ Root="$Current/.."
 # Format Functions
 #===============================================================================
 
-FormatShell() {
-	echo "========================================"
-	echo "Format Shell"
-	echo "========================================"
-	echo "Tooling: shfmt"
-	echo "Config:  .editorconfig (tabs, indent=4)"
-	echo "========================================"
-	echo ""
+FormatLineEndings() {
+	\echo "========================================"
+	\echo "Format Line Endings"
+	\echo "========================================"
+	\echo "Tooling: dos2unix"
+	\echo "========================================"
+	\echo ""
 
-	cd "$Root"
+	if ! \command -v dos2unix > /dev/null 2>&1; then
+		\echo "Error: dos2unix is not installed."
+		\echo "  macOS:  brew install dos2unix"
+		\echo "  Linux:  apt install dos2unix  /  dnf install dos2unix"
+		\exit 1
+	fi
 
-	# shfmt reads .editorconfig for indent style/size automatically.
-	# Exclude every generated / vendored / cache tree; only authored
-	# `.sh` files under `Maintain/`, `Container/`, and per-Element
-	# `Source/` paths should reach shfmt.
-	#
-	# Categories:
-	#   Vendored / external      Dependency/, node_modules/, SideCar/*/NODE/, .git/
-	#   Cargo build output       Target/, target/, **/.fingerprint/,
-	#                            **/incremental/, **/deps/, **/build/<crate>-*/out/
-	#                            (these contain Tauri codegen-asset `.sh`
-	#                            files that are raw binary payloads with
-	#                            invalid UTF-8 - shfmt errors on them)
-	#   Rustdoc + cargo doc      **/Documentation/Rust/doc/,
-	#                            **/Documentation/Rust/debug/,
-	#                            **/Documentation/Rust/release/
-	#                            (each Element has its own per-package
-	#                            doc tree under its Documentation/)
-	#   JS/TS build caches       **/.turbo/, **/.astro/, **/.next/,
-	#                            **/.swc/, **/.parcel-cache/,
-	#                            **/.eslintcache/, **/.cache/, **/dist/
-	#   Generated codegen        **/Generated/, **/.generated/, **/gen/
-	#                            (Vine.proto -> tonic, Sky channel
-	#                            codegen, Wind effect bridges)
-	#   Tauri codegen-assets     **/tauri-codegen-assets/ (binary payloads
-	#                            staged with `.sh` extensions)
+	\cd "$Root"
+
+	# Convert CRLF -> LF on every text file. dos2unix skips binary files
+	# automatically. Exclude vendored, build output, and generated paths.
 	#
 	# shellcheck disable=SC2038
-	find . -name "*.sh" \
+	\find . -type f \
+		-not -path "*/Dependency/*" \
+		-not -path "*/node_modules/*" \
+		-not -path "*/.git/*" \
+		-not -path "*/Target/*" \
+		-not -path "*/target/*" \
+		-not -path "*/Archive/*" \
+		-not -path "*/SideCar/*/NODE/*" \
+		-not -path "*/Documentation/Rust/doc/*" \
+		-not -path "*/Documentation/Rust/debug/*" \
+		-not -path "*/Documentation/Rust/release/*" \
+		-not -path "*/tauri-codegen-assets/*" \
+		-not -path "*/.fingerprint/*" \
+		-not -path "*/incremental/*" \
+		-not -path "*/deps/*" \
+		-not -path "*/.turbo/*" \
+		-not -path "*/.astro/*" \
+		-not -path "*/.next/*" \
+		-not -path "*/.swc/*" \
+		-not -path "*/.parcel-cache/*" \
+		-not -path "*/.eslintcache/*" \
+		-not -path "*/.cache/*" \
+		-not -path "*/dist/*" \
+		-not -path "*/Generated/*" \
+		-not -path "*/.generated/*" \
+		-not -path "*/gen/*" \
+		-not -path "*/bin/*" \
+		| \xargs \dos2unix -q
+
+	\echo ""
+	\echo "Line ending conversion complete."
+	\echo ""
+}
+
+FormatShell() {
+	\echo "========================================"
+	\echo "Format Shell"
+	\echo "========================================"
+	\echo "Tooling: shfmt"
+	\echo "Config:  .editorconfig (tabs, indent=4)"
+	\echo "========================================"
+	\echo ""
+
+	if ! \command -v shfmt > /dev/null 2>&1; then
+		\echo "Error: shfmt is not installed."
+		\echo "  macOS:  brew install shfmt"
+		\echo "  Linux:  apt install shfmt  /  go install mvdan.cc/sh/v3/cmd/shfmt@latest"
+		\echo "  https://github.com/mvdan/sh"
+		\exit 1
+	fi
+
+	\cd "$Root"
+
+	# shfmt reads .editorconfig for indent style/size automatically.
+	# Exclude vendored, build output, generated, and Tauri-specific paths.
+	#
+	# shellcheck disable=SC2038
+	\find . -name "*.sh" \
 		-not -path "*/Dependency/*" \
 		-not -path "*/node_modules/*" \
 		-not -path "*/.git/*" \
@@ -99,61 +134,76 @@ FormatShell() {
 		-not -path "*/.generated/*" \
 		-not -path "*/gen/*" \
 		-not -path "*/bin/*" \
-		| xargs shfmt -w
+		| \xargs \shfmt -w
 
-	echo ""
-	echo "Shell formatting complete."
-	echo ""
+	\echo ""
+	\echo "Shell formatting complete."
+	\echo ""
 }
 
-FormatTypeScript() {
-	echo "========================================"
-	echo "Format Prettier"
-	echo "========================================"
-	echo "Tooling: Prettier + prettier-plugin-tailwindcss"
-	echo "Config:  prettier.config.js, tailwind.config.js"
-	echo "Ignore:  .prettierignore"
-	echo "========================================"
-	echo ""
+FormatPrettier() {
+	\echo "========================================"
+	\echo "Format Prettier"
+	\echo "========================================"
+	\echo "Tooling: Format/TypeScript.py  (blank lines, first)"
+	\echo "         Prettier              (TS/JS/JSON/MD, second)"
+	\echo "Config:  prettier.config.js"
+	\echo "Ignore:  .prettierignore"
+	\echo "========================================"
+	\echo ""
 
-	cd "$Root"
+	\cd "$Root"
 
-	"$Root/node_modules/.bin/prettier" --write . \
-		--ignore-path ".prettierignore"
+	# Pass 1: blank-line formatter - inserts blank lines after statement and
+	# block boundaries. Runs first so that Prettier can normalize the result.
+	\python3 "$Current/Format/TypeScript.py" --All
 
-	echo ""
-	echo "Prettier formatting complete."
-	echo ""
+	# Pass 2: Prettier - formats TS/JS/JSX/TSX/JSON/MD/CSS and everything
+	# else covered by prettier.config.js. || \true prevents file-level errors
+	# (e.g. plugin issues) from aborting the pipeline.
+	if [ -x "$Root/node_modules/.bin/prettier" ]; then
+		"$Root/node_modules/.bin/prettier" --write . \
+			--ignore-path ".prettierignore" || \true
+	else
+		\echo "Prettier not found in node_modules/.bin - skipping."
+		\echo "Run: pnpm install"
+	fi
+
+	\echo ""
+	\echo "Prettier formatting complete."
+	\echo ""
 }
 
 FormatRust() {
-	echo "========================================"
-	echo "Format Rust"
-	echo "========================================"
-	echo "Tooling: cargo +nightly fmt  (module tree)"
-	echo "         rustfmt direct pass (orphan files)"
-	echo "Config:  rustfmt.toml (incl. ignore = [...])"
-	echo "========================================"
-	echo ""
+	\echo "========================================"
+	\echo "Format Rust"
+	\echo "========================================"
+	\echo "Tooling: Format/Rust.py      (blank lines, first)"
+	\echo "         cargo +nightly fmt  (module tree, second)"
+	\echo "         rustfmt direct pass (orphan files, third)"
+	\echo "Config:  rustfmt.toml (incl. ignore = [...])"
+	\echo "========================================"
+	\echo ""
 
-	cd "$Root"
+	\cd "$Root"
 
-	# Pass 1: cargo fmt - formats every .rs file reachable via `mod`
-	# declarations from a crate root.  Respects the rustfmt.toml `ignore`
-	# list automatically.
-	cargo +nightly fmt
+	# Pass 1: blank-line formatter - inserts blank lines after statement and
+	# block boundaries. Runs first so that rustfmt can normalize the result:
+	# blank_lines_upper_bound = 1 in rustfmt.toml caps any excess to one line.
+	\python3 "$Current/Format/Rust.py" --All
 
-	# Pass 2: direct rustfmt - catches any .rs files that are NOT part of
-	# any crate's module graph (orphan files, partially-wired refactoring
-	# directories, planned modules not yet `mod`-declared in a crate root).
-	# These files are invisible to `cargo fmt` because the Rust compiler
-	# never parses them; `rustfmt` called with an explicit path always
-	# formats them regardless of module membership.
+	# Pass 2: cargo fmt - formats every .rs file reachable via `mod`
+	# declarations from a crate root. Respects the rustfmt.toml `ignore`
+	# list automatically. nightly is pinned by rust-toolchain.toml.
+	\cargo +nightly fmt
+
+	# Pass 3: direct rustfmt - catches any .rs files that are NOT part of
+	# any crate's module graph (orphan files, planned modules not yet wired
+	# into a crate root). Exclusion list mirrors rustfmt.toml `ignore`.
 	#
-	# Exclusion list mirrors rustfmt.toml `ignore = [...]` and the same
-	# categories used in FormatShell above.
 	# shellcheck disable=SC2038
-	find . -name "*.rs" \
+	# shellcheck disable=SC2016
+	\find . -name "*.rs" \
 		-not -path "*/Dependency/*" \
 		-not -path "*/node_modules/*" \
 		-not -path "*/.git/*" \
@@ -166,17 +216,18 @@ FormatRust() {
 		-not -path "*/Documentation/Rust/doc/*" \
 		-not -path "*/Documentation/Rust/debug/*" \
 		-not -path "*/Documentation/Rust/release/*" \
+		-not -path "*/Archive/*" \
 		-not -path "*/Generated/*" \
 		-not -path "*/.generated/*" \
 		-not -path "*/gen/*" \
 		-not -path "*/SideCar/*/NODE/*" \
-		| xargs -I {} sh -c \
-			'rustup run nightly rustfmt --config-path rustfmt.toml "$1" 2>/dev/null || true' \
+		| \xargs -I {} \sh -c \
+			'\rustup run nightly rustfmt --config-path rustfmt.toml "$1" 2>/dev/null || \true' \
 			-- {}
 
-	echo ""
-	echo "Rust formatting complete."
-	echo ""
+	\echo ""
+	\echo "Rust formatting complete."
+	\echo ""
 }
 
 #===============================================================================
@@ -184,31 +235,36 @@ FormatRust() {
 #===============================================================================
 
 case "${1:-}" in
+	dos2unix)
+		FormatLineEndings
+		;;
 	shell)
 		FormatShell
 		;;
 	prettier)
-		FormatTypeScript
+		FormatPrettier
 		;;
 	rust)
 		FormatRust
 		;;
 	"")
+		FormatLineEndings
 		FormatShell
-		FormatTypeScript
+		FormatPrettier
 		FormatRust
 		;;
 	--help | -h)
-		echo "Usage: $0 [shell|prettier|rust]"
-		echo ""
-		echo "  shell     Format shell scripts with shfmt"
-		echo "  prettier  Format TS/JS/Astro/CSS/JSON/MD with Prettier"
-		echo "  rust      Format Rust files with rustfmt (nightly)"
-		echo "  (no arg)  Format all three"
+		\echo "Usage: $0 [dos2unix|shell|prettier|rust]"
+		\echo ""
+		\echo "  dos2unix  Normalize line endings (CRLF -> LF) with dos2unix"
+		\echo "  shell     Format shell scripts with shfmt"
+		\echo "  prettier  Format TS/JS/JSON/MD with Prettier + TypeScript.py"
+		\echo "  rust      Format Rust with rustfmt (nightly) + Rust.py"
+		\echo "  (no arg)  Run all four in order"
 		;;
 	*)
-		echo "Unknown target: $1"
-		echo "Use --help for usage information"
-		exit 1
+		\echo "Unknown target: $1"
+		\echo "Use --help for usage information"
+		\exit 1
 		;;
 esac

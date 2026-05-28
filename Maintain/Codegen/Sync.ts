@@ -51,6 +51,7 @@ interface Channel {
 
 async function Walk(
 	Root: string,
+
 	Predicate: (Path: string) => boolean,
 ): Promise<Array<string>> {
 	const Out: Array<string> = [];
@@ -118,6 +119,7 @@ function HandlerToWireName(FunctionName: string): string {
 async function ScanHandlers(): Promise<Array<Handler>> {
 	const HandlerDir = join(
 		RepoRoot,
+
 		"Element/Mountain/Source/IPC/WindServiceHandlers",
 	);
 
@@ -155,6 +157,7 @@ async function ScanSkyChannels(): Promise<Array<Channel>> {
 
 	const TsFiles = await Walk(
 		SkySource,
+
 		(Path) => Path.endsWith(".ts") || Path.endsWith(".tsx"),
 	);
 
@@ -227,12 +230,15 @@ async function Main() {
 				Total: Handlers.length,
 				Handlers,
 			},
+
 			null,
+
 			"	",
 		) + "\n";
 
 	const HandlerPath = join(
 		RepoRoot,
+
 		"Element/Mountain/Source/IPC/Generated/HandlerRegistry.json",
 	);
 
@@ -260,6 +266,7 @@ export const SkyChannelCount = ${Channels.length};
 
 	const ChannelPath = join(
 		RepoRoot,
+
 		"Element/Sky/Source/Function/Generated/SkyChannels.ts",
 	);
 

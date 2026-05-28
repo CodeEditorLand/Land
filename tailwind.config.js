@@ -4,11 +4,17 @@ import { fontFamily } from "tailwindcss/defaultTheme";
 export default {
 	content: [
 		"./Public/**/*.html",
+
 		"./Source/**/*.{astro,css,html,js,json,jsx,md,mdx,scss,svelte,ts,tsx,vue}",
+
 		"./index.html",
+
 		`${__dirname}/**/*.vue`,
+
 		`${__dirname}/frontend/**/*.{css,html,ts,js}`,
+
 		`${__dirname}/src/main.js`,
+
 		`${__dirname}/src/{components,views}/**/*.js`,
 	],
 
@@ -44,6 +50,7 @@ export default {
 
 			colors: {
 				backgroundDark: "var(--background-dark)",
+
 				backgroundLight: "var(--background-light)",
 			},
 		},
@@ -51,7 +58,9 @@ export default {
 
 	plugins: [
 		require("@tailwindcss/forms"),
+
 		require("@tailwindcss/typography"),
+
 		require("@tailwindcss/aspect-ratio"),
 	],
 };
