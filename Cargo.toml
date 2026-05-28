@@ -11,6 +11,7 @@ members = [
 	"Element/Maintain",
 	"Element/Mountain",
 	"Element/Air",
+	"Element/Cache",
 	"Element/Grove",
 	"Element/Mist",
 	"Element/Rest",
@@ -82,6 +83,7 @@ tauri-plugin-window-state = { version = "=2.4.1" }
 # tauri-plugin-deep-link = { path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/deep-link" }
 
 Air = { path = "Element/Air" }
+Cache = { path = "Element/Cache" }
 Common = { path = "Element/Common" }
 Echo = { path = "Element/Echo" }
 Mist = { path = "Element/Mist" }
