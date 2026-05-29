@@ -12,18 +12,25 @@ Before building, ensure you have the following installed:
 
 - **Rust** (1.77+ for Mountain, 1.75+ for Grove) -
   [rustup.rs](https://rustup.rs/)
-- **Node.js** (v22 recommended, v18+ supported) -
+- **Node.js** (v24 required for building the Editor submodule) -
   [nodejs.org](https://nodejs.org/)
 - **pnpm** (package manager) - `npm install -g pnpm`
+- **dum** (script runner, used in place of `npm run`) - `npm install -g dum`
 - **Git** (with LFS support) - `git lfs install`
 - **Protocol Buffer compiler** (optional, only if modifying `.proto` files)
 
-Use `nvm` to manage Node versions:
+Use `nvm` to install and select the required Node version:
 
 ```sh
-nvm use 22
-nvm install 22
+nvm install 24
+nvm use 24
 ```
+
+> [!NOTE]
+>
+> Node 24 is required specifically to compile the VS Code Editor submodule (Step
+> 1 below). The pinned version is tracked in
+> `Dependency/Microsoft/Dependency/Editor/.nvmrc`.
 
 ---
 
@@ -43,31 +50,43 @@ The Land build is a **two-step linear flow**. Do NOT pull submodules recursively
 
 ## Step 1: Compile VS Code Source 📦
 
-The VS Code source is vendored as a Git submodule in `Dependency/Editor`. You
-must compile it before building Land.
+The VS Code source is vendored as a Git submodule in
+`Dependency/Microsoft/Dependency/Editor`. **This step is mandatory — Land cannot
+build without it.** `Cocoon` (the extension host) and `Output` (the platform
+bundle) both consume the compiled output produced here.
+
+> [!IMPORTANT]
+>
+> You must be on **Node 24** for this step. The submodule's `.nvmrc` pins the
+> exact version (`24.15.0`). Switch before running any of the commands below.
 
 ```sh
 cd Dependency/Microsoft/Dependency/Editor
 
-# Ensure correct Node version
-nvm use 22
+# Switch to the required Node version (reads .nvmrc automatically)
+nvm use 24
 
-# Reset to the expected upstream commit
+# Reset to the expected upstream commit and clean all generated files
 git fetch --all
 git reset --hard Parent/main
 git clean -dfx
 
 # Install dependencies and compile
-npm install
-npm run compile
-npm run compile-extensions-build
+dum install
+dum compile
+dum compile-extensions-build
 ```
+
+> [!NOTE]
+>
+> `dum` is a lightweight `npm run` replacement. Install it once with
+> `npm install -g dum` if not already present.
 
 > [!IMPORTANT]
 >
-> The `compile-extensions-build` script produces the `out-<platform>`
-> directories that `Rest` later bundles into the `Output` element. This step is
-> mandatory for `Cocoon` to function.
+> The `compile-extensions-build` step produces the `out-<platform>` directories
+> that `Rest` bundles into `@codeeditorland/output`. Without it, `Cocoon` will
+> fail to locate the VS Code platform code at runtime.
 
 ---
 
@@ -183,15 +202,15 @@ element-specific workflows:
 ### Compilation errors in `Dependency/Editor`
 
 If the VS Code compilation fails, ensure you have cleaned the directory properly
-and are using Node 22:
+and are on Node 24:
 
 ```sh
 cd Dependency/Microsoft/Dependency/Editor
-nvm use 22
+nvm use 24
 git clean -dfx
 rm -rf node_modules
-npm install
-npm run compile
+dum install
+dum compile
 ```
 
 ### `Rest` binary not found

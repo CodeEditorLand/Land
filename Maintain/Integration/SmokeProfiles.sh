@@ -49,8 +49,8 @@ while [ $# -gt 0 ]; do
 	esac
 done
 
-BINARY="Element/Mountain/Target/debug/DevelopmentNodeEnvironment_MicrosoftVSCodeDependency_22NodeVersion_Bundle_Clean_Debug_Mountain"
-LOG_ROOT="$HOME/Library/Application Support/land.editor.binary.development.node.environment.microsoft.vscode.dependency.node.22.bundle.clean.debug.mountain/logs"
+BINARY="Element/Mountain/Target/debug/DevelopmentNodeEnvironment_MicrosoftVSCodeDependency_24NodeVersion_Bundle_Clean_Debug_Mountain"
+LOG_ROOT="$HOME/Library/Application Support/land.editor.binary.development.node.environment.microsoft.vscode.dependency.node.24.bundle.clean.debug.mountain/logs"
 
 if [ ! -x "$BINARY" ]; then
 	echo "[SmokeProfiles] binary not found: $BINARY"
@@ -186,7 +186,7 @@ echo "================================================================"
 echo "[SmokeProfiles] Shippable-surface footprint"
 echo "================================================================"
 
-APP_BUNDLE="Element/Mountain/Target/debug/bundle/macos/DevelopmentNodeEnvironment_MicrosoftVSCodeDependency_22NodeVersion_Bundle_Clean_Debug_Mountain.app"
+APP_BUNDLE="Element/Mountain/Target/debug/bundle/macos/DevelopmentNodeEnvironment_MicrosoftVSCodeDependency_24NodeVersion_Bundle_Clean_Debug_Mountain.app"
 SKY_EXTENSIONS="Element/Sky/Target/Static/Application/extensions"
 
 if [ -d "$APP_BUNDLE" ]; then

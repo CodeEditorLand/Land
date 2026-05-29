@@ -305,17 +305,20 @@ graph LR
 > The build is a two-step linear flow. Do NOT pull submodules recursively --
 > each submodule is managed independently on its own branch.
 >
-> **Step 1: Compile VS Code Source**
+> **Step 1: Compile VS Code Source** _(mandatory — do this before Step 2)_
+>
+> Node 24 is required for this step. The exact version is pinned in
+> `Dependency/Microsoft/Dependency/Editor/.nvmrc`.
 >
 > ```sh
 > cd Dependency/Microsoft/Dependency/Editor
-> nvm use 22
+> nvm use 24
 > git fetch --all
 > git reset --hard Parent/main
 > git clean -dfx
-> npm install
-> npm run compile
-> npm run compile-extensions-build
+> dum install
+> dum compile
+> dum compile-extensions-build
 > ```
 >
 > **Step 2: Build Land Application**

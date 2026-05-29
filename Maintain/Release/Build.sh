@@ -164,7 +164,7 @@ case $PROFILE in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=production
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=8192"
 		export RUST_LOG=info
 
@@ -230,7 +230,7 @@ case $PROFILE in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=production
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=8192"
 		export RUST_LOG=warn
 
@@ -256,7 +256,7 @@ case $PROFILE in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=production
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export RUST_LOG=info
 
@@ -285,7 +285,7 @@ case $PROFILE in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=production
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export RUST_LOG=info
 		export Skip=true
@@ -304,7 +304,7 @@ case $PROFILE in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=production
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export RUST_LOG=info
 		export Spawn=false
@@ -323,7 +323,7 @@ case $PROFILE in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=production
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export RUST_LOG=info
 		export Render=false
@@ -341,7 +341,7 @@ case $PROFILE in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=production
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export RUST_LOG=info
 		export Skip=true
@@ -364,7 +364,7 @@ case $PROFILE in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=production
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export RUST_LOG=info
 		export Pack="electron"
@@ -382,7 +382,7 @@ case $PROFILE in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=production
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export RUST_LOG=warn
 		export Pack="browser"
@@ -400,7 +400,7 @@ case $PROFILE in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=production
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export RUST_LOG=info
 		export Pack="sessions"
@@ -418,7 +418,7 @@ case $PROFILE in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=production
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export RUST_LOG=info
 		export Pack="workbench"
@@ -439,7 +439,7 @@ case $PROFILE in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=production
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export RUST_LOG=info
 		export Pack="electron browser sessions workbench"
@@ -455,7 +455,7 @@ case $PROFILE in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=production
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=8192"
 		export RUST_LOG=warn
 

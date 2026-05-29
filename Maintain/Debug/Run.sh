@@ -86,7 +86,7 @@ case $Profile in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		;;
 	debug-mountain)
@@ -99,7 +99,7 @@ case $Profile in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		;;
 	debug-electron)
@@ -112,7 +112,7 @@ case $Profile in
 		export Level=silent
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		;;
 	*)

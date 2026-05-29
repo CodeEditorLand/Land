@@ -58,15 +58,24 @@ The VS Code source is vendored as a `Git` submodule at
 `Dependency/Microsoft/Dependency/Editor`. Stage 1 produces the compiled
 JavaScript platform code that `Cocoon` and `Sky` consume:
 
+> [!IMPORTANT]
+>
+> This step is a **mandatory prerequisite** for every Land build. `Cocoon` and
+> `Output` both depend on the compiled output. You must be on **Node 24**
+> (tracked in `Dependency/Microsoft/Dependency/Editor/.nvmrc`).
+
 ```sh
 cd Dependency/Microsoft/Dependency/Editor
-nvm use 22
+
+# Switch to Node 24 (reads .nvmrc automatically)
+nvm use 24
+
 git fetch --all
 git reset --hard Parent/main
 git clean -dfx
-npm install
-npm run compile
-npm run compile-extensions-build
+dum install
+dum compile
+dum compile-extensions-build
 ```
 
 The `compile-extensions-build` step produces `out-<platform>` directories

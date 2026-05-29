@@ -24,7 +24,7 @@
 		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.4.15",
+		"@biomejs/biome": "2.4.16",
 		"@ianvs/prettier-plugin-sort-imports": "4.7.1",
 		"@playform/build": "0.3.2",
 		"@playform/pipe": "0.1.5",
@@ -37,13 +37,13 @@
 		"@tailwindcss/typography": "0.5.19",
 		"@tauri-apps/cli": "2.11.2",
 		"@trivago/prettier-plugin-sort-imports": "6.0.2",
-		"@vue/compiler-sfc": "3.5.34",
+		"@vue/compiler-sfc": "3.5.35",
 		"cross-env": "10.1.0",
 		"prettier": "3.8.3",
 		"prettier-plugin-astro": "0.14.1",
 		"prettier-plugin-autocorrect": "0.4.3",
 		"prettier-plugin-ember-template-tag": "2.1.6",
-		"prettier-plugin-java": "2.9.4",
+		"prettier-plugin-java": "2.9.7",
 		"prettier-plugin-kotlin": "2.1.0",
 		"prettier-plugin-organize-attributes": "1.0.0",
 		"prettier-plugin-packagejson": "3.0.2",
@@ -55,7 +55,7 @@
 		"prettier-plugin-tailwindcss": "0.8.0",
 		"prettier-plugin-toml": "2.0.6",
 		"tailwindcss": "3.4.17",
-		"turbo": "2.9.14",
+		"turbo": "2.9.16",
 		"typescript": "6.0.3"
 	},
 	"packageManager": "pnpm@11.3.0",

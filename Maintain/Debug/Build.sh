@@ -181,7 +181,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		;;
 	debug-mountain)
@@ -194,7 +194,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		;;
 	debug-electron)
@@ -207,7 +207,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		;;
 	debug-electron-rest)
@@ -223,7 +223,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 
 		# Build Rest compiler if binary is missing - only needed when the
@@ -252,7 +252,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export Skip=true
 		;;
@@ -270,7 +270,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export Spawn=false
 		;;
@@ -288,7 +288,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export Render=false
 		;;
@@ -305,7 +305,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export Skip=true
 		export Spawn=false
@@ -337,7 +337,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		;;
 	debug-mountain-compiled)
@@ -355,7 +355,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		;;
 	debug-electron-bundled)
@@ -375,7 +375,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export Pack="electron"
 		export Boot=true
@@ -392,7 +392,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export Pack="browser"
 		export Boot=true
@@ -409,7 +409,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export Pack="sessions"
 		export Boot=true
@@ -426,7 +426,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export Pack="workbench"
 		export Boot=true
@@ -443,7 +443,7 @@ case $PROFILE in
 		export Level=debug
 		export Dependency=Microsoft/VSCode
 		export NODE_ENV=development
-		export NODE_VERSION=22
+		export NODE_VERSION=24
 		export NODE_OPTIONS="--max-old-space-size=16384"
 		export Pack="electron browser sessions workbench"
 		export Boot=true
