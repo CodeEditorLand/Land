@@ -107,6 +107,7 @@ ignore = [
 	"Element/Air/Source/Vine/Generated",
 	"Element/Grove/Source/Protocol/Generated",
 	"Element/Cocoon/Source/Generated",
+	"Element/Vine/Source/Generated",
 	"Element/Wind/Source/Effect/Generated",
 	"**/Generated/",
 	"**/.generated/",

@@ -70,10 +70,13 @@ Exclude = frozenset(
         "Archive",
         "Dependency",
         "Documentation",
+        "Generated",
         "Target",
         "target",
         "node_modules",
         ".git",
+        ".generated",
+        "gen",
     }
 )
 
