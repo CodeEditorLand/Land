@@ -388,7 +388,7 @@ graph TB
     Cocoon --> CocoonBootstrap[cocoon-bootstrap.js]
     Cocoon --> CocoonBundles[bundles/]
 
-    Output --> OutputPkg[@codeeditorland/output/]
+    Output --> OutputPkg["@codeeditorland/output/"]
 
     Sky --> SkyStatic[Static/]
     SkyStatic --> SkyBundled[Bundled/]
