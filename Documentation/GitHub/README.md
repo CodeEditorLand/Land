@@ -78,30 +78,30 @@ details.
 
 | Element      | Role                                                           | Key Dependencies     | Doc                                                                        |
 | ------------ | -------------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------- |
-| **Common**   | Abstract core library: traits, ActionEffect, DTOs, CommonError | (none, foundational) | [`Architecture.md`](Element/Common/Documentation/GitHub/Architecture.md)   |
-| **Echo**     | Work-stealing task scheduler with priority tiers               | Common               | [`Architecture.md`](Element/Echo/Documentation/GitHub/Architecture.md)     |
-| **Mountain** | Primary Tauri backend, gRPC host, sidecar orchestrator         | Common, Echo, Mist   | [`Architecture.md`](Element/Mountain/Documentation/GitHub/Architecture.md) |
-| **Air**      | Background daemon: updates, indexing, crypto                   | Common, Mist         | [`Architecture.md`](Element/Air/Documentation/GitHub/Architecture.md)      |
-| **Mist**     | Local DNS server for `*.land.playform.cloud`                   | Common               | [`Architecture.md`](Element/Mist/Documentation/GitHub/Architecture.md)     |
-| **Grove**    | WASM extension host (WASMtime)                                 | Common               | [`Architecture.md`](Element/Grove/Documentation/GitHub/Architecture.md)    |
-| **Rest**     | OXC-based TypeScript compiler                                  | Common               | [`Architecture.md`](Element/Rest/Documentation/GitHub/Architecture.md)     |
-| **SideCar**  | Vendored Node.js runtime manager                               | Common, Mist         | [`Architecture.md`](Element/SideCar/Documentation/GitHub/Architecture.md)  |
+| **Common**   | Abstract core library: traits, ActionEffect, DTOs, CommonError | (none, foundational) | [`Architecture.md`](https://github.com/CodeEditorLand/Common/blob/Current/Documentation/GitHub/Architecture.md)   |
+| **Echo**     | Work-stealing task scheduler with priority tiers               | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Echo/blob/Current/Documentation/GitHub/Architecture.md)     |
+| **Mountain** | Primary Tauri backend, gRPC host, sidecar orchestrator         | Common, Echo, Mist   | [`Architecture.md`](https://github.com/CodeEditorLand/Mountain/blob/Current/Documentation/GitHub/Architecture.md) |
+| **Air**      | Background daemon: updates, indexing, crypto                   | Common, Mist         | [`Architecture.md`](https://github.com/CodeEditorLand/Air/blob/Current/Documentation/GitHub/Architecture.md)      |
+| **Mist**     | Local DNS server for `*.land.playform.cloud`                   | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Mist/blob/Current/Documentation/GitHub/Architecture.md)     |
+| **Grove**    | WASM extension host (WASMtime)                                 | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Grove/blob/Current/Documentation/GitHub/Architecture.md)    |
+| **Rest**     | OXC-based TypeScript compiler                                  | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Rest/blob/Current/Documentation/GitHub/Architecture.md)     |
+| **SideCar**  | Vendored Node.js runtime manager                               | Common, Mist         | [`Architecture.md`](https://github.com/CodeEditorLand/SideCar/blob/Current/Documentation/GitHub/Architecture.md)  |
 
 ### TypeScript Elements 📜
 
 | Element    | Role                                         | Framework        | Doc                                                                      |
 | ---------- | -------------------------------------------- | ---------------- | ------------------------------------------------------------------------ |
-| **Cocoon** | Node.js extension host with vscode API shim  | Effect-TS        | [`Architecture.md`](Element/Cocoon/Documentation/GitHub/Architecture.md) |
-| **Wind**   | UI service layer with ~40 Effect-TS services | Effect-TS + Vite | [`Architecture.md`](Element/Wind/Documentation/GitHub/Architecture.md)   |
-| **Sky**    | Astro-based UI component layer               | Astro + Vite     | [`Architecture.md`](Element/Sky/Documentation/GitHub/Architecture.md)    |
-| **Output** | Build artifact management, dual-compiler     | ESBuild          | [`Architecture.md`](Element/Output/Documentation/GitHub/Architecture.md) |
-| **Worker** | Service worker: caching, CSS interceptor     | ESBuild          | [`Architecture.md`](Element/Worker/Documentation/GitHub/Architecture.md) |
+| **Cocoon** | Node.js extension host with vscode API shim  | Effect-TS        | [`Architecture.md`](https://github.com/CodeEditorLand/Cocoon/blob/Current/Documentation/GitHub/Architecture.md) |
+| **Wind**   | UI service layer with ~40 Effect-TS services | Effect-TS + Vite | [`Architecture.md`](https://github.com/CodeEditorLand/Wind/blob/Current/Documentation/GitHub/Architecture.md)   |
+| **Sky**    | Astro-based UI component layer               | Astro + Vite     | [`Architecture.md`](https://github.com/CodeEditorLand/Sky/blob/Current/Documentation/GitHub/Architecture.md)    |
+| **Output** | Build artifact management, dual-compiler     | ESBuild          | [`Architecture.md`](https://github.com/CodeEditorLand/Output/blob/Current/Documentation/GitHub/Architecture.md) |
+| **Worker** | Service worker: caching, CSS interceptor     | ESBuild          | [`Architecture.md`](https://github.com/CodeEditorLand/Worker/blob/Current/Documentation/GitHub/Architecture.md) |
 
 ### Protocol Layer 🔌
 
 | Element  | Role                      | Format           | Doc                                                                    |
 | -------- | ------------------------- | ---------------- | ---------------------------------------------------------------------- |
-| **Vine** | gRPC protocol definitions | Protocol Buffers | [`Architecture.md`](Element/Vine/Documentation/GitHub/Architecture.md) |
+| **Vine** | gRPC protocol definitions | Protocol Buffers | [`Architecture.md`](https://github.com/CodeEditorLand/Vine/blob/Current/Documentation/GitHub/Architecture.md) |
 
 ---
 
@@ -113,20 +113,20 @@ may contain implementation notes not yet migrated to `Architecture.md`.
 
 | Element      | DeepDive                                                           | Topics                                                                   |
 | ------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| **Air**      | [`DeepDive.md`](Element/Air/Documentation/GitHub/DeepDive.md)      | Daemon architecture, gRPC server, update lifecycle, downloader           |
-| **Cocoon**   | [`DeepDive.md`](Element/Cocoon/Documentation/GitHub/DeepDive.md)   | Extension host, Effect-TS composition, service providers, gRPC client    |
-| **Common**   | [`DeepDive.md`](Element/Common/Documentation/GitHub/DeepDive.md)   | ActionEffect system, Environment DI, trait architecture, service lifting |
-| **Echo**     | [`DeepDive.md`](Element/Echo/Documentation/GitHub/DeepDive.md)     | Work-stealing queues, priority scheduling, performance benchmarks        |
-| **Grove**    | [`DeepDive.md`](Element/Grove/Documentation/GitHub/DeepDive.md)    | 5-layer architecture, WASMtime sandbox, transport strategies             |
-| **Mist**     | [`DeepDive.md`](Element/Mist/Documentation/GitHub/DeepDive.md)     | DNS zone, forward allowlisting, DNSSEC signing                           |
-| **Mountain** | [`DeepDive.md`](Element/Mountain/Documentation/GitHub/DeepDive.md) | ApplicationRunTime, AppState, vine gRPC, process management              |
-| **Output**   | [`DeepDive.md`](Element/Output/Documentation/GitHub/DeepDive.md)   | ESBuild pipeline, Rest OXC integration, transform configuration          |
-| **Rest**     | [`DeepDive.md`](Element/Rest/Documentation/GitHub/DeepDive.md)     | OXC parser/transformer/codegen pipeline, parallel compilation            |
-| **SideCar**  | [`DeepDive.md`](Element/SideCar/Documentation/GitHub/DeepDive.md)  | Binary resolution, download system, spawn configuration                  |
-| **Sky**      | [`DeepDive.md`](Element/Sky/Documentation/GitHub/DeepDive.md)      | Astro page architecture, workbench variants, SkyBridge                   |
-| **Vine**     | [`DeepDive.md`](Element/Vine/Documentation/GitHub/DeepDive.md)     | Proto definitions, gRPC services, code generation                        |
-| **Wind**     | [`DeepDive.md`](Element/Wind/Documentation/GitHub/DeepDive.md)     | Effect-TS services, Preload.ts, Tauri integration                        |
-| **Worker**   | [`DeepDive.md`](Element/Worker/Documentation/GitHub/DeepDive.md)   | Caching strategies, CSS interceptor, service worker lifecycle            |
+| **Air**      | [`DeepDive.md`](https://github.com/CodeEditorLand/Air/blob/Current/Documentation/GitHub/DeepDive.md)      | Daemon architecture, gRPC server, update lifecycle, downloader           |
+| **Cocoon**   | [`DeepDive.md`](https://github.com/CodeEditorLand/Cocoon/blob/Current/Documentation/GitHub/DeepDive.md)   | Extension host, Effect-TS composition, service providers, gRPC client    |
+| **Common**   | [`DeepDive.md`](https://github.com/CodeEditorLand/Common/blob/Current/Documentation/GitHub/DeepDive.md)   | ActionEffect system, Environment DI, trait architecture, service lifting |
+| **Echo**     | [`DeepDive.md`](https://github.com/CodeEditorLand/Echo/blob/Current/Documentation/GitHub/DeepDive.md)     | Work-stealing queues, priority scheduling, performance benchmarks        |
+| **Grove**    | [`DeepDive.md`](https://github.com/CodeEditorLand/Grove/blob/Current/Documentation/GitHub/DeepDive.md)    | 5-layer architecture, WASMtime sandbox, transport strategies             |
+| **Mist**     | [`DeepDive.md`](https://github.com/CodeEditorLand/Mist/blob/Current/Documentation/GitHub/DeepDive.md)     | DNS zone, forward allowlisting, DNSSEC signing                           |
+| **Mountain** | [`DeepDive.md`](https://github.com/CodeEditorLand/Mountain/blob/Current/Documentation/GitHub/DeepDive.md) | ApplicationRunTime, AppState, vine gRPC, process management              |
+| **Output**   | [`DeepDive.md`](https://github.com/CodeEditorLand/Output/blob/Current/Documentation/GitHub/DeepDive.md)   | ESBuild pipeline, Rest OXC integration, transform configuration          |
+| **Rest**     | [`DeepDive.md`](https://github.com/CodeEditorLand/Rest/blob/Current/Documentation/GitHub/DeepDive.md)     | OXC parser/transformer/codegen pipeline, parallel compilation            |
+| **SideCar**  | [`DeepDive.md`](https://github.com/CodeEditorLand/SideCar/blob/Current/Documentation/GitHub/DeepDive.md)  | Binary resolution, download system, spawn configuration                  |
+| **Sky**      | [`DeepDive.md`](https://github.com/CodeEditorLand/Sky/blob/Current/Documentation/GitHub/DeepDive.md)      | Astro page architecture, workbench variants, SkyBridge                   |
+| **Vine**     | [`DeepDive.md`](https://github.com/CodeEditorLand/Vine/blob/Current/Documentation/GitHub/DeepDive.md)     | Proto definitions, gRPC services, code generation                        |
+| **Wind**     | [`DeepDive.md`](https://github.com/CodeEditorLand/Wind/blob/Current/Documentation/GitHub/DeepDive.md)     | Effect-TS services, Preload.ts, Tauri integration                        |
+| **Worker**   | [`DeepDive.md`](https://github.com/CodeEditorLand/Worker/blob/Current/Documentation/GitHub/DeepDive.md)   | Caching strategies, CSS interceptor, service worker lifecycle            |
 
 ### Element-Specific Supplementary Docs 📎
 
@@ -135,12 +135,11 @@ Some Elements contain additional documentation beyond `DeepDive.md` and
 
 | Element      | File                                                                                               | Topics                                                |
 | ------------ | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| **Mountain** | [`NamingConventions.md`](Element/Mountain/Documentation/GitHub/NamingConventions.md)               | PascalCase conventions, provider/ DTO naming          |
-| **Wind**     | [`VscodeIntegration.md`](Element/Wind/Documentation/GitHub/VscodeIntegration.md)                   | Native VS Code workbench inside Tauri via Wind        |
-| **Echo**     | [`Todo.md`](Element/Echo/Documentation/GitHub/Todo.md)                                             | Community contribution guide, 9 TODOs across 6 levels |
-| **Cocoon**   | [`CocoonImplementationPlan.md`](Element/Cocoon/Documentation/GitHub/CocoonImplementationPlan.md)   | Integration plan and synchronization status           |
-| **Cocoon**   | [`RefactoringStrategy.md`](Element/Cocoon/Documentation/GitHub/RefactoringStrategy.md)             | File split plan, naming conventions                   |
-| **Cocoon**   | [`VsCodeValidationChecklist.md`](Element/Cocoon/Documentation/GitHub/VsCodeValidationChecklist.md) | VS Code API compatibility validation                  |
+| **Mountain** | [`NamingConventions.md`](https://github.com/CodeEditorLand/Mountain/blob/Current/Documentation/GitHub/NamingConventions.md)               | PascalCase conventions, provider/ DTO naming          |
+| **Echo**     | [`Todo.md`](https://github.com/CodeEditorLand/Echo/blob/Current/Documentation/GitHub/Todo.md)                                             | Community contribution guide, 9 TODOs across 6 levels |
+| **Cocoon**   | [`CocoonImplementationPlan.md`](https://github.com/CodeEditorLand/Cocoon/blob/Current/Documentation/GitHub/CocoonImplementationPlan.md)   | Integration plan and synchronization status           |
+| **Cocoon**   | [`RefactoringStrategy.md`](https://github.com/CodeEditorLand/Cocoon/blob/Current/Documentation/GitHub/RefactoringStrategy.md)             | File split plan, naming conventions                   |
+| **Cocoon**   | [`VsCodeValidationChecklist.md`](https://github.com/CodeEditorLand/Cocoon/blob/Current/Documentation/GitHub/VsCodeValidationChecklist.md) | VS Code API compatibility validation                  |
 
 ---
 

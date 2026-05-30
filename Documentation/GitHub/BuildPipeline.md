@@ -73,9 +73,9 @@ nvm use 24
 git fetch --all
 git reset --hard Parent/main
 git clean -dfx
-dum install
-dum compile
-dum compile-extensions-build
+pnpm install
+pnpm run compile
+pnpm run compile-extensions-build
 ```
 
 The `compile-extensions-build` step produces `out-<platform>` directories

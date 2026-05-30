@@ -135,17 +135,17 @@ implementation details:
 
 | Element      | Language   | Role                      | Doc                                                                   |
 | ------------ | ---------- | ------------------------- | --------------------------------------------------------------------- |
-| **Air**      | Rust       | Background daemon         | [Architecture](Element/Air/Documentation/GitHub/Architecture.md)      |
-| **Cocoon**   | TypeScript | Node.js extension host    | [Architecture](Element/Cocoon/Documentation/GitHub/Architecture.md)   |
-| **Common**   | Rust       | Abstract core library     | [Architecture](Element/Common/Documentation/GitHub/Architecture.md)   |
-| **Echo**     | Rust       | Work-stealing scheduler   | [Architecture](Element/Echo/Documentation/GitHub/Architecture.md)     |
-| **Grove**    | Rust       | WASM extension host       | [Architecture](Element/Grove/Documentation/GitHub/Architecture.md)    |
-| **Mist**     | Rust       | DNS isolation server      | [Architecture](Element/Mist/Documentation/GitHub/Architecture.md)     |
-| **Mountain** | Rust       | Native backend (Tauri)    | [Architecture](Element/Mountain/Documentation/GitHub/Architecture.md) |
-| **Output**   | TypeScript | Build artifact management | [Architecture](Element/Output/Documentation/GitHub/Architecture.md)   |
-| **Rest**     | Rust       | OXC TypeScript compiler   | [Architecture](Element/Rest/Documentation/GitHub/Architecture.md)     |
-| **SideCar**  | Rust       | Vendored runtime manager  | [Architecture](Element/SideCar/Documentation/GitHub/Architecture.md)  |
-| **Sky**      | TypeScript | UI component layer        | [Architecture](Element/Sky/Documentation/GitHub/Architecture.md)      |
-| **Vine**     | Protocol   | gRPC protocol definitions | [Architecture](Element/Vine/Documentation/GitHub/Architecture.md)     |
-| **Wind**     | TypeScript | Frontend service layer    | [Architecture](Element/Wind/Documentation/GitHub/Architecture.md)     |
-| **Worker**   | TypeScript | Service worker            | [Architecture](Element/Worker/Documentation/GitHub/Architecture.md)   |
+| **Air**      | Rust       | Background daemon         | [Architecture](https://github.com/CodeEditorLand/Air/blob/Current/Documentation/GitHub/Architecture.md)      |
+| **Cocoon**   | TypeScript | Node.js extension host    | [Architecture](https://github.com/CodeEditorLand/Cocoon/blob/Current/Documentation/GitHub/Architecture.md)   |
+| **Common**   | Rust       | Abstract core library     | [Architecture](https://github.com/CodeEditorLand/Common/blob/Current/Documentation/GitHub/Architecture.md)   |
+| **Echo**     | Rust       | Work-stealing scheduler   | [Architecture](https://github.com/CodeEditorLand/Echo/blob/Current/Documentation/GitHub/Architecture.md)     |
+| **Grove**    | Rust       | WASM extension host       | [Architecture](https://github.com/CodeEditorLand/Grove/blob/Current/Documentation/GitHub/Architecture.md)    |
+| **Mist**     | Rust       | DNS isolation server      | [Architecture](https://github.com/CodeEditorLand/Mist/blob/Current/Documentation/GitHub/Architecture.md)     |
+| **Mountain** | Rust       | Native backend (Tauri)    | [Architecture](https://github.com/CodeEditorLand/Mountain/blob/Current/Documentation/GitHub/Architecture.md) |
+| **Output**   | TypeScript | Build artifact management | [Architecture](https://github.com/CodeEditorLand/Output/blob/Current/Documentation/GitHub/Architecture.md)   |
+| **Rest**     | Rust       | OXC TypeScript compiler   | [Architecture](https://github.com/CodeEditorLand/Rest/blob/Current/Documentation/GitHub/Architecture.md)     |
+| **SideCar**  | Rust       | Vendored runtime manager  | [Architecture](https://github.com/CodeEditorLand/SideCar/blob/Current/Documentation/GitHub/Architecture.md)  |
+| **Sky**      | TypeScript | UI component layer        | [Architecture](https://github.com/CodeEditorLand/Sky/blob/Current/Documentation/GitHub/Architecture.md)      |
+| **Vine**     | Protocol   | gRPC protocol definitions | [Architecture](https://github.com/CodeEditorLand/Vine/blob/Current/Documentation/GitHub/Architecture.md)     |
+| **Wind**     | TypeScript | Frontend service layer    | [Architecture](https://github.com/CodeEditorLand/Wind/blob/Current/Documentation/GitHub/Architecture.md)     |
+| **Worker**   | TypeScript | Service worker            | [Architecture](https://github.com/CodeEditorLand/Worker/blob/Current/Documentation/GitHub/Architecture.md)   |

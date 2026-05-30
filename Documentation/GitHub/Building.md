@@ -15,7 +15,6 @@ Before building, ensure you have the following installed:
 - **Node.js** (v24 required for building the Editor submodule) -
   [nodejs.org](https://nodejs.org/)
 - **pnpm** (package manager) - `npm install -g pnpm`
-- **dum** (script runner, used in place of `npm run`) - `npm install -g dum`
 - **Git** (with LFS support) - `git lfs install`
 - **Protocol Buffer compiler** (optional, only if modifying `.proto` files)
 
@@ -51,7 +50,7 @@ The Land build is a **two-step linear flow**. Do NOT pull submodules recursively
 ## Step 1: Compile VS Code Source 📦
 
 The VS Code source is vendored as a Git submodule in
-`Dependency/Microsoft/Dependency/Editor`. **This step is mandatory — Land cannot
+`Dependency/Microsoft/Dependency/Editor`. **This step is mandatory - Land cannot
 build without it.** `Cocoon` (the extension host) and `Output` (the platform
 bundle) both consume the compiled output produced here.
 
@@ -72,15 +71,11 @@ git reset --hard Parent/main
 git clean -dfx
 
 # Install dependencies and compile
-dum install
-dum compile
-dum compile-extensions-build
+pnpm install
+pnpm run compile
+pnpm run compile-extensions-build
 ```
 
-> [!NOTE]
->
-> `dum` is a lightweight `npm run` replacement. Install it once with
-> `npm install -g dum` if not already present.
 
 > [!IMPORTANT]
 >
@@ -209,8 +204,8 @@ cd Dependency/Microsoft/Dependency/Editor
 nvm use 24
 git clean -dfx
 rm -rf node_modules
-dum install
-dum compile
+pnpm install
+pnpm run compile
 ```
 
 ### `Rest` binary not found

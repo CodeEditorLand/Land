@@ -57,6 +57,12 @@ exclude_path = [
 	"effect",
 	".git",
 	"Dependency",
+	# Element/ subdirectories are submodule checkouts - local file links into
+	# them are valid on disk but not on GitHub. They must be absolute GitHub
+	# URLs pointing to each element's own repo. Exclude the raw paths here so
+	# lychee does not try to resolve them as file:// URLs (they are already
+	# converted to https:// URLs in the docs).
+	"Element",
 ]
 
 # Accepted status codes
