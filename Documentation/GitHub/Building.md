@@ -76,7 +76,6 @@ pnpm run compile
 pnpm run compile-extensions-build
 ```
 
-
 > [!IMPORTANT]
 >
 > The `compile-extensions-build` step produces the `out-<platform>` directories
