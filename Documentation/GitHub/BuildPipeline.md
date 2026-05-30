@@ -96,7 +96,7 @@ export Trace=all Record=1 Disable=false
 The build script invokes, in sequence:
 
 1. **Rust workspace compilation** via `cargo build` for `Common`, `Echo`,
-   `Mist`, `Mountain`, `Rest`, `SideCar`, `Air`
+   `Mist`, `Mountain`, `Rest`, `SideCar`, `Air`, `Vine`, `Grove`
 2. **Output artifact bundling** via `ESBuild` for the VS Code platform code
 3. **Cocoon compilation** via `ESBuild` for the extension host
 4. **Worker compilation** via `ESBuild` for the service worker
@@ -211,7 +211,7 @@ graph LR
     I --> J[Runtime tier validation]
 ```
 
-### Rust Elements (Mountain, Common, Echo, Mist, Rest, SideCar, Air, Grove)
+### Rust Elements (Mountain, Common, Echo, Mist, Rest, SideCar, Air, Grove, Vine)
 
 ```
 Maintain/Debug/Build.sh
@@ -313,6 +313,7 @@ members = [
 	"Element/SideCar",
 	"Element/Air",
 	"Element/Grove",
+	"Element/Vine",
 ]
 ```
 
@@ -376,6 +377,7 @@ directories:
 graph TB
     Root[Land/] --> Element[Element/]
     Element --> Mountain[Mountain/Target/]
+    Element --> Air[Air/Target/]
     Element --> Cocoon[Cocoon/Compiled/]
     Element --> Output[Output/Target/]
     Element --> Sky[Sky/Target/]
@@ -469,6 +471,8 @@ Target triples supported:
 - `x86_64-apple-darwin` (Intel `macOS`)
 - `aarch64-unknown-linux-gnu` (ARM64 Linux)
 - `x86_64-unknown-linux-gnu` (x86_64 Linux)
+- `aarch64-pc-windows-msvc` (ARM64 Windows)
+- `x86_64-pc-windows-msvc` (x86_64 Windows)
 
 ---
 

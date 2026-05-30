@@ -55,7 +55,7 @@ The Preload shim defines the following global replacements:
 | --------------------------- | --------------------------------------- | ------------------------------------------------------------------------------ |
 | `window.vscode.ipcRenderer` | `Tauri` `invoke()` wrapper              | Custom `IPCRenderer` interface in `Wind/Source/Types/Interface/IPCRenderer.ts` |
 | `process.env`               | Object with tier-gated env vars         | Populated from `__LandTiers` at preload time                                   |
-| `process.platform`          | Static `darwin`                         | Hardcoded for `macOS`                                                          |
+| `process.platform`          | `darwin` / `linux` / `win32`            | Derived from `navigator.userAgent` at preload time                             |
 | `process.versions`          | Object with `node`, `http_parser`, `v8` | Populated from navigator.userAgent                                             |
 | `process.argv`              | Array of launch arguments               | Received from `Tauri` IPC                                                      |
 | `process.cwd()`             | Resolved workspace root                 | Set during init from `Mountain`                                                |
@@ -322,10 +322,10 @@ indicates env propagation drift.
 ### Dev-Log File Sink
 
 `Mountain` writes diagnostic output to a structured dev-log file when
-`Trace=all` is set:
+`Trace=all` and `Record=1` are set:
 
 ```
-~/.land/logs/dev-<timestamp>.log
+<app_data_dir>/<bundle>/logs/<timestamp>/Mountain.dev.log
 ```
 
 The dev-log captures:

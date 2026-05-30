@@ -79,12 +79,12 @@ sequenceDiagram
 
 #### **Phase 2: Host-Side Provider Registration (`Mountain`)**
 
-3.  **gRPC Server (`Mountain/src/vine/server/MountainVineGrpcService.rs`)**
+3.  **gRPC Server (`Mountain/Source/Vine/server/MountainVineGrpcService.rs`)**
     - **Action:** The gRPC server receives the `$registerHoverProvider` request.
     - It passes the request to the `track` dispatcher.
 
 4.  **Dispatcher
-    ([`Mountain/src/track/TrackLogic.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Track/TrackLogic.rs))**
+    ([`Mountain/Source/Track/TrackLogic.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Track/TrackLogic.rs))**
 
 - **Action:** `DispatchSidecarRequest` is called.
     - It maps the method name (`$registerHoverProvider`) to an `ActionEffect`
@@ -133,7 +133,7 @@ sequenceDiagram
 
 #### **Phase 4: Host-Side Orchestration (`Mountain` -> `Cocoon` -> `Mountain`)**
 
-9.  **`Mountain/src/handlers/protocol/ProtocolLogic.rs`**
+9.  **`Mountain/Source/handlers/protocol/ProtocolLogic.rs`**
     - **Action:** The `HandleCustomUriSchemeRequest` function receives the
       `mountain://language-feature/provide-hover` request.
     - It dispatches this to the `track` module.

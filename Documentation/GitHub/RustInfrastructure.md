@@ -25,16 +25,17 @@ the entire editor is built upon.
 
 ## Component Summary 📋
 
-| Component  | Crate Type     | Edition | Key Dependencies                                     | Role                                                    |
-| ---------- | -------------- | ------- | ---------------------------------------------------- | ------------------------------------------------------- |
-| `Common`   | Library        | 2024    | tauri, async-trait, serde, thiserror                 | Abstract trait definitions, `ActionEffect` system, DTOs |
-| `Echo`     | Library        | 2024    | tokio, crossbeam-deque, `Common`                     | Priority work-stealing task scheduler                   |
-| `Mountain` | Binary         | 2024    | `Common`, `Echo`, `Mist`, tauri, tonic, portable-pty | Primary `Tauri` application, `gRPC` server              |
-| `Mist`     | Library+Binary | 2024    | hickory-server, ring, tokio, `Common`                | Local DNS server for `*.land.playform.cloud`            |
-| `Air`      | Binary         | 2024    | tokio, tonic, reqwest, `Common`, `Mist`              | Background daemon (updates, indexing, crypto)           |
-| `Rest`     | Binary+Library | 2024    | oxc_allocator, oxc_parser, oxc_transformer, `Common` | `OXC`-based `TypeScript` compiler                       |
-| `SideCar`  | Library        | 2024    | tokio, reqwest, zip, `Common`, `Mist`                | Vendored `Node.js` binary manager                       |
-| `Grove`    | Library+Binary | 2021    | `Common`, wasmtime, tonic, clap                      | Wasm sandbox for WASM-compiled extensions               |
+| Component  | Crate Type     | Edition | Key Dependencies                                     | Role                                                                                              |
+| ---------- | -------------- | ------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `Common`   | Library        | 2024    | tauri, async-trait, serde, thiserror                 | Abstract trait definitions, `ActionEffect` system, DTOs                                           |
+| `Echo`     | Library        | 2024    | tokio, crossbeam-deque, `Common`                     | Priority work-stealing task scheduler                                                             |
+| `Mountain` | Binary         | 2024    | `Common`, `Echo`, `Mist`, tauri, tonic, portable-pty | Primary `Tauri` application, `gRPC` server                                                        |
+| `Mist`     | Library+Binary | 2024    | hickory-server, ring, tokio, `Common`                | Local DNS server for `*.land.playform.cloud`                                                      |
+| `Air`      | Binary         | 2024    | tokio, tonic, reqwest, `Common`, `Mist`              | Background daemon (updates, indexing, crypto)                                                     |
+| `Rest`     | Binary+Library | 2024    | oxc_allocator, oxc_parser, oxc_transformer, `Common` | `OXC`-based `TypeScript` compiler                                                                 |
+| `SideCar`  | Library        | 2024    | tokio, reqwest, zip, `Common`, `Mist`                | Vendored `Node.js` binary manager                                                                 |
+| `Grove`    | Library+Binary | 2021    | `Common`, wasmtime, tonic, clap                      | Wasm sandbox for WASM-compiled extensions                                                         |
+| `Vine`     | Library        | 2024    | tonic-build, prost, prost-types                      | gRPC protocol definitions (`Vine.proto`); generated stubs consumed by `Mountain`, `Cocoon`, `Air` |
 
 ### Dependency Graph
 
@@ -50,6 +51,8 @@ graph TB
     Rest --> Mountain
     SideCar --> Mountain
     Grove --> Mountain
+    Vine[Vine<br/>gRPC proto definitions] --> Mountain
+    Vine --> Air
     Mountain --> Air[Air<br/>background daemon, optional]
 ```
 
@@ -511,6 +514,8 @@ Mountain build copies binary to app bundle
 | x86_64-apple-darwin       | darwin-x64      | node-v{version}-darwin-x64.tar.gz   |
 | aarch64-unknown-linux-gnu | linux-arm64     | node-v{version}-linux-arm64.tar.gz  |
 | x86_64-unknown-linux-gnu  | linux-x64       | node-v{version}-linux-x64.tar.gz    |
+| aarch64-pc-windows-msvc   | win-arm64       | node-v{version}-win-arm64.zip       |
+| x86_64-pc-windows-msvc    | win-x64         | node-v{version}-win-x64.zip         |
 
 ---
 
@@ -550,6 +555,23 @@ alongside `Cocoon` for WASM-compiled extensions.
 
 ---
 
+---
+
+## Vine: gRPC Protocol Definitions 📡
+
+`Vine` is the protocol definitions library for all `gRPC` communication in
+**Land**. It owns `Vine.proto` and generates `Rust` stubs (`prost`/`tonic`)
+consumed by `Mountain`, `Air`, and any other element that speaks `gRPC`.
+
+| File                             | Purpose                                                    |
+| -------------------------------- | ---------------------------------------------------------- |
+| `Element/Vine/Proto/Vine.proto`  | Core service contracts (ExtensionHost, BackgroundServices) |
+| `Element/Vine/Source/Build.rs`   | `prost-build` codegen invocation                           |
+| `Element/Vine/Source/Library.rs` | Re-exports generated types for consumers                   |
+
+Protocol evolution is centralised here — adding or changing an RPC updates one
+`.proto` file and all consumers rebuild against the new stubs.
+
 ## Rust Build Configuration 🔧
 
 ### Workspace Configuration
@@ -568,6 +590,7 @@ members = [
 	"Element/SideCar",
 	"Element/Air",
 	"Element/Grove",
+	"Element/Vine",
 ]
 
 [profile.release]
@@ -584,7 +607,14 @@ Defined in `Land/rust-toolchain.toml`:
 [toolchain]
 channel = "nightly-2025-01-01"
 components = ["rustfmt", "clippy"]
-targets = ["aarch64-apple-darwin", "x86_64-apple-darwin"]
+targets = [
+	"aarch64-apple-darwin",
+	"x86_64-apple-darwin",
+	"aarch64-unknown-linux-gnu",
+	"x86_64-unknown-linux-gnu",
+	"aarch64-pc-windows-msvc",
+	"x86_64-pc-windows-msvc",
+]
 ```
 
 ### Rust Edition

@@ -14,8 +14,9 @@ composed of three primary components:
   sidecar process.
 - **`Wind` 🍃 & `Sky` 🌌 (TypeScript UI):** The frontend. `Wind` is a
   re-implementation of the VS Code workbench services using `Effect-TS`,
-  providing the application logic for the UI. `Sky` is the declarative UI
-  component layer (e.g., React, Vue) that renders the state managed by `Wind`.
+  providing the application logic for the UI. `Sky` is the `Astro`-based UI
+  layer that renders the editor interface and bridges `Tauri` events to the
+  workbench via `SkyBridge`.
 - **`Cocoon` 🦋 (TypeScript Application):** A Node.js sidecar process managed by
   `Mountain`. It is responsible for running extensions in a sandboxed
   environment and providing them with a high-fidelity `vscode` API.
@@ -118,14 +119,14 @@ The following documents provide in-depth system-level documentation
 complementing these workflows. A comprehensive master index is available at
 [`README.md`](README.md).
 
-| Document                                            | Topics Covered                                                                 |
-| --------------------------------------------------- | ------------------------------------------------------------------------------ |
-| [Architecture](Architecture.md)                     | System architecture, process model, IPC architecture, service layer design     |
-| [BuildPipeline](BuildPipeline.md)                   | Build stages, env propagation, profile system, artifact layout                 |
-| [EditorCore](EditorCore.md)                         | Workbench adaptation, Wind service layer, command dispatch, workbench variants |
-| [Polyfills](Polyfills.md)                           | Preload shim, SkyBridge, Cocoon prelude, Output transforms, Worker SW          |
-| [RustInfrastructure](RustInfrastructure.md)         | Common traits, Echo scheduler, Mountain, Mist DNS, Air daemon, Rest OXC        |
-| [InterComponentProtocol](InterComponentProtocol.md) | Tauri IPC, Vine gRPC, Spine protocol, connection lifecycle, health monitoring  |
+| Document                                            | Topics Covered                                                                              |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [Architecture](Architecture.md)                     | System architecture, process model, IPC architecture, service layer design                  |
+| [BuildPipeline](BuildPipeline.md)                   | Build stages, env propagation, profile system, artifact layout                              |
+| [EditorCore](EditorCore.md)                         | Workbench adaptation, Wind service layer, command dispatch, workbench variants              |
+| [Polyfills](Polyfills.md)                           | Preload shim, SkyBridge, Cocoon prelude, Output transforms, Worker SW                       |
+| [RustInfrastructure](RustInfrastructure.md)         | Common traits, Echo scheduler, Mountain, Mist DNS, Air daemon, Rest OXC, Vine gRPC protocol |
+| [InterComponentProtocol](InterComponentProtocol.md) | Tauri IPC, Vine gRPC, Spine protocol, connection lifecycle, health monitoring               |
 
 ### Per-Element Architecture
 

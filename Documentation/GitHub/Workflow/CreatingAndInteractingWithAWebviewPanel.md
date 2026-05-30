@@ -97,7 +97,7 @@ stateDiagram-v2
 
 #### **Phase 2: Host Creates the Native Webview (`Mountain`)**
 
-4.  **gRPC Server & Dispatcher (`Mountain/src/vine/` & `src/track/`)**
+4.  **gRPC Server & Dispatcher (`Mountain/Source/Vine/` & `src/track/`)**
     - **Action:** The `$createWebviewPanel` request is received and dispatched
       to the `WebviewProvider` trait implementation on the
       `MountainEnvironment`.

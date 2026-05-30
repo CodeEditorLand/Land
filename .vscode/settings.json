@@ -51,7 +51,7 @@
 		"**/Target": false,
 		"**/deps": true,
 		"**/incremental": true,
-		"**/node_modules": false,
+		"**/node_modules": true,
 		"**/tauri-codegen-assets": true
 	},
 	"files.readonlyInclude": {

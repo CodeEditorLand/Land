@@ -165,8 +165,9 @@ const unlisten = await listen("configuration-changed", (event) => {
 ## Vine gRPC Protocol 🔌
 
 `Vine` defines the `gRPC` service contracts for `Mountain`-`Cocoon` and
-`Mountain`-`Air` communication. The protocol is defined in `.proto` files
-located at `Element/Mountain/Proto/Vine.proto`.
+`Mountain`-`Air` communication. The canonical definition lives at
+`Element/Vine/Proto/Vine.proto`. `Mountain` keeps a local sync'd copy at
+`Element/Mountain/Proto/Vine.proto` which its `build.rs` compiles directly.
 
 ### Service Definitions
 
@@ -515,13 +516,13 @@ All connection state changes are logged via the `@landfix` diagnostic system:
 
 Protocol definitions currently reside in consuming components:
 
-| File          | Location                                                 | Purpose                                    |
-| ------------- | -------------------------------------------------------- | ------------------------------------------ |
-| `Vine.proto`  | `Element/Mountain/Proto/Vine.proto`                      | Core `Mountain`<->`Cocoon` `gRPC` services |
-| `Grove.proto` | `Element/Grove/Proto/Grove.proto`                        | Grove-specific WASM hosting extensions     |
-| Server impl   | `Element/Mountain/Source/Vine/`                          | Rust `gRPC` server (`tonic`)               |
-| Client impl   | `Element/Cocoon/Source/Services/Mountain/gRPC/Client.ts` | TypeScript `gRPC` client                   |
-| RouteManifest | `Element/Cocoon/Source/Generated/RouteManifest.ts`       | Auto-generated routing tier enumeration    |
+| File          | Location                                                 | Purpose                                           |
+| ------------- | -------------------------------------------------------- | ------------------------------------------------- |
+| `Vine.proto`  | `Element/Vine/Proto/Vine.proto`                          | Core `Mountain`<->`Cocoon` `gRPC` services        |
+| `Grove.proto` | `Element/Grove/Proto/Grove.proto`                        | Grove-specific WASM hosting extensions            |
+| Server impl   | `Element/Mountain/Source/Vine/`                          | Rust `gRPC` server (`tonic`, consumes Vine stubs) |
+| Client impl   | `Element/Cocoon/Source/Services/Mountain/gRPC/Client.ts` | TypeScript `gRPC` client                          |
+| RouteManifest | `Element/Cocoon/Source/Generated/RouteManifest.ts`       | Auto-generated routing tier enumeration           |
 
 ### Code Generation
 
@@ -529,10 +530,10 @@ Rust types are generated from `.proto` files using `prost` and `tonic-build` at
 compile time:
 
 ```rust
-// Mountain/build.rs
+// Mountain/build.rs  (references Vine element's proto)
 fn main() {
     tonic_build::configure()
-        .compile(&["Proto/Vine.proto"], &["Proto"])
+        .compile(&["../Vine/Proto/Vine.proto"], &["../Vine/Proto"])
         .expect("Failed to compile protos");
 }
 ```
