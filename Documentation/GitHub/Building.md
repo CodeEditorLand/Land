@@ -10,7 +10,7 @@ prerequisites, environment configuration, and element-specific build notes.
 
 Before building, ensure you have the following installed:
 
-- **Rust** (1.77+ for Mountain, 1.75+ for Grove) -
+- **Rust** (1.95.0+ - workspace MSRV for all Rust elements) -
   [rustup.rs](https://rustup.rs/)
 - **Node.js** (v24 required for building the Editor submodule) -
   [nodejs.org](https://nodejs.org/)
@@ -149,6 +149,7 @@ After a successful build, artifacts are placed in:
 Land/
 ├── Element/
 │   ├── Mountain/Target/...        # Native Tauri app bundle
+│   ├── Air/Target/...             # Background daemon binary
 │   ├── Output/Target/...          # Bundled JavaScript platform code
 │   ├── Cocoon/Compiled/...        # Built extension host
 │   └── Sky/Target/...             # UI static assets
@@ -181,6 +182,7 @@ element-specific workflows:
 
 | Element   | Build Instructions                                                                                                                   |
 | :-------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| `Air`     | [`Element/Air/README.md`](https://github.com/CodeEditorLand/Air/tree/Current/README.md) - Background daemon build & daemon lifecycle |
 | `Grove`   | [`Element/Grove/README.md`](https://github.com/CodeEditorLand/Grove/tree/Current/README.md) - Native Rust/WASM extension host build  |
 | `Mist`    | [`Element/Mist/README.md`](https://github.com/CodeEditorLand/Mist/tree/Current/README.md) - DNS server build & testing               |
 | `Rest`    | [`Element/Rest/README.md`](https://github.com/CodeEditorLand/Rest/tree/Current/README.md) - CLI compiler usage                       |
@@ -218,7 +220,7 @@ export REST_BINARY_PATH=/path/to/rest
 ### Missing environment variables
 
 The build reads `.env.Land` from the repository root. If variables appear
-missing, verify the file exists and is formatted correctly. See see
+missing, verify the file exists and is formatted correctly. See
 [`EnvironmentVariables.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/EnvironmentVariables.md)
 for syntax.
 

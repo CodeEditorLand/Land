@@ -29,22 +29,23 @@ files that are read by every Element's build system.
 Each Element consumer reads from the same `.env.Land*` files. If a tier flag
 flips, every Element picks up the change through its own build system.
 
-| Element      | Language   | Build System         | How It Reads Env Vars               |
-| :----------- | :--------- | :------------------- | :---------------------------------- |
-| **Mountain** | Rust       | `build.rs` + `Cargo` | `rustc-env` + `--cfg` feature flags |
-| **Common**   | Rust       | `build.rs` + `Cargo` | `rustc-env` + `--cfg` feature flags |
-| **Echo**     | Rust       | `build.rs` + `Cargo` | `rustc-env` + `--cfg` feature flags |
-| **Grove**    | Rust       | `build.rs` + `Cargo` | `rustc-env` + `--cfg` feature flags |
-| **Maintain** | Rust       | `build.rs` + `Cargo` | `rustc-env` + `--cfg` feature flags |
-| **Mist**     | Rust       | `Cargo`              | `rustc-env` + `--cfg` feature flags |
-| **Rest**     | Rust       | `build.rs` + `Cargo` | `rustc-env` + `--cfg` feature flags |
-| **SideCar**  | Rust       | `build.rs` + `Cargo` | `rustc-env` + `--cfg` feature flags |
-| **Air**      | Rust       | `Cargo`              | `rustc-env` + `--cfg` feature flags |
-| **Cocoon**   | TypeScript | ESBuild              | `define` substitution in bootstrap  |
-| **Wind**     | TypeScript | Vite                 | `import.meta.env` resolution        |
-| **Sky**      | TypeScript | Astro + Vite         | Runtime `__LandTiers` injection     |
-| **Output**   | TypeScript | ESBuild              | `define` substitution               |
-| **Worker**   | TypeScript | ESBuild              | `define` substitution               |
+| Element      | Language     | Build System            | How It Reads Env Vars                                  |
+| :----------- | :----------- | :---------------------- | :----------------------------------------------------- |
+| **Mountain** | Rust         | `build.rs` + `Cargo`    | `rustc-env` + `--cfg` feature flags                    |
+| **Common**   | Rust         | `build.rs` + `Cargo`    | `rustc-env` + `--cfg` feature flags                    |
+| **Echo**     | Rust         | `build.rs` + `Cargo`    | `rustc-env` + `--cfg` feature flags                    |
+| **Grove**    | Rust         | `build.rs` + `Cargo`    | `rustc-env` + `--cfg` feature flags                    |
+| **Maintain** | Rust         | `build.rs` + `Cargo`    | `rustc-env` + `--cfg` feature flags                    |
+| **Mist**     | Rust         | `Cargo`                 | `rustc-env` + `--cfg` feature flags                    |
+| **Rest**     | Rust         | `build.rs` + `Cargo`    | `rustc-env` + `--cfg` feature flags                    |
+| **SideCar**  | Rust         | `build.rs` + `Cargo`    | `rustc-env` + `--cfg` feature flags                    |
+| **Air**      | Rust         | `Cargo`                 | `rustc-env` + `--cfg` feature flags                    |
+| **Vine**     | Proto + Rust | `prost-build` + `Cargo` | Port numbers baked into generated stubs via `build.rs` |
+| **Cocoon**   | TypeScript   | ESBuild                 | `define` substitution in bootstrap                     |
+| **Wind**     | TypeScript   | Vite                    | `import.meta.env` resolution                           |
+| **Sky**      | TypeScript   | Astro + Vite            | Runtime `__LandTiers` injection                        |
+| **Output**   | TypeScript   | ESBuild                 | `define` substitution                                  |
+| **Worker**   | TypeScript   | ESBuild                 | `define` substitution                                  |
 
 ---
 
