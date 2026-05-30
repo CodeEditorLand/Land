@@ -39,17 +39,17 @@ Every host-filesystem location the editor reads or writes, mapped to its
 producing code, with cross-platform resolution and cleanup recipes.
 
 <picture>
-	<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/macOS-supported-black?labelColor=black&logoColor=white">
-	<source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/macOS-supported-white?labelColor=white&logoColor=black">
-	<img src="https://img.shields.io/badge/macOS-supported-black?labelColor=black&logoColor=white" alt="macOS">
+	<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/macOS-supported-black">
+	<source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/macOS-supported-white">
+	<img src="https://img.shields.io/badge/macOS-supported-black" alt="macOS">
 </picture>&#x2001;<picture>
-	<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Linux-partial-black?labelColor=black&logoColor=white">
-	<source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/Linux-partial-white?labelColor=white&logoColor=black">
-	<img src="https://img.shields.io/badge/Linux-partial-black?labelColor=black&logoColor=white" alt="Linux">
+	<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Linux-partial-black">
+	<source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/Linux-partial-white">
+	<img src="https://img.shields.io/badge/Linux-partial-black" alt="Linux">
 </picture>&#x2001;<picture>
-	<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Windows-pending-black?labelColor=black&logoColor=white">
-	<source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/Windows-pending-white?labelColor=white&logoColor=black">
-	<img src="https://img.shields.io/badge/Windows-pending-black?labelColor=black&logoColor=white" alt="Windows">
+	<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Windows-pending-black">
+	<source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/Windows-pending-white">
+	<img src="https://img.shields.io/badge/Windows-pending-black" alt="Windows">
 </picture>
 
 ---

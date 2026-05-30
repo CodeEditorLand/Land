@@ -54,38 +54,38 @@ mkdir -p "$ARCH"/Library/{Application\ Support,Caches,Preferences,Logs,WebKit,Sa
 	"$ARCH"/Home
 
 # ---------- Archive ----------
-for d in "$HOME/Library/Application Support/"land.editor*; do
+for d in "$HOME/Library/Application Support/"land.playform*; do
 	[ -d "$d" ] && ditto "$d" "$ARCH/Library/Application Support/$(basename "$d")"
 done
-for d in "$HOME/Library/Caches/"land.editor*; do
+for d in "$HOME/Library/Caches/"land.playform*; do
 	[ -d "$d" ] && ditto "$d" "$ARCH/Library/Caches/$(basename "$d")"
 done
-for d in "$HOME/Library/Logs/"land.editor*; do
+for d in "$HOME/Library/Logs/"land.playform*; do
 	[ -d "$d" ] && ditto "$d" "$ARCH/Library/Logs/$(basename "$d")"
 done
-for d in "$HOME/Library/WebKit/"land.editor* "$HOME/Library/WebKit/vanilla.editor.land"; do
+for d in "$HOME/Library/WebKit/"land.playform* "$HOME/Library/WebKit/vanilla.land.playform.cloud"; do
 	[ -d "$d" ] && ditto "$d" "$ARCH/Library/WebKit/$(basename "$d")"
 done
-for d in "$HOME/Library/HTTPStorages/"land.editor*; do
+for d in "$HOME/Library/HTTPStorages/"land.playform*; do
 	[ -d "$d" ] && ditto "$d" "$ARCH/Library/HTTPStorages/$(basename "$d")"
 done
-for d in "$HOME/Library/Saved Application State/"land.editor*; do
+for d in "$HOME/Library/Saved Application State/"land.playform*; do
 	[ -d "$d" ] && ditto "$d" "$ARCH/Library/Saved Application State/$(basename "$d")"
 done
-for f in "$HOME/Library/Preferences/"land.editor*.plist; do
+for f in "$HOME/Library/Preferences/"land.playform*.plist; do
 	[ -f "$f" ] && cp -p "$f" "$ARCH/Library/Preferences/$(basename "$f")"
 done
 [ -d "$HOME/.fiddee" ] && ditto "$HOME/.fiddee" "$ARCH/Home/.fiddee"
 [ -d "$HOME/.land" ] && ditto "$HOME/.land" "$ARCH/Home/.land"
 
 # ---------- Delete ----------
-rm -rf "$HOME/Library/Application Support/"land.editor*
-rm -rf "$HOME/Library/Caches/"land.editor*
-rm -rf "$HOME/Library/Logs/"land.editor*
-rm -rf "$HOME/Library/WebKit/"land.editor* "$HOME/Library/WebKit/vanilla.editor.land"
-rm -rf "$HOME/Library/HTTPStorages/"land.editor* 2> /dev/null
-rm -rf "$HOME/Library/Saved Application State/"land.editor* 2> /dev/null
-rm -f "$HOME/Library/Preferences/"land.editor*.plist
+rm -rf "$HOME/Library/Application Support/"land.playform*
+rm -rf "$HOME/Library/Caches/"land.playform*
+rm -rf "$HOME/Library/Logs/"land.playform*
+rm -rf "$HOME/Library/WebKit/"land.playform* "$HOME/Library/WebKit/vanilla.land.playform.cloud"
+rm -rf "$HOME/Library/HTTPStorages/"land.playform* 2> /dev/null
+rm -rf "$HOME/Library/Saved Application State/"land.playform* 2> /dev/null
+rm -f "$HOME/Library/Preferences/"land.playform*.plist
 rm -rf "$HOME/Library/Application Support/Land" # legacy hard-coded fallback (rarely populated)
 rm -rf "$HOME/.fiddee"
 rm -rf "$HOME/.land"
@@ -128,7 +128,7 @@ XDG_DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
 XDG_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}"
 
 # ---------- Archive ----------
-for d in "$XDG_CONFIG"/land.editor* "$XDG_DATA"/land.editor* "$XDG_CACHE"/land.editor*; do
+for d in "$XDG_CONFIG"/land.playform* "$XDG_DATA"/land.playform* "$XDG_CACHE"/land.playform*; do
 	[ -d "$d" ] || continue
 	target="$ARCH/$(basename "$(dirname "$d")")/$(basename "$d")"
 	mkdir -p "$(dirname "$target")"
@@ -138,9 +138,9 @@ done
 [ -d "$HOME/.land" ] && cp -a "$HOME/.land" "$ARCH/Home/.land"
 
 # ---------- Delete ----------
-rm -rf "$XDG_CONFIG"/land.editor*
-rm -rf "$XDG_DATA"/land.editor*
-rm -rf "$XDG_CACHE"/land.editor*
+rm -rf "$XDG_CONFIG"/land.playform*
+rm -rf "$XDG_DATA"/land.playform*
+rm -rf "$XDG_CACHE"/land.playform*
 rm -rf "$HOME/.fiddee"
 rm -rf "$HOME/.land"
 
@@ -184,10 +184,10 @@ $Home    = "$env:USERPROFILE"
 $Temp    = "$env:TEMP"
 
 # ---------- Archive ----------
-Get-ChildItem -Path "$Roaming" -Filter "land.editor*" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+Get-ChildItem -Path "$Roaming" -Filter "land.playform*" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
 	Copy-Item -Recurse -Force $_.FullName "$ArchRoot\AppData\Roaming\$($_.Name)"
 }
-Get-ChildItem -Path "$Local" -Filter "land.editor*" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+Get-ChildItem -Path "$Local" -Filter "land.playform*" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
 	Copy-Item -Recurse -Force $_.FullName "$ArchRoot\AppData\Local\$($_.Name)"
 }
 if (Test-Path "$Home\.fiddee") { Copy-Item -Recurse -Force "$Home\.fiddee" "$ArchRoot\Home\.fiddee" }

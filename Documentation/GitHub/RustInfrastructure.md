@@ -332,13 +332,13 @@ async fn read_file(path: String, state: State<'_, AppState>) -> Result<Vec<u8>, 
 
 ## Mist: DNS Isolation Server 🌐
 
-`Mist` runs a local Hickory DNS server authoritative for the
-`land.playform.cloud` zone. It provides network isolation for sidecar processes.
+`Mist` runs a local Hickory DNS server authoritative for the `editor.land` zone.
+It provides network isolation for sidecar processes.
 
 ### DNS Zone Configuration
 
 ```
-land.playform.cloud.  IN SOA  localhost. root.land.playform.cloud. (
+editor.land.  IN SOA  localhost. hostmaster.editor.land. (
     2026010100 ; serial
     3600       ; refresh
     900        ; retry
@@ -346,27 +346,27 @@ land.playform.cloud.  IN SOA  localhost. root.land.playform.cloud. (
     60         ; minimum TTL
 )
 
-*.land.playform.cloud.  IN A  127.0.0.1
+*.editor.land.  IN A  127.0.0.1
 ```
 
-All `*.land.playform.cloud` subdomains resolve to `127.0.0.1`, ensuring sidecar
+All `*.editor.land` subdomains resolve to `127.0.0.1`, ensuring sidecar
 processes communicate only over localhost.
 
 ### Forward Allowlisting
 
 `Mist` maintains a configurable allowlist of trusted external domains:
 
-| Domain                           | Purpose                | Status          |
-| -------------------------------- | ---------------------- | --------------- |
-| `marketplace.visualstudio.com`   | Extension downloads    | Allowlisted     |
-| `update.codeland.playform.cloud` | Application updates    | Allowlisted     |
-| `api.posthog.com`                | Telemetry (if enabled) | Allowlisted     |
-| All others                       | Blocked (NXDOMAIN)     | Default blocked |
+| Domain                         | Purpose                      | Status              |
+| ------------------------------ | ---------------------------- | ------------------- | ----------- |
+| `marketplace.visualstudio.com` | Extension downloads          | Allowlisted         |
+|                                | `update.land.playform.cloud` | Application updates | Allowlisted |
+| `api.posthog.com`              | Telemetry (if enabled)       | Allowlisted         |
+| All others                     | Blocked (NXDOMAIN)           | Default blocked     |
 
 ### DNSSEC
 
-`Mist` supports DNSSEC with ECDSA P-256 signing for the `land.playform.cloud`
-zone. Signing keys are generated on first run and cached in the application data
+`Mist` supports DNSSEC with ECDSA P-256 signing for the `editor.land` zone.
+Signing keys are generated on first run and cached in the application data
 directory.
 
 ---
@@ -569,7 +569,7 @@ consumed by `Mountain`, `Air`, and any other element that speaks `gRPC`.
 | `Element/Vine/Source/Build.rs`   | `prost-build` codegen invocation                           |
 | `Element/Vine/Source/Library.rs` | Re-exports generated types for consumers                   |
 
-Protocol evolution is centralised here — adding or changing an RPC updates one
+Protocol evolution is centralised here - adding or changing an RPC updates one
 `.proto` file and all consumers rebuild against the new stubs.
 
 ## Rust Build Configuration 🔧
