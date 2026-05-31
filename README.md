@@ -790,7 +790,6 @@ Element 🌱
 
 </tr>
 
-
 </table>
 
 ---
@@ -850,7 +849,6 @@ Element 🌱
 </td>
 
 </tr>
-
 
 </table>
 
@@ -1260,7 +1258,6 @@ This project is funded through
 </tr>
 
 </tbody>
-
 
 </table>
 
