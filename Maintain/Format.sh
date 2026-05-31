@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 #===============================================================================
-# Format.sh - Format shell, Prettier, and Rust source code.
+# Format.sh - Format shell, Prettier, Rust, and Markdown source code.
 #===============================================================================
 #
 # Usage:
@@ -10,6 +10,7 @@
 #   sh Maintain/Format.sh shell         # Format shell scripts only
 #   sh Maintain/Format.sh prettier      # Format TS/JS/JSON/MD only
 #   sh Maintain/Format.sh rust          # Format Rust only
+#   sh Maintain/Format.sh markdown      # Format Markdown HTML tables only
 #
 # Configuration:
 #   .editorconfig      - Shared indent/newline rules (shfmt reads this)
@@ -22,7 +23,7 @@
 
 \set -e
 
-Current=$(\cd -- "$(\dirname -- "$0")" > /dev/null 2>&1 && \pwd)
+Current=$(cd -- "$(dirname -- "$0")" > /dev/null 2>&1 && pwd)
 
 Root="$Current/.."
 
@@ -174,6 +175,23 @@ FormatPrettier() {
 	\echo ""
 }
 
+FormatMarkdown() {
+	\echo "========================================"
+	\echo "Format Markdown"
+	\echo "========================================"
+	\echo "Tooling: Maintain/Format/Markdown.py"
+	\echo "========================================"
+	\echo ""
+
+	\cd "$Root"
+
+	\python3 "$Current/Format/Markdown.py" --All
+
+	\echo ""
+	\echo "Markdown formatting complete."
+	\echo ""
+}
+
 FormatRust() {
 	\echo "========================================"
 	\echo "Format Rust"
@@ -247,20 +265,25 @@ case "${1:-}" in
 	rust)
 		FormatRust
 		;;
+	markdown)
+		FormatMarkdown
+		;;
 	"")
 		FormatLineEndings
 		FormatShell
+		FormatMarkdown
 		FormatPrettier
 		FormatRust
 		;;
 	--help | -h)
-		\echo "Usage: $0 [dos2unix|shell|prettier|rust]"
+		\echo "Usage: $0 [dos2unix|shell|prettier|rust|markdown]"
 		\echo ""
 		\echo "  dos2unix  Normalize line endings (CRLF -> LF) with dos2unix"
 		\echo "  shell     Format shell scripts with shfmt"
 		\echo "  prettier  Format TS/JS/JSON/MD with Prettier + TypeScript.py"
 		\echo "  rust      Format Rust with rustfmt (nightly) + Rust.py"
-		\echo "  (no arg)  Run all four in order"
+		\echo "  markdown  Format Markdown HTML tables with Markdown.py"
+		\echo "  (no arg)  Run all five in order"
 		;;
 	*)
 		\echo "Unknown target: $1"
