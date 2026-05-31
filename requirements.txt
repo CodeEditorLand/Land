@@ -1,0 +1,60 @@
+# =============================================================================
+# Python
+# =============================================================================
+#
+# No external packages required.
+# Maintain/Format/Markdown.py, Maintain/Format/Rust.py and
+# Maintain/Format/TypeScript.py use only stdlib.
+#
+# Minimum Python version: 3.10
+#   - str | None union syntax without __future__ annotations (PEP 604, 3.10+)
+#   - list[str] built-in generic (PEP 585, 3.9+)
+#
+# macOS:  brew install python@3.12
+# Linux:  apt install python3.12  /  dnf install python3.12
+# https://www.python.org/downloads/
+
+# =============================================================================
+# System tools  (not installable via pnpm/cargo/pip)
+# =============================================================================
+#
+# dos2unix  - CRLF -> LF line ending normalizer (Maintain/Format.sh dos2unix)
+#   macOS:  brew install dos2unix
+#   Linux:  apt install dos2unix  /  dnf install dos2unix
+#
+# shfmt     - Shell script formatter (Maintain/Format.sh shell)
+#   macOS:  brew install shfmt
+#   Linux:  apt install shfmt  /  go install mvdan.cc/sh/v3/cmd/shfmt@latest
+#   https://github.com/mvdan/sh
+#
+# rustup    - Rust toolchain manager; rust-toolchain.toml auto-provisions
+#             the nightly toolchain on first use
+#   https://rustup.rs
+#
+# pnpm      - Package manager; pinned via packageManager in package.json
+#   brew install pnpm  /  npm install -g pnpm
+#
+# lychee    - Link checker for Markdown / Rust / TS docs (Maintain/Check/Links.sh)
+#   macOS:  brew install lychee
+#   Linux:  cargo install lychee-cli
+#   https://github.com/lycheeverse/lychee
+#
+# Xcode CLT - Required on macOS for codesign / notarytool used by
+#             tauri-bundler during release builds.
+#   Install once: xcode-select --install
+
+# =============================================================================
+# Node.js / pnpm ecosystem
+# =============================================================================
+#
+# Node.js 22 LTS / 24  - build and dev server runtime
+#   npm / corepack will select the version pinned by package.json
+#   packageManager: pnpm@11.3.0
+#
+# Primary workspace dependencies (installed by pnpm install):
+#   @tauri-apps/cli         - Tauri application lifecycle / build
+#   esbuild                 - TS/JS bundler used by build and scripts
+#   prettier + plugins      - code formatter for TS/JS/JSON/Markdown
+#   @biomejs/biome          - linter / formatter
+#   typescript              - TS compiler / language services
+#   vitest / vite / jsdom   - test runner + dev server + DOM environment
