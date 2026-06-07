@@ -31,9 +31,7 @@
 #   DRY_RUN=1 ./transfer_documentation_repos.sh   # preview only
 #   ./transfer_documentation_repos.sh             # real run
 
-
 set -euo pipefail
-
 
 SOURCE_ORG="CodeEditorLand"
 DEST_ORG="DocumentationCodeEditorLand"
@@ -42,51 +40,46 @@ FAILED=()
 SKIPPED=()
 SUCCESS=()
 
-
 # ── Land/.gitmodules ───────────────────────────────────────────────────────────
 REPOS_LAND_ROOT=(
-    RustDocumentationLand
+	RustDocumentationLand
 )
-
 
 # ── Land/Element/*/. gitmodules (one DocumentationRust per element) ────────────
 REPOS_ELEMENT_DOCUMENTATION=(
-    RustDocumentationAirLand
-    RustDocumentationCommonLand
-    RustDocumentationEchoLand
-    RustDocumentationGroveLand
-    RustDocumentationMaintainLand
-    RustDocumentationMistLand
-    RustDocumentationMountainLand
-    RustDocumentationRestLand
-    RustDocumentationSideCarLand
+	RustDocumentationAirLand
+	RustDocumentationCommonLand
+	RustDocumentationEchoLand
+	RustDocumentationGroveLand
+	RustDocumentationMaintainLand
+	RustDocumentationMistLand
+	RustDocumentationMountainLand
+	RustDocumentationRestLand
+	RustDocumentationSideCarLand
 )
-
 
 # Combine all groups
 ALL_REPOS=(
-    "${REPOS_LAND_ROOT[@]}"
-    "${REPOS_ELEMENT_DOCUMENTATION[@]}"
+	"${REPOS_LAND_ROOT[@]}"
+	"${REPOS_ELEMENT_DOCUMENTATION[@]}"
 )
-
 
 # Deduplicate while preserving order
 UNIQUE_REPOS=()
 for r in "${ALL_REPOS[@]}"; do
-    found=0
-    if [[ ${#UNIQUE_REPOS[@]} -gt 0 ]]; then
-        for existing in "${UNIQUE_REPOS[@]}"; do
-            if [[ "$existing" == "$r" ]]; then
-                found=1
-                break
-            fi
-        done
-    fi
-    if [[ $found -eq 0 ]]; then
-        UNIQUE_REPOS+=("$r")
-    fi
+	found=0
+	if [[ ${#UNIQUE_REPOS[@]} -gt 0 ]]; then
+		for existing in "${UNIQUE_REPOS[@]}"; do
+			if [[ "$existing" == "$r" ]]; then
+				found=1
+				break
+			fi
+		done
+	fi
+	if [[ $found -eq 0 ]]; then
+		UNIQUE_REPOS+=("$r")
+	fi
 done
-
 
 echo "=================================================================="
 echo "  CodeEditorLand → DocumentationCodeEditorLand  |  Documentation repos"
@@ -101,74 +94,63 @@ echo "  Excluded:  Dependency/*, Element/* (elements themselves)"
 echo "=================================================================="
 echo ""
 
-
 if ! command -v gh &> /dev/null; then
-    echo "ERROR: gh CLI not found. Install: https://cli.github.com/" >&2
-    exit 1
+	echo "ERROR: gh CLI not found. Install: https://cli.github.com/" >&2
+	exit 1
 fi
-
 
 if ! gh auth status &> /dev/null; then
-    echo "ERROR: Not authenticated. Run: gh auth login" >&2
-    exit 1
+	echo "ERROR: Not authenticated. Run: gh auth login" >&2
+	exit 1
 fi
 
-
 transfer_repo() {
-    local REPO="$1"
-    local FULL="${SOURCE_ORG}/${REPO}"
+	local REPO="$1"
+	local FULL="${SOURCE_ORG}/${REPO}"
 
+	if ! gh repo view "$FULL" &> /dev/null 2>&1; then
+		printf "  [SKIP]  %-55s not found / no access\n" "$REPO"
+		SKIPPED+=("$REPO")
+		return
+	fi
 
-    if ! gh repo view "$FULL" &> /dev/null 2>&1; then
-        printf "  [SKIP]  %-55s not found / no access\n" "$REPO"
-        SKIPPED+=("$REPO")
-        return
-    fi
+	if gh repo view "${DEST_ORG}/${REPO}" &> /dev/null 2>&1; then
+		printf "  [SKIP]  %-55s already in %s\n" "$REPO" "$DEST_ORG"
+		SKIPPED+=("$REPO")
+		return
+	fi
 
+	if [[ "$DRY_RUN" == "1" ]]; then
+		printf "  [DRY]   %-55s would transfer\n" "$REPO"
+		SUCCESS+=("$REPO")
+		return
+	fi
 
-    if gh repo view "${DEST_ORG}/${REPO}" &> /dev/null 2>&1; then
-        printf "  [SKIP]  %-55s already in %s\n" "$REPO" "$DEST_ORG"
-        SKIPPED+=("$REPO")
-        return
-    fi
+	printf "  [XFER]  %-55s ... " "$REPO"
+	if
+		gh api \
+			--method POST \
+			"repos/${FULL}/transfer" \
+			-f "new_owner=${DEST_ORG}" \
+			--silent 2> /dev/null
+	then
+		echo "OK"
+		SUCCESS+=("$REPO")
+	else
+		echo "FAILED"
+		FAILED+=("$REPO")
+	fi
 
-
-    if [[ "$DRY_RUN" == "1" ]]; then
-        printf "  [DRY]   %-55s would transfer\n" "$REPO"
-        SUCCESS+=("$REPO")
-        return
-    fi
-
-
-    printf "  [XFER]  %-55s ... " "$REPO"
-    if
-        gh api \
-            --method POST \
-            "repos/${FULL}/transfer" \
-            -f "new_owner=${DEST_ORG}" \
-            --silent 2> /dev/null
-    then
-        echo "OK"
-        SUCCESS+=("$REPO")
-    else
-        echo "FAILED"
-        FAILED+=("$REPO")
-    fi
-
-
-    # Respect GitHub's transfer rate limits
-    sleep 0.5
+	# Respect GitHub's transfer rate limits
+	sleep 0.5
 }
-
 
 echo "── Land root (${#REPOS_LAND_ROOT[@]} repo) ──────────────────────────────────────────"
 for r in "${REPOS_LAND_ROOT[@]}"; do transfer_repo "$r"; done
 
-
 echo ""
 echo "── Land/Element/*/DocumentationRust (${#REPOS_ELEMENT_DOCUMENTATION[@]} repos) ────────"
 for r in "${REPOS_ELEMENT_DOCUMENTATION[@]}"; do transfer_repo "$r"; done
-
 
 echo ""
 echo "=================================================================="
@@ -178,11 +160,10 @@ echo "  Transferred : ${#SUCCESS[@]}"
 echo "  Skipped     : ${#SKIPPED[@]}"
 echo "  Failed      : ${#FAILED[@]}"
 
-
 if [[ ${#FAILED[@]} -gt 0 ]]; then
-    echo ""
-    echo "  Failed - retry individually:"
-    for r in "${FAILED[@]}"; do
-        echo "    gh api --method POST repos/${SOURCE_ORG}/${r}/transfer -f new_owner=${DEST_ORG}"
-    done
+	echo ""
+	echo "  Failed - retry individually:"
+	for r in "${FAILED[@]}"; do
+		echo "    gh api --method POST repos/${SOURCE_ORG}/${r}/transfer -f new_owner=${DEST_ORG}"
+	done
 fi
