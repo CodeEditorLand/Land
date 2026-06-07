@@ -1,39 +1,49 @@
 <table>
 	<tr>
 		<td align="left" valign="middle">
-			<h3 align="left">Filesystem Footprint&#x2001;📂</h3>
+			<h3 align="left">
+				Filesystem Footprint&#x2001;📂
+			</h3>
 		</td>
 		<td align="left" valign="middle">
-			<h3 align="left">&#x2001;+&#x2001;</h3>
+			<h3 align="left">
+				&#x2001;+&#x2001;
+			</h3>
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">
 				<a href="https://Land.PlayForm.Cloud" target="_blank">
 					<picture>
-						<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Land.svg">
-						<source media="(prefers-color-scheme: light)" srcset="https://PlayForm.Cloud/Image/GitHub/Land.svg">
-						<img width="28" alt="Land Logo" src="https://PlayForm.Cloud/Image/GitHub/Land.svg">
+						<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Land.svg" />
+						<source media="(prefers-color-scheme: light)" srcset="https://PlayForm.Cloud/Image/GitHub/Land.svg" />
+						<img width="28" alt="Land Logo" src="https://PlayForm.Cloud/Image/GitHub/Land.svg" />
 					</picture>
 				</a>
 			</h3>
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">
-				<a href="https://Land.PlayForm.Cloud" target="_blank">Land&#x2001;🏞️</a>
+				<a href="https://Land.PlayForm.Cloud" target="_blank">
+					Land&#x2001;🏞️
+				</a>
 			</h3>
 		</td>
 		<td align="left" valign="middle">
-			<h3 align="left">&#x2001;+&#x2001;</h3>
+			<h3 align="left">
+				&#x2001;+&#x2001;
+			</h3>
 		</td>
 		<td align="left" valign="middle">
-			<h3 align="left">FIDDEE&#x2001;🎻</h3>
+			<h3 align="left">
+				FIDDEE&#x2001;🎻
+			</h3>
 		</td>
 	</tr>
 </table>
 
 ---
 
-# **Filesystem Footprint**&#x2001;📂
+# **Filesystem Footprint** 📂
 
 Every host-filesystem location the editor reads or writes, mapped to its
 producing code, with cross-platform resolution and cleanup recipes.
@@ -42,11 +52,11 @@ producing code, with cross-platform resolution and cleanup recipes.
 	<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/macOS-supported-black">
 	<source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/macOS-supported-white">
 	<img src="https://img.shields.io/badge/macOS-supported-black" alt="macOS">
-</picture>&#x2001;<picture>
+</picture> <picture>
 	<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Linux-partial-black">
 	<source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/Linux-partial-white">
 	<img src="https://img.shields.io/badge/Linux-partial-black" alt="Linux">
-</picture>&#x2001;<picture>
+</picture> <picture>
 	<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Windows-pending-black">
 	<source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/Windows-pending-white">
 	<img src="https://img.shields.io/badge/Windows-pending-black" alt="Windows">
@@ -54,7 +64,7 @@ producing code, with cross-platform resolution and cleanup recipes.
 
 ---
 
-## Why This Document Exists&#x2001;🎯
+## Why This Document Exists 🎯
 
 Both Land (Tauri shell + workbench wiring) and the bundled VS Code dependency
 are ours to modify. That means today's filesystem layout is incidental rather
@@ -65,7 +75,7 @@ exactly where the side effects are.
 
 ---
 
-## The Four Ownership Domains&#x2001;🗺️
+## The Four Ownership Domains 🗺️
 
 | Status | Domain                 | Owner             | Path family                              | Survives uninstall? |
 | :----- | :--------------------- | :---------------- | :--------------------------------------- | :------------------ |
@@ -87,7 +97,7 @@ Three observations follow from this split and inform every sub-document:
 
 ---
 
-## The Bundle-Identifier Story&#x2001;🆔
+## The Bundle-Identifier Story 🆔
 
 The Tauri `identifier` is the leaf segment of every per-bundle path. Today's
 identifiers encode each Maintain build profile's full configuration matrix into
@@ -119,7 +129,7 @@ per-profile subdirectory and make uninstall a one-line `rm -rf`. Not done today.
 
 ---
 
-## Document Index&#x2001;📑
+## Document Index 📑
 
 The footprint splits across six focused documents. Read in order for a full
 tour, or jump to whichever matches the task at hand.
@@ -135,7 +145,7 @@ tour, or jump to whichever matches the task at hand.
 
 ---
 
-## Cross-Cutting Observations&#x2001;🔍
+## Cross-Cutting Observations 🔍
 
 - **Three log destinations.** Mountain session logs land in
   `<app_data_dir>/<bundle>/logs/<ts>/Mountain.dev.log`; workbench logs live in
@@ -172,7 +182,7 @@ tour, or jump to whichever matches the task at hand.
 
 ---
 
-## Related Documentation&#x2001;📚
+## Related Documentation 📚
 
 - [`EnvironmentVariables.md`](EnvironmentVariables.md) - the canonical
   environment-variable registry. Cross-referenced from
@@ -184,7 +194,7 @@ tour, or jump to whichever matches the task at hand.
 - [`Workflow/ApplicationStartupAndHandshake.md`](Workflow/ApplicationStartupAndHandshake.md)
     - the boot sequence inside which `AppLifecycle::Dirs` runs.
 
-### Key source files&#x2001;🦴
+### Key source files 🦴
 
 | Concern                              | File                                                                              |
 | :----------------------------------- | :-------------------------------------------------------------------------------- |

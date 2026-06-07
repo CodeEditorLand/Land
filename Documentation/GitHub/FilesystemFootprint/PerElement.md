@@ -1,14 +1,20 @@
 <table>
 	<tr>
 		<td align="left" valign="middle">
-			<h3 align="left">Per-Element Write Sites&#x2001;✍️</h3>
-		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">&#x2001;+&#x2001;</h3>
+			<h3 align="left">
+				Per-Element Write Sites ✍️
+			</h3>
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">
-				<a href="https://Land.PlayForm.Cloud" target="_blank">Land&#x2001;🏞️</a>
+				 + 
+			</h3>
+		</td>
+		<td align="left" valign="middle">
+			<h3 align="left">
+				<a href="https://Land.PlayForm.Cloud" target="_blank">
+					Land 🏞️
+				</a>
 			</h3>
 		</td>
 	</tr>
@@ -16,7 +22,7 @@
 
 ---
 
-# **Per-Element Write Sites**&#x2001;✍️
+# **Per-Element Write Sites** ✍️
 
 Every Element grouped by which filesystem location it touches. Reverse map of
 [`UserDotfile.md`](UserDotfile.md) and [`PlatformPaths.md`](PlatformPaths.md):
@@ -27,7 +33,7 @@ Element write?".
 
 ---
 
-## At-a-Glance Matrix&#x2001;🗺️
+## At-a-Glance Matrix 🗺️
 
 | Element  | Owns paths?                | Writes to disk? | Primary destinations                                                                                        |
 | :------- | :------------------------- | :-------------- | :---------------------------------------------------------------------------------------------------------- |
@@ -49,7 +55,7 @@ Element write?".
 
 ---
 
-## Mountain&#x2001;⛰️
+## Mountain ⛰️
 
 The largest write-site domain. Rust backend that owns the `~/.fiddee/` atom, the
 workbench userdata seeder, the session log, the memento persistence layer, and
@@ -78,7 +84,7 @@ the VSIX extraction pipeline.
 
 ---
 
-## Cocoon&#x2001;🦋
+## Cocoon 🦋
 
 Node.js extension host. Writes per-extension storage roots under `~/.fiddee/`
 and a temp proto when the bundled proto resource is missing.
@@ -97,7 +103,7 @@ file-system gRPC).
 
 ---
 
-## Sky&#x2001;🌌
+## Sky 🌌
 
 Sky writes via the OS-native webview storage APIs; the actual filesystem
 destination is the webview's per-bundle storage tree
@@ -118,7 +124,7 @@ writes the file).
 
 ---
 
-## Wind&#x2001;🍃
+## Wind 🍃
 
 Build-time only. Reads `process.env` and `import.meta.env` to compose the
 ESBuild config and PostHog telemetry constants. No runtime filesystem writes.
@@ -131,7 +137,7 @@ ESBuild config and PostHog telemetry constants. No runtime filesystem writes.
 
 ---
 
-## Output&#x2001;⚫
+## Output ⚫
 
 Build-time only. Same shape as Wind - reads env, no runtime writes.
 
@@ -143,7 +149,7 @@ Build-time only. Same shape as Wind - reads env, no runtime writes.
 
 ---
 
-## Air&#x2001;💨
+## Air 💨
 
 Background daemon. **Uses a different filesystem root than Mountain** -
 `<config_dir>/FIDDEE/` (uppercase) and `<data_local_dir>/FIDDEE/`, not
@@ -171,7 +177,7 @@ ships as an external tool with its own naming convention.
 
 ---
 
-## SideCar&#x2001;🛟
+## SideCar 🛟
 
 | Producer                               | Writes                                                 | Trigger                  |
 | :------------------------------------- | :----------------------------------------------------- | :----------------------- |
@@ -184,7 +190,7 @@ FiddeeRoot.
 
 ---
 
-## Grove&#x2001;🌳
+## Grove 🌳
 
 | Producer                                      | Writes                                   | Trigger                                          |
 | :-------------------------------------------- | :--------------------------------------- | :----------------------------------------------- |
@@ -195,7 +201,7 @@ FiddeeRoot.
 
 ---
 
-## Maintain&#x2001;💪🏻
+## Maintain 💪🏻
 
 Build-time only. Reads env (`get_env`, `env`, `vars`) and runs Rhai scripts. No
 runtime writes; build-time writes are to `Target/` and to temporarily rewritten
@@ -204,7 +210,7 @@ manifest files (`Cargo.toml.Backup` residue is the known leakage - see
 
 ---
 
-## Elements With No Filesystem Writes&#x2001;⚫
+## Elements With No Filesystem Writes ⚫
 
 For completeness:
 
@@ -219,7 +225,7 @@ For completeness:
 
 ---
 
-## See Also&#x2001;📚
+## See Also 📚
 
 - [`UserDotfile.md`](UserDotfile.md) - target table for `~/.fiddee/` writes.
 - [`PlatformPaths.md`](PlatformPaths.md) - target tables for per-OS paths.

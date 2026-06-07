@@ -124,7 +124,7 @@ VoidTag = frozenset(
 
 class TableParser(HTMLParser):
     def __init__(self) -> None:
-        super().__init__(convert_charrefs=False)
+        super().__init__(convert_charrefs=True)
         self.Stack: list[Node] = []
         self.Root: Node | None = None
 
@@ -163,14 +163,40 @@ def AttrsToString(Attrs: list[tuple[str, str]]) -> str:
     return " " + " ".join(f'{Key}="{Value}"' for Key, Value in Attrs)
 
 
+# Em quad (U+2001) is a space separator (Zs) but must NOT be stripped
+# from text content as it serves as a semantic spacer between text and emoji.
+# In HTML output we use the entity &#x2001; for explicit visibility in source.
+EM_QUAD = "\u2001"
+EM_QUAD_ENTITY = "&#x2001;"
+
+
+def SafeStrip(Text: str) -> str:
+    """Strip whitespace but preserve em quad characters."""
+    if not Text:
+        return ""
+    # Strip leading/trailing ASCII whitespace only, not em quad
+    Start = 0
+    End = len(Text)
+    while Start < End and Text[Start] in " \t\n\r\v\f":
+        Start += 1
+    while End > Start and Text[End - 1] in " \t\n\r\v\f":
+        End -= 1
+    return Text[Start:End]
+
+
+def EmitText(Text: str) -> str:
+    """Replace literal em quad with HTML entity for explicit source visibility."""
+    return Text.replace(EM_QUAD, EM_QUAD_ENTITY)
+
+
 def Render(Node_: Node, Depth: int) -> list[str]:
     Lines: list[str] = []
     Indent = "\t" * Depth
 
     if Node_.Text is not None:
-        Text_ = Node_.Text.strip()
+        Text_ = SafeStrip(Node_.Text)
         if Text_:
-            Lines.append(Indent + Text_)
+            Lines.append(Indent + EmitText(Text_))
         return Lines
 
     if Node_.SelfClosing or Node_.Children is None:
@@ -185,10 +211,10 @@ def Render(Node_: Node, Depth: int) -> list[str]:
         len(Node_.Children) == 1 and Node_.Children[0].Text is not None
     )
     if SingleText:
-        Text_ = Node_.Children[0].Text.strip()  # type: ignore[union-attr]
+        Text_ = SafeStrip(Node_.Children[0].Text)  # type: ignore[union-attr]
         if Text_:
             Lines.append(Indent + f"<{Node_.Name}{AttrsToString(Node_.Attrs)}>")
-            Lines.append(Indent + "\t" + Text_)
+            Lines.append(Indent + "\t" + EmitText(Text_))
             Lines.append(Indent + f"</{Node_.Name}>")
         else:
             Lines.append(Indent + f"<{Node_.Name}{AttrsToString(Node_.Attrs)}>")

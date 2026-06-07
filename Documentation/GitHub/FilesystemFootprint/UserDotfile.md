@@ -1,25 +1,31 @@
 <table>
 	<tr>
 		<td align="left" valign="middle">
-			<h3 align="left">User Dotfile&#x2001;🏞️</h3>
+			<h3 align="left">
+				User Dotfile 🏞️
+			</h3>
 		</td>
 		<td align="left" valign="middle">
-			<h3 align="left">&#x2001;+&#x2001;</h3>
+			<h3 align="left">
+				 + 
+			</h3>
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">
 				<a href="https://Land.PlayForm.Cloud" target="_blank">
 					<picture>
-						<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Land.svg">
-						<source media="(prefers-color-scheme: light)" srcset="https://PlayForm.Cloud/Image/GitHub/Land.svg">
-						<img width="28" alt="Land Logo" src="https://PlayForm.Cloud/Image/GitHub/Land.svg">
+						<source media="(prefers-color-scheme: dark)" srcset="https://PlayForm.Cloud/Dark/Image/GitHub/Land.svg" />
+						<source media="(prefers-color-scheme: light)" srcset="https://PlayForm.Cloud/Image/GitHub/Land.svg" />
+						<img width="28" alt="Land Logo" src="https://PlayForm.Cloud/Image/GitHub/Land.svg" />
 					</picture>
 				</a>
 			</h3>
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">
-				<a href="https://Land.PlayForm.Cloud" target="_blank">Land&#x2001;🏞️</a>
+				<a href="https://Land.PlayForm.Cloud" target="_blank">
+					Land 🏞️
+				</a>
 			</h3>
 		</td>
 	</tr>
@@ -27,7 +33,7 @@
 
 ---
 
-# **User Dotfile**&#x2001;🏞️
+# **User Dotfile** 🏞️
 
 The `~/.fiddee/` tree - Land's primary product-owned filesystem domain.
 
@@ -35,7 +41,7 @@ The `~/.fiddee/` tree - Land's primary product-owned filesystem domain.
 
 ---
 
-## At a Glance&#x2001;🗺️
+## At a Glance 🗺️
 
 `~/.fiddee/` is centralised by **one atom**: `FiddeeRoot::Fn` (Rust) +
 `FiddeeRoot()` (TypeScript). Every Land call site resolves sub-paths through
@@ -49,7 +55,7 @@ this atom so future renames touch a single file per Element.
 
 ---
 
-## Cross-OS Resolution&#x2001;🌐
+## Cross-OS Resolution 🌐
 
 The dotfile root resolves to the user's home directory with `.fiddee` appended:
 
@@ -65,7 +71,7 @@ fallback to a relative `.fiddee` keeps callers receiving a valid `PathBuf`.
 
 ---
 
-## Sub-Directory Map&#x2001;🗂️
+## Sub-Directory Map 🗂️
 
 | Path                                           | Producer                                                                               | Purpose                                                                                                                    |
 | :--------------------------------------------- | :------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
@@ -82,7 +88,7 @@ GB** depending on which language servers are installed.
 
 ---
 
-## Storage-Path Override&#x2001;🎛️
+## Storage-Path Override 🎛️
 
 Cocoon respects one env var that re-roots part of the tree:
 
@@ -96,7 +102,7 @@ Cocoon respects one env var that re-roots part of the tree:
 
 ---
 
-## Cocoon-Side Mirror&#x2001;🪞
+## Cocoon-Side Mirror 🪞
 
 `Element/Cocoon/Source/Platform/FiddeeRoot.ts` exists so Node-side code does not
 call back into Rust to resolve the path. The TypeScript implementation mirrors
@@ -117,7 +123,7 @@ Keep them lockstep; the docstring on each file references the other.
 
 ---
 
-## Legacy Fan-Out&#x2001;🦴
+## Legacy Fan-Out 🦴
 
 | Path                  | Status                                             | Producer                                                                   |
 | :-------------------- | :------------------------------------------------- | :------------------------------------------------------------------------- |
@@ -140,7 +146,7 @@ Retirement plan (deferred): one-shot migration that moves `~/.land/extensions/*`
 
 ---
 
-## Lifecycle&#x2001;📅
+## Lifecycle 📅
 
 - **First boot:** `FiddeeRoot::Fn()` is resolved lazily. Sub-paths are created
   on first use (e.g. first extension activation creates the per-extension
@@ -159,7 +165,7 @@ Retirement plan (deferred): one-shot migration that moves `~/.land/extensions/*`
 
 ---
 
-## Open Questions&#x2001;❓
+## Open Questions ❓
 
 - The `.fiddee/extensions/<id>/.storage/` location ties per-extension storage to
   the extension's own directory. Reinstalls or version bumps destroy that
@@ -174,7 +180,7 @@ Retirement plan (deferred): one-shot migration that moves `~/.land/extensions/*`
 
 ---
 
-## See Also&#x2001;📚
+## See Also 📚
 
 - [`PlatformPaths.md`](PlatformPaths.md) - per-OS Library / XDG / AppData paths
   that coexist with `~/.fiddee/`.

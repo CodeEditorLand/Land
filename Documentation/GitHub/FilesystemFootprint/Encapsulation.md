@@ -1,14 +1,20 @@
 <table>
 	<tr>
 		<td align="left" valign="middle">
-			<h3 align="left">Encapsulation Directions&#x2001;🚧</h3>
-		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">&#x2001;+&#x2001;</h3>
+			<h3 align="left">
+				Encapsulation Directions 🚧
+			</h3>
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">
-				<a href="https://Land.PlayForm.Cloud" target="_blank">Land&#x2001;🏞️</a>
+				 + 
+			</h3>
+		</td>
+		<td align="left" valign="middle">
+			<h3 align="left">
+				<a href="https://Land.PlayForm.Cloud" target="_blank">
+					Land 🏞️
+				</a>
 			</h3>
 		</td>
 	</tr>
@@ -16,7 +22,7 @@
 
 ---
 
-# **Encapsulation Directions**&#x2001;🚧
+# **Encapsulation Directions** 🚧
 
 Potential refactors that would shrink Land's filesystem footprint, simplify
 cleanup, or unblock versioning. Each option is feasible because both Land and
@@ -28,7 +34,7 @@ should be costed against the current [`PerElement.md`](PerElement.md) and
 
 ---
 
-## At-a-Glance Roadmap&#x2001;🗺️
+## At-a-Glance Roadmap 🗺️
 
 | ID  | Direction                                    | Effort | Impact                                             | Risk                           |
 | :-- | :------------------------------------------- | :----- | :------------------------------------------------- | :----------------------------- |
@@ -48,7 +54,7 @@ S ≤ 1 day, M = 1 - 5 days, L = 1 - 2 weeks.
 
 ---
 
-## A. Single Product Root (`~/.fiddee/<profile>/`)&#x2001;🏞️
+## A. Single Product Root (`~/.fiddee/<profile>/`) 🏞️
 
 **Move every per-bundle path under `~/.fiddee/<profile>/`.** Replace Tauri's
 `app_data_dir()` / `app_cache_dir()` / `app_log_dir()` calls with an internal
@@ -76,7 +82,7 @@ WKWebView still gets its keychain-equivalents when the userdata moves.
 
 ---
 
-## B. Stable Short Bundle Identifier&#x2001;🆔
+## B. Stable Short Bundle Identifier 🆔
 
 Stop encoding the build matrix into the Tauri `identifier`. Use a single
 identifier like `cloud.fiddee.editor` and represent the profile as a
@@ -99,7 +105,7 @@ Workbench userdata needs careful handling so settings don't reset.
 
 ---
 
-## C. Log Rotation and Retention&#x2001;🪵
+## C. Log Rotation and Retention 🪵
 
 A single `~/.fiddee/<profile>/logs/<ts>/` tree (option A) opens the door to:
 
@@ -121,7 +127,7 @@ forever. The fix is mechanical once the log root is single-source.
 
 ---
 
-## D. Versioned Userdata Schema&#x2001;🔢
+## D. Versioned Userdata Schema 🔢
 
 Stamp `~/.fiddee/<profile>/data/.schema-version` (or
 `<app_data_dir>/<bundle>/User/.schema-version` in the pre-A layout). Boot-time
@@ -146,7 +152,7 @@ read for now), expensive to retrofit later.
 
 ---
 
-## E. Tier Parity for Every Location&#x2001;🎚️
+## E. Tier Parity for Every Location 🎚️
 
 `Lodge` and `Extend` let operators redirect the extension paths. Today
 `<app_data_dir>`, `<app_log_dir>`, `<app_cache_dir>` cannot be redirected
@@ -169,7 +175,7 @@ accumulate state.
 
 ---
 
-## F. Self-Uninstall Command&#x2001;🧼
+## F. Self-Uninstall Command 🧼
 
 `fiddee --uninstall` (or a menu item) that walks the
 [`PerElement.md`](PerElement.md) tables and removes every path it owns,
@@ -189,7 +195,7 @@ clears OS-keychain entries.
 
 ---
 
-## G. Foreign-Tool Probe Tier-Gate&#x2001;🌐
+## G. Foreign-Tool Probe Tier-Gate 🌐
 
 `TierForeignToolProbe=Off` would stop `AppLifecycle::Dirs` from pre-creating
 `~/.claude/agents` and `~/.copilot/agents`. Workbench-side, make the missing-dir
@@ -207,7 +213,7 @@ Default tier value: `On` for backwards-compatible boot behaviour.
 
 ---
 
-## H. Cocoon `.storage` Move Out-of-Bundle&#x2001;📦
+## H. Cocoon `.storage` Move Out-of-Bundle 📦
 
 The current `~/.fiddee/extensions/<id>/.storage/` location ties per-extension
 storage to the extension's own directory - reinstalls or version bumps destroy
@@ -228,7 +234,7 @@ doesn't already exist.
 
 ---
 
-## I. PostHog distinctId Unification&#x2001;🆔
+## I. PostHog distinctId Unification 🆔
 
 Read `<app_data_dir>/<bundle>/machine-id.txt` and use it as the PostHog
 distinctId, so analytics see one identity per install. Avoid the divergence that
@@ -245,7 +251,7 @@ disk) and Sky's distinctId (Sky-generated, lives in webview localStorage).
 
 ---
 
-## J. FIDDEE Root Reconciliation (Air vs Mountain)&#x2001;🤝
+## J. FIDDEE Root Reconciliation (Air vs Mountain) 🤝
 
 Mountain owns `~/.fiddee/` (dotfile, lowercase). The `Air` background daemon
 writes to `<config_dir>/FIDDEE/` (uppercase, under the OS config root - i.e.
@@ -269,7 +275,7 @@ either entry point.
 
 ---
 
-## K. OS Keychain Enumeration&#x2001;🔐
+## K. OS Keychain Enumeration 🔐
 
 `Mountain/Source/Environment/SecretsProvider.rs` writes through the `keyring`
 crate, but Land doesn't enumerate the entries it creates. A complete uninstall
@@ -292,7 +298,7 @@ requires either user-side `security delete-generic-password` /
 
 ---
 
-## Sequencing Suggestion&#x2001;📐
+## Sequencing Suggestion 📐
 
 If we tackle these, the natural order is:
 
@@ -311,7 +317,7 @@ If we tackle these, the natural order is:
 
 ---
 
-## Versioning Sketch&#x2001;🔢
+## Versioning Sketch 🔢
 
 Once option A lands, the versioning story becomes straightforward:
 
@@ -335,7 +341,7 @@ across all four ownership domains.
 
 ---
 
-## See Also&#x2001;📚
+## See Also 📚
 
 - [`UserDotfile.md`](UserDotfile.md) - the `~/.fiddee/` tree (option A's target
   shape).

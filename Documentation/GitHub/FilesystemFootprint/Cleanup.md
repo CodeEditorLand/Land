@@ -1,14 +1,20 @@
 <table>
 	<tr>
 		<td align="left" valign="middle">
-			<h3 align="left">Cleanup Recipes&#x2001;🧼</h3>
-		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">&#x2001;+&#x2001;</h3>
+			<h3 align="left">
+				Cleanup Recipes 🧼
+			</h3>
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">
-				<a href="https://Land.PlayForm.Cloud" target="_blank">Land&#x2001;🏞️</a>
+				 + 
+			</h3>
+		</td>
+		<td align="left" valign="middle">
+			<h3 align="left">
+				<a href="https://Land.PlayForm.Cloud" target="_blank">
+					Land 🏞️
+				</a>
 			</h3>
 		</td>
 	</tr>
@@ -16,7 +22,7 @@
 
 ---
 
-# **Cleanup Recipes**&#x2001;🧼
+# **Cleanup Recipes** 🧼
 
 Per-OS commands to wipe every piece of Land / FIDDEE state from a system, plus
 the archive pattern used in production cleanups.
@@ -25,7 +31,7 @@ the archive pattern used in production cleanups.
 
 ---
 
-## Safety Preamble&#x2001;⚠️
+## Safety Preamble ⚠️
 
 Read before running anything below:
 
@@ -223,7 +229,7 @@ What survives this recipe (intentional):
 
 ---
 
-## What This Removes vs Preserves&#x2001;📊
+## What This Removes vs Preserves 📊
 
 Cross-OS summary of what a complete cleanup touches.
 
@@ -243,7 +249,7 @@ Cross-OS summary of what a complete cleanup touches.
 
 ---
 
-## OS Keychain / Credential Store&#x2001;🔐
+## OS Keychain / Credential Store 🔐
 
 `Mountain/Source/Environment/SecretsProvider.rs` writes through the `keyring`
 crate, which delegates to:
@@ -266,7 +272,7 @@ enumerate and clear these.
 
 ---
 
-## Archive Pattern (Production-Validated)&#x2001;📦
+## Archive Pattern (Production-Validated) 📦
 
 The 2026-05-26 cleanup ran the macOS recipe above against an active developer
 workstation. Archive total: 4.5 GB across `Library/*` (~780 MB), `~/.fiddee/`
@@ -310,7 +316,7 @@ ditto "$ARCH/Home/.land" "$HOME/.land"
 
 ---
 
-## See Also&#x2001;📚
+## See Also 📚
 
 - [`UserDotfile.md`](UserDotfile.md) - what's inside `~/.fiddee/`.
 - [`PlatformPaths.md`](PlatformPaths.md) - what's inside each per-OS path.

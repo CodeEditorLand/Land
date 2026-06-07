@@ -1,14 +1,20 @@
 <table>
 	<tr>
 		<td align="left" valign="middle">
-			<h3 align="left">Environment Variables&#x2001;🎛️</h3>
-		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">&#x2001;+&#x2001;</h3>
+			<h3 align="left">
+				Environment Variables 🎛️
+			</h3>
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">
-				<a href="https://Land.PlayForm.Cloud" target="_blank">Land&#x2001;🏞️</a>
+				 + 
+			</h3>
+		</td>
+		<td align="left" valign="middle">
+			<h3 align="left">
+				<a href="https://Land.PlayForm.Cloud" target="_blank">
+					Land 🏞️
+				</a>
 			</h3>
 		</td>
 	</tr>
@@ -16,7 +22,7 @@
 
 ---
 
-# **Environment Variables**&#x2001;🎛️
+# **Environment Variables** 🎛️
 
 Every env var that shapes a filesystem path, controls log volume, or affects the
 bundle identifier - grouped by role. Cross-references the canonical
@@ -27,7 +33,7 @@ in filesystem-footprint terms.
 
 ---
 
-## Naming Convention&#x2001;📐
+## Naming Convention 📐
 
 Per [`../EnvironmentVariables.md`](../EnvironmentVariables.md):
 
@@ -44,7 +50,7 @@ Per [`../EnvironmentVariables.md`](../EnvironmentVariables.md):
 
 ---
 
-## Path-Shaping Overrides&#x2001;🏞️
+## Path-Shaping Overrides 🏞️
 
 These redirect where Land reads or writes on disk.
 
@@ -65,7 +71,7 @@ These redirect where Land reads or writes on disk.
 
 ---
 
-## Log Control&#x2001;🪵
+## Log Control 🪵
 
 | Variable       | Effect                                                                                                       | Reader                                                    | Default       |
 | :------------- | :----------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- | :------------ |
@@ -88,7 +94,7 @@ tag list.
 
 ---
 
-## Bundle-Identifier-Shaping Build Env&#x2001;🆔
+## Bundle-Identifier-Shaping Build Env 🆔
 
 These change the Maintain bundle identifier (the long
 `land.editor.binary....mountain` string), which is the leaf of every per-bundle
@@ -111,7 +117,7 @@ need to enumerate per-variable.
 
 ---
 
-## Webview localStorage Growth (PostHog Telemetry)&#x2001;📈
+## Webview localStorage Growth (PostHog Telemetry) 📈
 
 Build-time env baked into the bundle via Vite's `define`. Affects how much data
 Sky writes into the OS-managed webview storage tree (`Library/WebKit/<bundle>/`
@@ -134,7 +140,7 @@ on macOS, `~/.local/share/<bundle>/` on Linux,
 
 ---
 
-## Sky Workbench Gates (localStorage / build-time)&#x2001;🌌
+## Sky Workbench Gates (localStorage / build-time) 🌌
 
 Build-time env via `import.meta.env`; baked into the bundle by Vite's `define`.
 A few of these are also persisted as localStorage keys with the same name - the
@@ -148,7 +154,7 @@ env value is the **default**; the localStorage value overrides it.
 
 ---
 
-## Tier-Gating Build Env&#x2001;🎚️
+## Tier-Gating Build Env 🎚️
 
 Subset of the broader tier system that touches paths. See
 [`../EnvironmentVariables.md`](../EnvironmentVariables.md) §Tier for the full
@@ -161,7 +167,7 @@ catalog.
 
 ---
 
-## Environment Snapshot at Boot&#x2001;📸
+## Environment Snapshot at Boot 📸
 
 `Element/Mountain/Source/LandFixTier.rs` logs the active tier values at boot.
 For filesystem debugging, run with the recommended profile:
@@ -179,7 +185,7 @@ MB.
 
 ---
 
-## See Also&#x2001;📚
+## See Also 📚
 
 - [`../EnvironmentVariables.md`](../EnvironmentVariables.md) - canonical
   registry with full descriptions, tier-gating rules, and multi-file `.env`

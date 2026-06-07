@@ -53,7 +53,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Common" target="_blank">
 				<b>
-					Common 🧑🏻‍🏭 + Land 🏞️
+					Common&#x2001;🧑🏻‍🏭&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -94,7 +94,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Echo" target="_blank">
 				<b>
-					Echo 📣 + Land 🏞️
+					Echo&#x2001;📣&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -137,7 +137,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Vine" target="_blank">
 				<b>
-					Vine 🌿 + Land 🏞️
+					Vine&#x2001;🌿&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -178,7 +178,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Mountain" target="_blank">
 				<b>
-					Mountain ⛰️ + Land 🏞️
+					Mountain&#x2001;⛰️&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -221,7 +221,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Rest" target="_blank">
 				<b>
-					Rest ⛱️ + Land 🏞️
+					Rest&#x2001;⛱️&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -262,7 +262,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Output" target="_blank">
 				<b>
-					Output ⚫ + Land 🏞️
+					Output&#x2001;⚫&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -305,7 +305,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Cocoon" target="_blank">
 				<b>
-					Cocoon 🦋 + Land 🏞️
+					Cocoon&#x2001;🦋&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -346,7 +346,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Wind" target="_blank">
 				<b>
-					Wind 🍃 + Land 🏞️
+					Wind&#x2001;🍃&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -389,7 +389,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Worker" target="_blank">
 				<b>
-					Worker 🍩 + Land 🏞️
+					Worker&#x2001;🍩&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -430,7 +430,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Sky" target="_blank">
 				<b>
-					Sky 🌌 + Land 🏞️
+					Sky&#x2001;🌌&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -473,7 +473,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Mist" target="_blank">
 				<b>
-					Mist 🌫️ + Land 🏞️
+					Mist&#x2001;🌫️&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -514,7 +514,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Maintain" target="_blank">
 				<b>
-					Maintain 💪🏻 + Land 🏞️
+					Maintain&#x2001;💪🏻&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -557,7 +557,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Grove" target="_blank">
 				<b>
-					Grove 🌳 + Land 🏞️
+					Grove&#x2001;🌳&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -598,7 +598,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Land" target="_blank">
 				<b>
-					Land 🏞️
+					Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -641,7 +641,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Editor" target="_blank">
 				<b>
-					Editor 💻 + Land 🏞️
+					Editor&#x2001;💻&#x2001;+&#x2001;Land&#x2001;🏞️
 				</b>
 			</a>
 		</td>
@@ -682,7 +682,7 @@
 			<br />
 			<a href="https://github.com/CodeEditorLand/Element" target="_blank">
 				<b>
-					Element 🌱
+					Element&#x2001;🌱
 				</b>
 			</a>
 		</td>
