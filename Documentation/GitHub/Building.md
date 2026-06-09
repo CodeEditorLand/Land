@@ -47,7 +47,7 @@ export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ```
 
 ```sh
-source ~/.zshrc   # or restart your terminal
+source ~/.zshrc # or restart your terminal
 ```
 
 ---
@@ -227,10 +227,10 @@ element-specific workflows:
 The Editor submodule includes packages that download large platform-specific
 binaries during installation:
 
--   **`electron`** (~200 MB) - a devDependency of the Copilot extension, only
-    needed for running Electron integration tests
--   **`@playwright/browser-chromium`** (~300 MB) - only needed for running
-    browser-based e2e tests
+- **`electron`** (~200 MB) - a devDependency of the Copilot extension, only
+  needed for running Electron integration tests
+- **`@playwright/browser-chromium`** (~300 MB) - only needed for running
+  browser-based e2e tests
 
 Neither binary is needed for compilation. Without the skip flags, `npm install`
 will stall indefinitely downloading them on every fresh install.

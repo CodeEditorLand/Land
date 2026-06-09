@@ -14,12 +14,12 @@ set -euo pipefail
 ORG="CodeEditorLand"
 PER_PAGE=100
 
-if ! command -v gh &>/dev/null; then
+if ! command -v gh &> /dev/null; then
 	echo "ERROR: gh CLI not found. Install: https://cli.github.com/" >&2
 	exit 1
 fi
 
-if ! gh auth status &>/dev/null; then
+if ! gh auth status &> /dev/null; then
 	echo "ERROR: Not authenticated. Run: gh auth login" >&2
 	exit 1
 fi
@@ -36,14 +36,14 @@ while true; do
 			--paginate=false \
 			"orgs/${ORG}/repos?type=forks&per_page=${PER_PAGE}&page=${PAGE}" \
 			--jq '.[] | select(.fork == true and .archived == false) | .name' \
-			2>/dev/null
+			2> /dev/null
 	)
 
 	[[ -z "${BATCH}" ]] && break
 
 	while IFS= read -r name; do
 		ALL_FORKS+=("${name}")
-	done <<<"${BATCH}"
+	done <<< "${BATCH}"
 
 	# Stop if we got fewer than a full page
 	COUNT=$(echo "${BATCH}" | wc -l | tr -d ' ')

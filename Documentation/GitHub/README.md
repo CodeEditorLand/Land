@@ -82,7 +82,7 @@ details.
 | **Echo**     | Work-stealing task scheduler with priority tiers               | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Echo/tree/Current/Documentation/GitHub/Architecture.md)     |
 | **Mountain** | Primary Tauri backend, gRPC host, sidecar orchestrator         | Common, Echo, Mist   | [`Architecture.md`](https://github.com/CodeEditorLand/Mountain/tree/Current/Documentation/GitHub/Architecture.md) |
 | **Air**      | Background daemon: updates, indexing, crypto                   | Common, Mist         | [`Architecture.md`](https://github.com/CodeEditorLand/Air/tree/Current/Documentation/GitHub/Architecture.md)      |
-| **Mist**     | Local DNS server for `*.editor.land`                   | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Mist/tree/Current/Documentation/GitHub/Architecture.md)     |
+| **Mist**     | Local DNS server for `*.editor.land`                           | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Mist/tree/Current/Documentation/GitHub/Architecture.md)     |
 | **Grove**    | WASM extension host (WASMtime)                                 | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Grove/tree/Current/Documentation/GitHub/Architecture.md)    |
 | **Rest**     | OXC-based TypeScript compiler                                  | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Rest/tree/Current/Documentation/GitHub/Architecture.md)     |
 | **SideCar**  | Vendored Node.js runtime manager                               | Common, Mist         | [`Architecture.md`](https://github.com/CodeEditorLand/SideCar/tree/Current/Documentation/GitHub/Architecture.md)  |

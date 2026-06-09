@@ -30,7 +30,7 @@ the entire editor is built upon.
 | `Common`   | Library        | 2024    | tauri, async-trait, serde, thiserror                 | Abstract trait definitions, `ActionEffect` system, DTOs                                           |
 | `Echo`     | Library        | 2024    | tokio, crossbeam-deque, `Common`                     | Priority work-stealing task scheduler                                                             |
 | `Mountain` | Binary         | 2024    | `Common`, `Echo`, `Mist`, tauri, tonic, portable-pty | Primary `Tauri` application, `gRPC` server                                                        |
-| `Mist`     | Library+Binary | 2024    | hickory-server, ring, tokio, `Common`                | Local DNS server for `*.editor.land`                                                      |
+| `Mist`     | Library+Binary | 2024    | hickory-server, ring, tokio, `Common`                | Local DNS server for `*.editor.land`                                                              |
 | `Air`      | Binary         | 2024    | tokio, tonic, reqwest, `Common`, `Mist`              | Background daemon (updates, indexing, crypto)                                                     |
 | `Rest`     | Binary+Library | 2024    | oxc_allocator, oxc_parser, oxc_transformer, `Common` | `OXC`-based `TypeScript` compiler                                                                 |
 | `SideCar`  | Library        | 2024    | tokio, reqwest, zip, `Common`, `Mist`                | Vendored `Node.js` binary manager                                                                 |
@@ -356,12 +356,12 @@ processes communicate only over localhost.
 
 `Mist` maintains a configurable allowlist of trusted external domains:
 
-| Domain                         | Purpose                      | Status              |
-| ------------------------------ | ---------------------------- | ------------------- | ----------- |
-| `marketplace.visualstudio.com` | Extension downloads          | Allowlisted         |
-|                                | `update.editor.land` | Application updates | Allowlisted |
-| `api.posthog.com`              | Telemetry (if enabled)       | Allowlisted         |
-| All others                     | Blocked (NXDOMAIN)           | Default blocked     |
+| Domain                         | Purpose                | Status              |
+| ------------------------------ | ---------------------- | ------------------- | ----------- |
+| `marketplace.visualstudio.com` | Extension downloads    | Allowlisted         |
+|                                | `update.editor.land`   | Application updates | Allowlisted |
+| `api.posthog.com`              | Telemetry (if enabled) | Allowlisted         |
+| All others                     | Blocked (NXDOMAIN)     | Default blocked     |
 
 ### DNSSEC
 

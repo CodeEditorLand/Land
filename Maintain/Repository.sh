@@ -18,7 +18,7 @@
 
 set -e
 
-Current=$(cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd)
+Current=$(cd -- "$(dirname -- "$0")" > /dev/null 2>&1 && pwd)
 
 sh "$Current/Repository/Sync.sh"
 sh "$Current/Repository/AbsorbGitDirs.sh"
