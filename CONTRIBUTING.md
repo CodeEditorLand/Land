@@ -141,6 +141,22 @@ To build Land from source, follow the comprehensive guide in
 This document covers all prerequisites, the two-step build process, environment
 configuration, and troubleshooting.
 
+> [!IMPORTANT]
+>
+> **Before your first build**, add the following to your shell profile
+> (`~/.zshrc`, `~/.bashrc`, or equivalent) and reload it. Without these, Step 1
+> (`npm install` in the Editor submodule) will stall indefinitely downloading
+> large test-only binaries (~500 MB total):
+>
+> ```sh
+> export ELECTRON_SKIP_BINARY_DOWNLOAD=1
+> export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+> ```
+>
+> See
+> [Building.md - Shell Environment](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Building.md#shell-environment)
+> for the full explanation.
+
 For a quick summary, see the main
 [`README.md`](https://github.com/CodeEditorLand/Land/tree/Current/README.md) -
 Project overview and quick start

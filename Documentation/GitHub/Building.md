@@ -31,6 +31,25 @@ nvm use 24
 > 1 below). The pinned version is tracked in
 > `Dependency/Microsoft/Dependency/Editor/.nvmrc`.
 
+### Shell Environment
+
+The Editor submodule's npm install fetches large platform-specific binaries for
+its test infrastructure. These binaries (Electron ~200 MB, Playwright Chromium
+~300 MB) are only needed for running integration tests - **not** for compiling.
+Without the flags below, `npm install` will stall indefinitely on the download.
+
+Add to your shell profile (`~/.zshrc`, `~/.bashrc`, or equivalent) and reload:
+
+```sh
+# Skip large binary downloads - only needed for e2e tests, not compilation
+export ELECTRON_SKIP_BINARY_DOWNLOAD=1
+export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+```
+
+```sh
+source ~/.zshrc   # or restart your terminal
+```
+
 ---
 
 ## Build Overview 📋
@@ -65,16 +84,24 @@ cd Dependency/Microsoft/Dependency/Editor
 # Switch to the required Node version (reads .nvmrc automatically)
 nvm use 24
 
+# Required by the VS Code build system
+export NODE_ENV=development
+
 # Reset to the expected upstream commit and clean all generated files
 git fetch --all
 git reset --hard Parent/main
 git clean -dfx
 
 # Install dependencies and compile
-pnpm install
-pnpm run compile
-pnpm run compile-extensions-build
+npm install
+npm run compile
+npm run compile-extensions-build
 ```
+
+> [!NOTE]
+>
+> The Editor submodule uses **npm**, not pnpm. Do not substitute `pnpm install`
+> here - the submodule's `package-lock.json` and `.npmrc` are npm-native.
 
 > [!IMPORTANT]
 >
@@ -195,6 +222,57 @@ element-specific workflows:
 
 ## Troubleshooting 🔍
 
+### `npm install` stalls or never completes
+
+The Editor submodule includes packages that download large platform-specific
+binaries during installation:
+
+-   **`electron`** (~200 MB) - a devDependency of the Copilot extension, only
+    needed for running Electron integration tests
+-   **`@playwright/browser-chromium`** (~300 MB) - only needed for running
+    browser-based e2e tests
+
+Neither binary is needed for compilation. Without the skip flags, `npm install`
+will stall indefinitely downloading them on every fresh install.
+
+**Fix:** add these to your shell profile and reload:
+
+```sh
+export ELECTRON_SKIP_BINARY_DOWNLOAD=1
+export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+```
+
+### Playwright lockfile blocks install
+
+If `npm install` fails with:
+
+```
+Error: An active lockfile is found at: ~/Library/Caches/ms-playwright/__dirlock
+```
+
+A previous install was interrupted and left a stale lockfile. Remove it:
+
+```sh
+rm -rf ~/Library/Caches/ms-playwright/__dirlock
+```
+
+Then re-run `npm install`.
+
+### `npm warn Unknown project config` messages
+
+`npm install` prints several harmless warnings:
+
+```
+npm warn Unknown project config "target"
+npm warn Unknown project config "disturl"
+npm warn Unknown project config "runtime"
+npm warn Unknown project config "build_from_source"
+```
+
+These come from upstream VS Code's `.npmrc`, which uses keys that npm 11+
+considers non-standard. The keys are still read correctly by the build tooling
+(`node-gyp`, native module compilers) that actually uses them. No action needed.
+
 ### Compilation errors in `Dependency/Editor`
 
 If the VS Code compilation fails, ensure you have cleaned the directory properly
@@ -203,10 +281,11 @@ and are on Node 24:
 ```sh
 cd Dependency/Microsoft/Dependency/Editor
 nvm use 24
+export NODE_ENV=development
 git clean -dfx
 rm -rf node_modules
-pnpm install
-pnpm run compile
+npm install
+npm run compile
 ```
 
 ### `Rest` binary not found
