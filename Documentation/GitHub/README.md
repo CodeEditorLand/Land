@@ -82,7 +82,7 @@ details.
 | **Echo**     | Work-stealing task scheduler with priority tiers               | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Echo/tree/Current/Documentation/GitHub/Architecture.md)     |
 | **Mountain** | Primary Tauri backend, gRPC host, sidecar orchestrator         | Common, Echo, Mist   | [`Architecture.md`](https://github.com/CodeEditorLand/Mountain/tree/Current/Documentation/GitHub/Architecture.md) |
 | **Air**      | Background daemon: updates, indexing, crypto                   | Common, Mist         | [`Architecture.md`](https://github.com/CodeEditorLand/Air/tree/Current/Documentation/GitHub/Architecture.md)      |
-| **Mist**     | Local DNS server for `*.land.playform.cloud`                   | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Mist/tree/Current/Documentation/GitHub/Architecture.md)     |
+| **Mist**     | Local DNS server for `*.editor.land`                   | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Mist/tree/Current/Documentation/GitHub/Architecture.md)     |
 | **Grove**    | WASM extension host (WASMtime)                                 | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Grove/tree/Current/Documentation/GitHub/Architecture.md)    |
 | **Rest**     | OXC-based TypeScript compiler                                  | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Rest/tree/Current/Documentation/GitHub/Architecture.md)     |
 | **SideCar**  | Vendored Node.js runtime manager                               | Common, Mist         | [`Architecture.md`](https://github.com/CodeEditorLand/SideCar/tree/Current/Documentation/GitHub/Architecture.md)  |
@@ -155,6 +155,6 @@ Some Elements contain additional documentation beyond `DeepDive.md` and
 ---
 
 **Project Maintainers:** Source Open
-([Source/Open@Land.PlayForm.Cloud](mailto:Source/Open@Land.PlayForm.Cloud)) |
+([Source/Open@editor.land](mailto:Source/Open@editor.land)) |
 [GitHub Repository](https://github.com/CodeEditorLand/Land) |
 [Report an Issue](https://github.com/CodeEditorLand/Land/issues)

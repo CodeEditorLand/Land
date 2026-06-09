@@ -12,7 +12,7 @@
 		</td>
 		<td align="left" valign="middle">
 			<h3 align="left">
-				<a href="https://Land.PlayForm.Cloud" target="_blank">
+				<a href="https://editor.land" target="_blank">
 					Land&#x2001;🏞️
 				</a>
 			</h3>
@@ -69,7 +69,7 @@ done
 for d in "$HOME/Library/Logs/"land.playform*; do
 	[ -d "$d" ] && ditto "$d" "$ARCH/Library/Logs/$(basename "$d")"
 done
-for d in "$HOME/Library/WebKit/"land.playform* "$HOME/Library/WebKit/vanilla.land.playform.cloud"; do
+for d in "$HOME/Library/WebKit/"land.playform* "$HOME/Library/WebKit/vanilla.editor.land"; do
 	[ -d "$d" ] && ditto "$d" "$ARCH/Library/WebKit/$(basename "$d")"
 done
 for d in "$HOME/Library/HTTPStorages/"land.playform*; do
@@ -88,7 +88,7 @@ done
 rm -rf "$HOME/Library/Application Support/"land.playform*
 rm -rf "$HOME/Library/Caches/"land.playform*
 rm -rf "$HOME/Library/Logs/"land.playform*
-rm -rf "$HOME/Library/WebKit/"land.playform* "$HOME/Library/WebKit/vanilla.land.playform.cloud"
+rm -rf "$HOME/Library/WebKit/"land.playform* "$HOME/Library/WebKit/vanilla.editor.land"
 rm -rf "$HOME/Library/HTTPStorages/"land.playform* 2> /dev/null
 rm -rf "$HOME/Library/Saved Application State/"land.playform* 2> /dev/null
 rm -f "$HOME/Library/Preferences/"land.playform*.plist
