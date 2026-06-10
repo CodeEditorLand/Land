@@ -207,9 +207,7 @@ def Render(Node_: Node, Depth: int) -> list[str]:
             Lines.append(Indent + Tag + ">")
         return Lines
 
-    SingleText = (
-        len(Node_.Children) == 1 and Node_.Children[0].Text is not None
-    )
+    SingleText = len(Node_.Children) == 1 and Node_.Children[0].Text is not None
     if SingleText:
         Text_ = SafeStrip(Node_.Children[0].Text)  # type: ignore[union-attr]
         if Text_:
