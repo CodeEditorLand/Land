@@ -485,7 +485,7 @@ echo "Starting build..."
 echo ""
 
 LandCapturePhaseBegin "tauri-build" "profile" "$PROFILE"
-if ./Target/release/Maintain -- pnpm tauri build --debug; then
+if ./Target/release/Maintain -- cargo tauri build --debug; then
 	LandCapturePhaseEnd "tauri-build" "profile" "$PROFILE" "ok" "true"
 	LandCapture "land:build:complete" \
 		"profile" "$PROFILE" \
