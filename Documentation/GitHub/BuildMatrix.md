@@ -83,12 +83,13 @@ concurrent sessions.
 
 Tier flags that gate how Elements communicate with each other.
 
-| Variable                  | Default      | Description               |
-| :------------------------ | :----------- | :------------------------ |
-| `TierHTTPProxy`           | `HandRolled` |                           |
-| `TierLogger`              | `Standard`   |                           |
-| `TierRemoteProcedureCall` | `gRPC`       | Transport + communication |
-| `TierSchemeAssets`        | `Embedded`   |                           |
+| Variable                  | Default      | Description                                                                                                                                                                                                                                     |
+| :------------------------ | :----------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TierHTTPProxy`           | `HandRolled` |                                                                                                                                                                                                                                                 |
+| `TierIPC`                 | `Mountain`   | IPC routing tier for Wind and Output `TauriMainProcessService`. `Mountain` = all calls to native backend; `NodeDeferred` = Mountain first, Cocoon fallback on miss; `Node` = all calls to Cocoon Node.js. Runtime switch - no rebuild required. |
+| `TierLogger`              | `Standard`   |                                                                                                                                                                                                                                                 |
+| `TierRemoteProcedureCall` | `gRPC`       | Transport + communication                                                                                                                                                                                                                       |
+| `TierSchemeAssets`        | `Embedded`   |                                                                                                                                                                                                                                                 |
 
 ### File System & Search
 
@@ -131,66 +132,84 @@ Telemetry mode selection.
 | :-------------- | :------------ | :---------- |
 | `TierTelemetry` | `Synchronous` | Telemetry   |
 
+### Build-Shim
+
+Variables exported by build scripts (not stored in `.env` files).
+
+| Variable        | Default            | Description                                                                                                                                                                                                                                     |
+| :-------------- | :----------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BundleLevel`   | `debug`            | Passed to `Maintain/Script/SignBundle.sh` to select the Tauri output directory (`Target/debug/` or `Target/release/`). Set to `debug` by `Debug/Build.sh` and `release` by `Release/Build.sh`. Also sets the ad-hoc re-sign identity correctly. |
+| `CopyToDesktop` | _(unset)_          | When set to any non-empty value, copies the signed `.app` to `~/Desktop` after signing. Convenience shortcut for quick Finder launch.                                                                                                           |
+| `MountainDir`   | `Element/Mountain` | Override the Mountain element root. Used by `SignBundle.sh` to locate `Entitlements.plist` and the Tauri bundle output directory.                                                                                                               |
+
+> After `tauri build`, `Maintain/Script/SignBundle.sh` re-signs the `.app`
+> bundle with `xattr -cr` + `codesign`. This step runs automatically via
+> `BundleLevel=debug sh Maintain/Script/SignBundle.sh` at the end of
+> `Debug/Build.sh` (and the release equivalent). It is also triggered by
+> `beforeBundleCommand` hooks in `tauri.conf.json` for production builds.
+
 ---
 
 ## File Mapping
 
 Which `.env.Land*` file each variable originates from:
 
-| Variable                       | Files                                                     |
-| :----------------------------- | :-------------------------------------------------------- |
-| `Ask`                          | `PostHog`, `Production.PostHog`                           |
-| `Authorize`                    | `Production.PostHog`                                      |
-| `Batch`                        | `PostHog`, `Production.PostHog`                           |
-| `Beam`                         | `Production.PostHog`                                      |
-| `Boot`                         | `Bundled`, `Production.Bundled`                           |
-| `Brand`                        | `PostHog`, `Production.PostHog`                           |
-| `Buffer`                       | `PostHog`, `Production.PostHog`                           |
-| `Cap`                          | `PostHog`, `Production.PostHog`                           |
-| `Capture`                      | `PostHog`, `Production.PostHog`                           |
-| `Disable`                      | `Production.Diagnostics`                                  |
-| `Install`                      | `Extensions`, `Production.Extensions`                     |
-| `Mute`                         | `Production.Extensions`                                   |
-| `NetworkCocoonPort`            | `Core`, `Production`                                      |
-| `NetworkMountainPort`          | `Core`, `Production`                                      |
-| `OTLPEnabled`                  | `PostHog`, `Production.PostHog`                           |
-| `OTLPEndpoint`                 | `PostHog`, `Production.PostHog`                           |
-| `Pack`                         | `Bundled`, `Production.Bundled`                           |
-| `ProductApplicationName`       | `Core`, `Production`                                      |
-| `ProductCommit`                | `Core`, `Production`                                      |
-| `ProductDataFolderName`        | `Core`, `Production`                                      |
-| `ProductEmbedderIdentifier`    | `Core`, `Production`                                      |
-| `ProductNameLong`              | `Core`, `Production`                                      |
-| `ProductNameShort`             | `Core`, `Production`                                      |
-| `ProductQuality`               | `Core`, `Production`                                      |
-| `ProductServerApplicationName` | `Core`, `Production`                                      |
-| `ProductUrlProtocol`           | `Core`, `Production`                                      |
-| `ProductVersion`               | `Core`, `Production`                                      |
-| `Record`                       | `PostHog`, `Production.Diagnostics`, `Production.PostHog` |
-| `Replay`                       | `PostHog`, `Production.PostHog`                           |
-| `Report`                       | `PostHog`, `Production.PostHog`                           |
-| `Require`                      | `Node`, `Production.Node`                                 |
-| `Skip`                         | `Production.Extensions`                                   |
-| `Throttle`                     | `PostHog`, `Production.PostHog`                           |
-| `TierClipboard`                | `Core`, `Production`                                      |
-| `TierConfiguration`            | `Core`, `Production`                                      |
-| `TierDiagnostics`              | `Core`, `Production`                                      |
-| `TierDocumentMirror`           | `Core`, `Production`                                      |
-| `TierExtensionActivation`      | `Core`, `Production`                                      |
-| `TierExtensionScan`            | `Core`, `Production`                                      |
-| `TierFileSystem`               | `Core`, `Production`                                      |
-| `TierFileWatcher`              | `Core`, `Production`                                      |
-| `TierFindFiles`                | `Core`, `Production`                                      |
-| `TierGlob`                     | `Core`, `Production`                                      |
-| `TierHTTPProxy`                | `Core`, `Production`                                      |
-| `TierLogger`                   | `Core`, `Production`                                      |
-| `TierModuleCache`              | `Core`, `Production`                                      |
-| `TierOpenExternal`             | `Core`, `Production`                                      |
-| `TierRemoteProcedureCall`      | `Core`, `Production`                                      |
-| `TierSchemeAssets`             | `Core`, `Production`                                      |
-| `TierTelemetry`                | `Core`, `Production`                                      |
-| `Trace`                        | `PostHog`, `Production.Diagnostics`, `Production.PostHog` |
-| `Wire`                         | `Production.Extensions`                                   |
+| Variable                       | Files                                                         |
+| :----------------------------- | :------------------------------------------------------------ |
+| `Ask`                          | `PostHog`, `Production.PostHog`                               |
+| `Authorize`                    | `Production.PostHog`                                          |
+| `Batch`                        | `PostHog`, `Production.PostHog`                               |
+| `Beam`                         | `Production.PostHog`                                          |
+| `Boot`                         | `Bundled`, `Production.Bundled`                               |
+| `BundleLevel`                  | Build-Shim (exported by `Debug/Build.sh`, `Release/Build.sh`) |
+| `Brand`                        | `PostHog`, `Production.PostHog`                               |
+| `Buffer`                       | `PostHog`, `Production.PostHog`                               |
+| `Cap`                          | `PostHog`, `Production.PostHog`                               |
+| `Capture`                      | `PostHog`, `Production.PostHog`                               |
+| `Disable`                      | `Production.Diagnostics`                                      |
+| `Install`                      | `Extensions`, `Production.Extensions`                         |
+| `Mute`                         | `Production.Extensions`                                       |
+| `NetworkCocoonPort`            | `Core`, `Production`                                          |
+| `NetworkMountainPort`          | `Core`, `Production`                                          |
+| `OTLPEnabled`                  | `PostHog`, `Production.PostHog`                               |
+| `OTLPEndpoint`                 | `PostHog`, `Production.PostHog`                               |
+| `Pack`                         | `Bundled`, `Production.Bundled`                               |
+| `ProductApplicationName`       | `Core`, `Production`                                          |
+| `ProductCommit`                | `Core`, `Production`                                          |
+| `ProductDataFolderName`        | `Core`, `Production`                                          |
+| `ProductEmbedderIdentifier`    | `Core`, `Production`                                          |
+| `ProductNameLong`              | `Core`, `Production`                                          |
+| `ProductNameShort`             | `Core`, `Production`                                          |
+| `ProductQuality`               | `Core`, `Production`                                          |
+| `ProductServerApplicationName` | `Core`, `Production`                                          |
+| `ProductUrlProtocol`           | `Core`, `Production`                                          |
+| `ProductVersion`               | `Core`, `Production`                                          |
+| `Record`                       | `PostHog`, `Production.Diagnostics`, `Production.PostHog`     |
+| `Replay`                       | `PostHog`, `Production.PostHog`                               |
+| `Report`                       | `PostHog`, `Production.PostHog`                               |
+| `Require`                      | `Node`, `Production.Node`                                     |
+| `Skip`                         | `Production.Extensions`                                       |
+| `Throttle`                     | `PostHog`, `Production.PostHog`                               |
+| `TierClipboard`                | `Core`, `Production`                                          |
+| `TierConfiguration`            | `Core`, `Production`                                          |
+| `TierDiagnostics`              | `Core`, `Production`                                          |
+| `TierDocumentMirror`           | `Core`, `Production`                                          |
+| `TierExtensionActivation`      | `Core`, `Production`                                          |
+| `TierExtensionScan`            | `Core`, `Production`                                          |
+| `TierFileSystem`               | `Core`, `Production`                                          |
+| `TierFileWatcher`              | `Core`, `Production`                                          |
+| `TierFindFiles`                | `Core`, `Production`                                          |
+| `TierGlob`                     | `Core`, `Production`                                          |
+| `TierHTTPProxy`                | `Core`, `Production`                                          |
+| `TierIPC`                      | `Core`, `Production`                                          |
+| `TierLogger`                   | `Core`, `Production`                                          |
+| `TierModuleCache`              | `Core`, `Production`                                          |
+| `TierOpenExternal`             | `Core`, `Production`                                          |
+| `TierRemoteProcedureCall`      | `Core`, `Production`                                          |
+| `TierSchemeAssets`             | `Core`, `Production`                                          |
+| `TierTelemetry`                | `Core`, `Production`                                          |
+| `Trace`                        | `PostHog`, `Production.Diagnostics`, `Production.PostHog`     |
+| `Wire`                         | `Production.Extensions`                                       |
 
 ---
 
@@ -199,20 +218,20 @@ Which `.env.Land*` file each variable originates from:
 Not every Element needs to understand the full build matrix. Each Element only
 needs to know where it fits:
 
-| Element      | Relevant Tier Flags                    | Build Impact                                     |
-| :----------- | :------------------------------------- | :----------------------------------------------- |
-| **Air**      | None directly                          | Reads ProductVersion for update checks           |
-| **Cocoon**   | TierExtensionActivation                | Affects extension loading strategy               |
-| **Common**   | TierRemoteProcedureCall, TierLogger    | Defines transport and logging traits             |
-| **Echo**     | None directly                          | Fixed scheduler implementation                   |
-| **Grove**    | None directly                          | Future: inherits transport from Common           |
-| **Maintain** | ProductQuality, ProductVersion         | Build orchestration uses quality/version         |
-| **Mist**     | NetworkMountainPort                    | DNS server binds to configured port              |
-| **Mountain** | All Tier\* flags                       | Gates feature implementations via Cargo features |
-| **Output**   | TierSchemeAssets                       | Determines asset bundling strategy               |
-| **Rest**     | None directly                          | Compiler is always active                        |
-| **SideCar**  | Require (Node version)                 | Downloads correct Node.js binary                 |
-| **Sky**      | Pack, Boot, ProductQuality             | Selects workbench variant at build time          |
-| **Vine**     | NetworkMountainPort, NetworkCocoonPort | Port numbers baked into generated gRPC stubs     |
-| **Wind**     | TierConfiguration, TierLogger          | Uses tiers for service layer behavior            |
-| **Worker**   | None directly                          | Fixed service worker implementation              |
+| Element      | Relevant Tier Flags                    | Build Impact                                                                                  |
+| :----------- | :------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| **Air**      | None directly                          | Reads ProductVersion for update checks                                                        |
+| **Cocoon**   | TierExtensionActivation                | Affects extension loading strategy                                                            |
+| **Common**   | TierRemoteProcedureCall, TierLogger    | Defines transport and logging traits                                                          |
+| **Echo**     | None directly                          | Fixed scheduler implementation                                                                |
+| **Grove**    | None directly                          | Future: inherits transport from Common                                                        |
+| **Maintain** | ProductQuality, ProductVersion         | Build orchestration uses quality/version                                                      |
+| **Mist**     | NetworkMountainPort                    | DNS server binds to configured port                                                           |
+| **Mountain** | All Tier\* flags                       | Gates feature implementations via Cargo features                                              |
+| **Output**   | TierSchemeAssets, TierIPC              | Determines asset bundling strategy; TierIPC selects IPC routing in TauriMainProcessService    |
+| **Rest**     | None directly                          | Compiler is always active                                                                     |
+| **SideCar**  | Require (Node version)                 | Downloads correct Node.js binary                                                              |
+| **Sky**      | Pack, Boot, ProductQuality             | Selects workbench variant at build time                                                       |
+| **Vine**     | NetworkMountainPort, NetworkCocoonPort | Port numbers baked into generated gRPC stubs                                                  |
+| **Wind**     | TierConfiguration, TierLogger, TierIPC | Uses tiers for service layer behavior; TierIPC selects IPC routing in TauriMainProcessService |
+| **Worker**   | None directly                          | Fixed service worker implementation                                                           |

@@ -81,9 +81,41 @@ where `window` is a Node polyfill).
 
 ## SkyBridge 🌐
 
-`SkyBridge` (`Sky/Source/SkyBridge.ts`, ~2900 lines) is the runtime event
-routing bridge between `Tauri`'s IPC system and the VS Code workbench's internal
-message channel system. It translates between two event models:
+`SkyBridge` (`Sky/Source/Function/Sky/Bridge.ts`) is the runtime event routing
+bridge between `Tauri`'s IPC system and the VS Code workbench's internal message
+channel system. It is composed of focused sub-modules in the `Bridge/`
+directory:
+
+- `InstallCommands.ts` - `sky://command/*` handlers (execute, register,
+  unregister)
+- `InstallDebug.ts` - debug breakpoint gutter sync
+  (`sky://debug/addBreakpoints`)
+- `InstallDeadChannelListeners.ts` - no-op stubs for deprecated channels
+- `InstallDiagnostics.ts` - language diagnostics relay to Monaco
+- `InstallEditorAndOutput.ts` - `sky://workspace/applyEdit`, save, saveAll,
+  saveAs
+- `InstallEditorOperations.ts` - Monaco content debounce (300 ms) →
+  `sky:model:contentChanged` → `$acceptModelChanged` → Cocoon
+  `onDidChangeTextDocument`
+- `InstallFanOut.ts` - fan-out dispatcher for multi-subscriber channels
+- `InstallInlineCompletions.ts` -
+  `ILanguageFeaturesService.inlineCompletionsProvider.register()` relay
+- `InstallProgressTerminalWorkspace.ts` - progress notifications and terminal
+  events
+- `InstallScm.ts` - SCM provider registration with 10 × 200 ms retry for
+  `__CEL_SERVICES__.SCM` population race
+- `InstallSearch.ts` - workspace search result forwarding
+- `InstallSimpleRelays.ts` - single-line DOM CustomEvent relays (language
+  config, theme, etc.)
+- `InstallStatusbar.ts` - `sky://statusbar/*` status-bar entry lifecycle
+- `InstallTasksAndDecorations.ts` - task and file-decoration event relay
+- `InstallTreeView.ts` - tree-view selection, expand/collapse, reveal
+  (`sky://tree-view/*`)
+- `InstallUiRequests.ts` - `sky://ui/show-message-request`, quick-pick,
+  input-box
+- `InstallWebview.ts` - webview message forwarding and disposal
+
+It translates between two event models:
 
 ### Event Translation
 
@@ -142,10 +174,9 @@ Sky webview sets HTML content
 
 ## Cocoon Initialization Prelude 🚀
 
-The `Cocoon` initialization prelude
-(`Cocoon/Source/Bootstrap/Implementation/CocoonMain.ts`) runs before any
-extension code executes. It establishes the execution environment for the VS
-Code Extension Host within `Node.js`.
+The `Cocoon` initialization prelude (`Cocoon/Source/Effect/Bootstrap.ts`) runs
+before any extension code executes. It establishes the execution environment for
+the VS Code Extension Host within `Node.js`.
 
 ### Prelude Sequence
 
@@ -153,36 +184,43 @@ Code Extension Host within `Node.js`.
 Cocoon Node.js process starts
     |
     v
-1. RunProcessPatches
-    - console.log piping to Mountain's log sink
-    - Unhandled rejection tracking
-    - Signal handling (SIGTERM, SIGINT)
+Stage 1: Environment
+    - Records Node.js version, platform, arch
     |
     v
-2. IpcProvider starts gRPC client
-    - Connects to Mountain on NetworkCocoonPort (default: 50052)
-    - Sends $initialHandshake notification
-    - Waits for initExtensionHost request
+Stage 2: Configuration
+    - Resolves MOUNTAIN_GRPC_PORT (default 50051) and COCOON_GRPC_PORT (default 50052)
+    - Populates globalThis.__cocoonBootstrapConfig
+    - Populates globalThis.__LandTiers from esbuild __LandTier_<Capability>__ defines,
+      falling through to process.env.Tier<Capability> and hard-coded defaults
     |
     v
-3. globalThis.__LandTiers populated
-    - Reads esbuild-substituted __LandTier_<Capability>__ identifiers
-    - Falls through to process.env.Tier<Capability>
-    - Falls through to hard-coded defaults
+Stage 3: RPCServer  ← must bind BEFORE MountainConnection
+    - Starts Cocoon's gRPC server on COCOON_GRPC_PORT (default 50052)
+    - Mountain's 30-second gRPC connection budget begins ticking from spawn;
+      RPCServer must be listening before that budget expires
     |
     v
-4. RequireInterceptor installed
-    - Patches Node.js require() for VS Code bundle loading
-    - Maps electron-less requires to Tauri equivalents
+Stage 4: ModuleInterceptor
+    - Initializes and installs the Node.js require() interceptor
+    - Remaps electron → Tauri stubs, patches VS Code bundle loading
     |
     v
-5. InitDataLayer created from Mountain's initialization payload
-    - Workspace info, extension lists, configuration
+Stage 5: MountainConnection
+    - TCP-probes Mountain on port 50051 (up to 3 attempts, 100 ms → 500 ms backoff)
+    - Opens gRPC channel; retries up to 5 times with exponential back-off
+    - On success emits $initialHandshake; waits for initExtensionHost payload
     |
     v
-6. FullAppInitialization effect runs
-    - Resolves ExtensionHostProvider
-    - Activates startup extensions (* activation event)
+Stage 6: Extensions
+    - Fetches all extensions; activates enabled ones concurrently (up to 8 in parallel)
+    - Activation uses topological ordering: if extension A declares
+      extensionDependencies: ["B"], B is activated first. An InProgress Set
+      prevents circular dependency deadlocks.
+    |
+    v
+Stage 7: HealthCheck (skippable via skipHealthCheck option)
+    - Runs checkAllServices(); marks overall result healthy/degraded/unhealthy
     |
     v
 Extension host ready for use
@@ -236,6 +274,21 @@ comments:
 
 These markers are respected by the VS Code platform code and used by the
 workbench variant selection system.
+
+### Cocoon `console.*` Replacement
+
+In production Cocoon source, all `console.log`, `console.warn`, and
+`console.error` calls are replaced with `CocoonDevLog` (routes through
+`Mountain`'s dev-log sink) or `process.stdout.write` / `process.stderr.write`
+directly. This ensures diagnostic output survives esbuild's `drop: ["console"]`
+pass, which strips bare `console.*` calls from production bundles.
+
+### Sky Sourcemap Strategy
+
+Sky dev builds use `sourcemap: "inline"` so the browser profiler and DevTools
+can resolve minified symbols back to original TypeScript source without a
+separate `.map` file download. Production builds use the standard external
+sourcemap (a `.js.map` file alongside the bundle).
 
 ---
 

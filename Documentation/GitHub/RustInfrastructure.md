@@ -328,6 +328,68 @@ async fn read_file(path: String, state: State<'_, AppState>) -> Result<Vec<u8>, 
 - Monitors health and resource usage
 - Coordinates update downloads and verification
 
+### Extension Scanner Cache
+
+Extension scanning is a two-path process that avoids the ~1200 ms cold-disk scan
+on every boot:
+
+| File                                                                      | Role                                                                                    |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `ApplicationState/Internal/ExtensionScanner/LoadFromCache.rs`             | Reads `extensions.manifest.json` pre-baked at build time; returns descriptors in <50 ms |
+| `ApplicationState/Internal/ExtensionScanner/ScanAndPopulateExtensions.rs` | Tries cache first; falls back to live scan using `join_all` parallel directory walks    |
+
+**Cache pre-bake:** `Maintain/Build/Manifest/PreBake.ts` runs from
+`tauri.conf.json` `beforeBundleCommand` and writes a single JSON blob
+(`extensions.manifest.json`) covering all bundled extension roots. Running from
+`beforeBundleCommand` ensures the cache is produced in all build paths, not only
+via `Build.sh`.
+
+**Cache freshness:** Dev-binary caches expire after 24 hours; bundled (`.app`)
+caches skip the staleness check entirely - they were written at build time and
+are always consistent with the bundled extensions.
+
+**User extension supplement:** On a cache hit, `ScanAndPopulateExtensions`
+additionally live-scans user-writable paths (`~/.fiddee/extensions`,
+`~/.land/extensions`) so VSIX-installed extensions are not hidden by the
+pre-bake. Found entries overwrite same-ID cache entries, matching VS Code
+semantics where an installed VSIX shadows a built-in of the same identifier.
+
+**Per-TypeFilter cache:** `ExtensionsGetInstalled.rs` uses a per-TypeFilter
+`OnceLock` so repeated calls for the same filter type are served from an
+in-process cache after the first resolution.
+
+### Encryption Provider
+
+Mountain implements VS Code's `EncryptionMainService` contract via three files
+in `IPC/WindServiceHandlers/Encryption/`:
+
+| File         | IPC method           | Purpose                                                                                                                                                                                                                                          |
+| ------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Key.rs`     | (shared)             | Derives a machine-stable 256-bit key: `SHA-256("Land-Encryption-v1" ++ machine_UUID)` via `ring`. Cached in a process-wide `OnceLock`. Reads hardware UUID from `ioreg` (macOS), `/etc/machine-id` (Linux), or Registry `MachineGuid` (Windows). |
+| `Encrypt.rs` | `encryption:encrypt` | AES-256-GCM encryption. Generates a 12-byte random nonce per call; returns `base64(<nonce><ciphertext+tag>)`.                                                                                                                                    |
+| `Decrypt.rs` | `encryption:decrypt` | Reverses encrypt: base64-decode, split nonce, AES-256-GCM open. Returns empty string on corrupt input rather than crashing.                                                                                                                      |
+
+Used by `Cocoon`'s `context.secrets` API so extension credentials and auth
+tokens are stored encrypted at rest on the host filesystem.
+
+### Boot Performance
+
+Key optimizations applied to Mountain's startup path:
+
+| Optimization                      | Before           | After                                 |
+| --------------------------------- | ---------------- | ------------------------------------- |
+| Extension scan (bundled build)    | ~1200 ms         | <50 ms                                |
+| Extension scan (live fallback)    | sequential scan  | parallel `join_all`                   |
+| Boot-path polling loops (8 files) | `sleep` loops    | `tokio::sync::Notify` / channel-drain |
+| Storage writes (debounced 100 ms) | 50+ per session  | 1 disk write                          |
+| Nonce generation (`SystemTime`)   | syscall per call | atomic counter                        |
+
+All eight boot-path `sleep` loops were replaced with `tokio::sync::Notify` or
+channel-drain patterns: `ExtensionsGetInstalled`, `WaitForClientConnection`,
+`LifecycleWhenPhase`, `DecorationTypeLifecycle`, `ProgressReport`,
+`RegisterCommand`, `EnqueueTreeViewEmit`, and the menubar debounce in
+`WindServiceHandlers`.
+
 ---
 
 ## Mist: DNS Isolation Server 🌐

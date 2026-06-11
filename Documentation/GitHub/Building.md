@@ -135,12 +135,24 @@ optimization levels. See
 [`BuildMatrix.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/BuildMatrix.md)
 for the full matrix of environment variables and tier configurations.
 
-| Profile                         | Description                       |
-| :------------------------------ | :-------------------------------- |
-| `debug-electron-bundled`        | Full bundled Electron debug build |
-| `debug-electron-unbundled`      | Electron debug without bundling   |
-| `production-electron-bundled`   | Optimized production release      |
-| `production-electron-unbundled` | Production without bundled assets |
+| Profile                       | Workbench         | Coverage                                              | Notes                             |
+| :---------------------------- | :---------------- | :---------------------------------------------------- | :-------------------------------- |
+| `debug`                       | Browser           | 70-80%                                                | Default debug                     |
+| `debug-mountain`              | Mountain          | 80-90%                                                | Recommended for daily development |
+| `debug-electron`              | Electron          | 95%+                                                  | Full feature set                  |
+| `debug-electron-rest`         | Electron + OXC    | 95%+                                                  | Fastest TypeScript compile        |
+| `debug-electron-minimal`      | Electron          | No built-in extensions                                | Atom J1                           |
+| `debug-mountain-only`         | Mountain          | No `Cocoon` subprocess                                | Atom N3                           |
+| `debug-cocoon-headless`       | Mountain + Cocoon | `Wind` preload disabled                               | Atom N3b                          |
+| `debug-kernel`                | None              | Pure `Mountain`, no built-ins, no `Cocoon`, no `Wind` | Atom N3c                          |
+| `debug-electron-compiled`     | Electron          | Single-binary embedded resources                      | Debug symbols + `Compile=true`    |
+| `debug-mountain-compiled`     | Mountain          | Single-binary embedded resources                      | Debug symbols + `Compile=true`    |
+| `debug-electron-bundled`      | Electron          | Vite/Astro compiled workbench                         | Full bundled Electron debug build |
+| `debug-browser-bundled`       | Browser           | Vite/Astro compiled workbench                         |                                   |
+| `debug-sessions-bundled`      | Sessions          | Vite/Astro compiled workbench                         |                                   |
+| `debug-workbench-bundled`     | Base workbench    | Vite/Astro compiled workbench                         |                                   |
+| `debug-bundled-all`           | All four          | Single Rollup pass                                    |                                   |
+| `production-electron-bundled` | Electron          | Optimized release                                     |                                   |
 
 ---
 
@@ -156,15 +168,16 @@ For a complete reference, see
 
 Common variables:
 
-| Variable                  | Default   | Description                              |
-| :------------------------ | :-------- | :--------------------------------------- |
-| `ProductVersion`          | `1.118.0` | Land version and feature tier gate       |
-| `Bundle`                  | (unset)   | Set to `true` to trigger `Rest` bundling |
-| `NetworkMountainPort`     | `50051`   | gRPC port for `Mountain` backend         |
-| `NetworkCocoonPort`       | `50052`   | gRPC port for `Cocoon` extension host    |
-| `TierFileSystem`          | `Layer2`  | Filesystem implementation tier           |
-| `TierFileWatcher`         | `Layer4`  | File watching implementation tier        |
-| `TierRemoteProcedureCall` | `gRPC`    | IPC transport mechanism                  |
+| Variable                  | Default    | Description                                       |
+| :------------------------ | :--------- | :------------------------------------------------ |
+| `ProductVersion`          | `1.118.0`  | Land version and feature tier gate                |
+| `Bundle`                  | (unset)    | Set to `true` to trigger `Rest` bundling          |
+| `NetworkMountainPort`     | `50051`    | gRPC port for `Mountain` backend                  |
+| `NetworkCocoonPort`       | `50052`    | gRPC port for `Cocoon` extension host             |
+| `TierFileSystem`          | `Layer2`   | Filesystem implementation tier                    |
+| `TierFileWatcher`         | `Layer4`   | File watching implementation tier                 |
+| `TierRemoteProcedureCall` | `gRPC`     | IPC transport mechanism                           |
+| `TierIPC`                 | `Mountain` | IPC routing: `Mountain` / `NodeDeferred` / `Node` |
 
 ---
 
@@ -188,9 +201,15 @@ Land/
 ## Running the Application ▶️
 
 ```sh
-# From the repository root
+# From the repository root (after a debug-electron build)
 cd Land
-./Element/Mountain/Target/ < platform > / < configuration > /Mountain
+./Element/Mountain/Target/debug/Mountain
+
+# After a debug-electron-bundled build
+./Element/Mountain/Target/debug/Mountain
+
+# The .app bundle (for Finder launch or codesign verification)
+open Element/Mountain/Target/debug/bundle/macos/Mountain.app
 ```
 
 Or use the `Build.sh` script's `--run` flag to launch immediately after
@@ -199,6 +218,12 @@ building:
 ```sh
 ./Maintain/Debug/Build.sh --profile debug-electron-bundled --run
 ```
+
+> [!NOTE]
+>
+> All debug profiles write to `Target/debug/`. The profile name affects what env
+> vars are set and which Sky assets are produced — not the target directory
+> name.
 
 ---
 
@@ -308,6 +333,23 @@ for syntax.
 If `NetworkMountainPort` or `NetworkCocoonPort` are already in use (from a
 previous run), kill the orphaned processes or change the port numbers in
 `.env.Land`.
+
+### App crashes immediately on macOS (Permission denied / code signing)
+
+Tauri's ad-hoc signature does not embed the entitlements from
+`Element/Mountain/Entitlements.plist`. Without the correct entitlements,
+`Cocoon`'s V8 JIT crashes, extension helpers fail to spawn, and file pickers
+silently do nothing.
+
+Re-sign the `.app` after any `tauri build`:
+
+```sh
+BundleLevel=debug sh Maintain/Script/SignBundle.sh
+```
+
+The script runs `xattr -cr` to strip quarantine bits, then re-signs with
+`codesign --force --deep --sign -` using the entitlements file. `Build.sh` calls
+this automatically at the end of every build.
 
 ---
 

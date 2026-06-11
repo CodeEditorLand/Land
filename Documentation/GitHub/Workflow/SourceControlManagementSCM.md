@@ -212,3 +212,38 @@ flowchart TB
     - The `EditorService` opens the `DiffEditor` and passes it the resolved
       input.
     - **The user now sees a side-by-side diff of their changes.**
+
+---
+
+#### **SCM provider state setters**
+
+Three `SourceControl` setters are wired to Mountain via
+`$scm:updateSourceControl` (a `sendRequest` round-trip, not a fire-and-forget
+notification):
+
+- **`inputBox.value`** setter sends `{ inputBoxValue: V }` to Mountain, which
+  updates the workbench commit input box.
+- **`inputBox.placeholder`** setter sends `{ inputBoxPlaceholder: V }` and maps
+  to `SourceControlUpdateDTO.InputBoxPlaceholder`.
+- **`commitTemplate`** setter sends `{ commitTemplate: V }` and maps to
+  `SourceControlUpdateDTO.InputBoxPlaceholder` on the Mountain side.
+- **`acceptInputCommand`** setter sends `{ acceptInputCommand: V }` and maps to
+  `SourceControlUpdateDTO.AcceptInputCommand`.
+
+#### **sky://scm/provider/changed**
+
+When Mountain receives a `$scm:updateSourceControl` call it emits
+`sky://scm/provider/changed` to the Sky renderer with the updated provider
+state. The `InstallScm.ts` bridge handler finds the matching shim by numeric
+handle and applies `InputModel.setValue(newValue)` (or `applyEdits` as a
+fallback) so the workbench commit input reflects the extension-set text. It then
+fires `provider.onDidChange` so the SCM panel re-renders.
+
+#### **sky://scm/register retry**
+
+`sky://scm/register` registration in the Sky bridge calls
+`__CEL_SERVICES__.SCM.registerSCMProvider()`. Because `__CEL_SERVICES__.SCM` is
+populated asynchronously by the Output service accessor, there is a potential
+race on startup. The bridge retries registration up to 10 times with 200 ms
+between attempts before falling back to the DOM `CustomEvent` path, ensuring the
+SCM viewlet populates even when the workbench service resolves late.

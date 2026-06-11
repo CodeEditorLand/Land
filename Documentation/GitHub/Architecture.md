@@ -33,6 +33,13 @@ processes:
 A fourth optional process, the background daemon (`Air`), runs as a persistent
 sidecar for updates and indexing.
 
+> **TierIPC note:** The `TierIPC` environment variable controls whether
+> `Wind`/`Output` route IPC through `Mountain` (default), fall back to `Cocoon`
+> on miss (`NodeDeferred`), or bypass `Mountain` entirely (`Node`).
+> Per-subsystem overrides (`TierTerminal`, `TierSCM`, `TierAuth`, etc.) allow
+> independent routing per channel. See
+> [EnvironmentVariables.md](EnvironmentVariables.md).
+
 ```mermaid
 graph TB
     subgraph Mountain["Mountain (Native Backend - Rust/Tauri)"]
@@ -57,7 +64,7 @@ graph TB
         AirSvc["Update, Index,<br/>Crypto, Health"]
     end
 
-    Mountain -- "gRPC (Vine.proto) port 50051" --> Cocoon
+    Mountain -- "gRPC (Vine.proto) port 50052" --> Cocoon
     Cocoon -- "gRPC (Vine.proto) port 50051" --> Mountain
     Mountain -- "Tauri invoke/event" --> WindSky
     WindSky -- "Tauri invoke" --> Mountain
@@ -80,17 +87,17 @@ graph TB
 | **Rest**     | Binary + Library | High-performance `TypeScript` compiler built on `OXC` (Oxidation Compiler). Replaces `esbuild`'s `TypeScript` loader with a `Rust`-powered `OXC` pipeline, producing VS Code-compatible output at 2-3x speed improvement. Handles decorators, class field transformations, `JSX`.                    |
 | **Grove**    | Library + Binary | Native `Rust`/`WASM` extension host. Provides a sandboxed environment via `WASMtime` for running `WASM`-compiled VS Code extensions. Shares the same VS Code API surface as `Cocoon`. Supports `gRPC`, IPC, and `WASM` host function transport strategies.                                           |
 | **SideCar**  | Library          | Vendored runtime binary management. Packages exact `Node.js` binaries per target triple (`aarch64`/`x86_64` for `macOS`/`Linux`/`Windows`). Provides download, caching, version resolution, and `Git LFS` management. Consumed at `Mountain` build time.                                             |
-| **Vine**     | Protocol Library | gRPC protocol definitions for all inter-process communication. Defines `Vine.proto` - the service contracts used between `Mountain` and `Cocoon` (port 50051) and between `Mountain` and `Air` (port 50053). Generated stubs are consumed by every element that speaks gRPC.                         |
+| **Vine**     | Protocol Library | gRPC protocol definitions for all inter-process communication. Defines `Vine.proto` - the service contracts used between `Mountain` (port 50051) and `Cocoon` (port 50052), and between `Mountain` and `Air` (port 50053). Generated stubs are consumed by every element that speaks gRPC.           |
 
 ### TypeScript Components (Web / Node.js)
 
-| Component  | Framework               | Role                                                                                                                                                                                                                                                                                                           |
-| ---------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Cocoon** | `Effect-TS` + `ESBuild` | `Node.js` extension host sidecar. Runs VS Code extensions in a supervised process. Provides a `vscode` API shim that translates extension API calls into declarative Effects. These Effects travel via `gRPC` to `Mountain` for native execution or are handled in-process by `Cocoon`.                        |
-| **Wind**   | `Effect-TS` + `Vite`    | UI service layer that recreates the VS Code workbench environment inside a `Tauri` WebView. Implements ~40 effect services (`IPC`, `Configuration`, `Editor`, `Terminal`, `Clipboard`, `Dialog`, `FileSystem`, `Window`) composed into three Layer stacks: `TauriLiveLayer`, `ElectronLiveLayer`, `TestLayer`. |
-| **Sky**    | `Astro` + `Vite`        | UI component layer. Renders the editor interface (editor, sidebar, activity bar, status bar, panels) using `Astro` pages. Loads the VS Code workbench from `@codeeditorland/output` and bridges `Tauri` events through `SkyBridge` (~2900 lines).                                                              |
-| **Output** | `ESBuild`               | Build artifact management. Handles compilation of VS Code platform source via dual-compiler support (`esbuild` primary, `Rest` `OXC` optional). Produces the `@codeeditorland/output` npm package consumed by `Cocoon`, `Sky`, and `Wind`.                                                                     |
-| **Worker** | `ESBuild`               | Service worker implementation. Provides asset caching (network-first for navigation, cache-first for static assets), offline support, and dynamic CSS loading. Intercepts JS imports of CSS files and responds with JS modules that trigger `<link>` tag injection.                                            |
+| Component  | Framework             | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Cocoon** | `Node.js` + `ESBuild` | `Node.js` extension host sidecar. Runs VS Code extensions in a supervised process. Provides a `vscode` API shim that translates extension calls to `gRPC` requests for `Mountain` or handles them in-process. Bootstrap is lean async (no `Effect-TS` runtime); stages run in a fixed order: `RPCServer` (port 50052) binds **before** `MountainConnection` so `Mountain`'s 30-second gRPC budget does not expire before `Cocoon` is ready. Extension dependencies are activated in topological order with a cycle guard.                                 |
+| **Wind**   | `Effect-TS` + `Vite`  | UI service layer that recreates the VS Code workbench environment inside a `Tauri` WebView. Implements ~40 effect services (`IPC`, `Configuration`, `Editor`, `Terminal`, `Clipboard`, `Dialog`, `FileSystem`, `Window`) composed into three Layer stacks: `TauriLiveLayer`, `ElectronLiveLayer`, `TestLayer`. Services use `Layer.succeed` (not `Layer.effect`) and are composed with `Layer.mergeAll`. The `TauriLiveLayer` is backed by an eager `ManagedRuntime` (module singleton via `globalThis.__CEL_WIND_RUNTIME__`) for sub-5ms service lookup. |
+| **Sky**    | `Astro` + `Vite`      | UI component layer. Renders the editor interface (editor, sidebar, activity bar, status bar, panels) using `Astro` pages. Loads the VS Code workbench from `@codeeditorland/output` and bridges `Tauri` events through `SkyBridge` (~2900 lines).                                                                                                                                                                                                                                                                                                         |
+| **Output** | `ESBuild`             | Build artifact management. Handles compilation of VS Code platform source via dual-compiler support (`esbuild` primary, `Rest` `OXC` optional). Produces the `@codeeditorland/output` npm package consumed by `Cocoon`, `Sky`, and `Wind`.                                                                                                                                                                                                                                                                                                                |
+| **Worker** | `ESBuild`             | Service worker implementation. Provides asset caching (network-first for navigation, cache-first for static assets), offline support, and dynamic CSS loading. Intercepts JS imports of CSS files and responds with JS modules that trigger `<link>` tag injection.                                                                                                                                                                                                                                                                                       |
 
 ---
 
@@ -100,7 +107,7 @@ graph TB
 
 | Source              | Sink         | Protocol              | Transport        | Port    |
 | ------------------- | ------------ | --------------------- | ---------------- | ------- |
-| `Mountain`          | `Cocoon`     | `gRPC` (`Vine.proto`) | TCP (localhost)  | `50051` |
+| `Mountain`          | `Cocoon`     | `gRPC` (`Vine.proto`) | TCP (localhost)  | `50052` |
 | `Cocoon`            | `Mountain`   | `gRPC` (`Vine.proto`) | TCP (localhost)  | `50051` |
 | `Mountain`          | `Air`        | `gRPC`                | TCP (localhost)  | `50053` |
 | `Wind`/`Sky`        | `Mountain`   | `Tauri` Commands      | IPC (in-process) | N/A     |
@@ -156,6 +163,26 @@ sequenceDiagram
     - Used for: extension host initialization, command execution, language
       feature requests (hover, completion, definition), webview panel
       communication
+
+### TierIPC Routing
+
+`Wind` and `Output` both support three routing modes, selected by the `TierIPC`
+environment variable:
+
+| Value          | Behaviour                                                                                      |
+| -------------- | ---------------------------------------------------------------------------------------------- |
+| `Mountain`     | All IPC calls route to `Mountain` Tauri backend (default)                                      |
+| `NodeDeferred` | `Mountain` first; falls back to `Cocoon` `cocoon:request` bridge on miss or `undefined` return |
+| `Node`         | All calls route to `Cocoon` Node.js process via `cocoon:request` bridge                        |
+
+Per-subsystem tier variables (`TierTerminal`, `TierSCM`, `TierDebug`,
+`TierLanguageFeatures`, `TierAuth`, `TierTasks`, etc.) override `TierIPC` for
+individual channel prefixes. For example, `TierTasks=Node` and `TierAuth=Node`
+are the defaults even when the global `TierIPC=Mountain`, because those handlers
+live in Cocoon's extension host.
+
+This is a runtime switch - no rebuild required. Set in `.env.Land` as
+`TierIPC=NodeDeferred` to enable gradual migration of handlers to `Cocoon`.
 
 ---
 
@@ -229,10 +256,28 @@ Services compose into Layer stacks:
 | **ElectronLiveLayer** | Electron-compatible services | Used for Electron workbench variant                    |
 | **TestLayer**         | Mock implementations         | Used in extension test runner                          |
 
-### Cocoon Effect-TS Architecture (Extension side)
+### Cocoon Bootstrap and Extension Architecture
 
-`Cocoon` mirrors the VS Code Extension Host API using `Effect-TS`. The critical
-architectural split:
+`Cocoon`'s bootstrap is lean async - plain `async`/`await` functions with no
+`Effect-TS` runtime overhead. Stages run sequentially in this order:
+
+1. **Environment** - validate Node version, platform, architecture
+2. **Configuration** - resolve `MOUNTAIN_GRPC_PORT` (50051) and
+   `COCOON_GRPC_PORT` (50052) from env
+3. **RPCServer** - bind Cocoon's own gRPC server on port 50052 **first**, before
+   attempting to connect to `Mountain`. This prevents `Mountain`'s 30-second
+   gRPC connection budget from expiring while `Cocoon`'s port is still unbound.
+4. **ModuleInterceptor** - install the VS Code module shim
+5. **MountainConnection** - connect to `Mountain` gRPC at port 50051 with
+   exponential-backoff retry (3 TCP probes, 5 connection attempts)
+6. **Extensions** - activate all enabled extensions (concurrency 8)
+7. **HealthCheck** - verify all services are operational
+
+Extension dependencies are activated in topological order with an `InProgress`
+Set cycle guard to prevent circular-dependency deadlocks.
+
+The `vscode` API shim in `Cocoon/Source/Services/Handler/VscodeAPI/` uses a
+two-track dispatch model:
 
 - **Track A - Stock Node:** Loads unmodified VS Code `extHost*.ts` sources. The
   `ExtHostContext`/`MainContext` RPC glue is provided by `Cocoon`'s shim
@@ -242,8 +287,8 @@ architectural split:
   (filesystem, process, terminal, search, git). Faster than bouncing through
   `Node.js`.
 
-The `Cocoon/Source/Services/Handler/VscodeAPI/` tier router decides per-call
-which track to use.
+The per-call tier router in `Cocoon/Source/Services/Handler/VscodeAPI/` selects
+the track at runtime.
 
 ---
 
@@ -353,6 +398,8 @@ sequenceDiagram
 - [BuildMatrix](BuildMatrix.md) - Build variant profile reference
 - [EnvironmentVariables](EnvironmentVariables.md) - Complete env var reference
 - [Workflow/](Workflow/) - Detailed component interaction workflows
+- [VSCode-API-Coverage-Matrix](VSCode-API-Coverage-Matrix.md) - `vscode.*` API
+  implementation status per namespace
 
 ---
 

@@ -105,6 +105,24 @@ sequenceDiagram
         | `TierExtensionHost`    | `Process`  | `Process` / `WebWorker` / `Disabled` |
         | `TierWebSocket`        | `Disabled` | `Disabled` / `Mountain` / `Mist`     |
 
+        **Notable entries:**
+
+        - **`TierIPC`** is the global IPC routing switch. `Wind`'s
+          `TauriMainProcessService.ts` reads this variable at module
+          initialisation time (before any IPC call is made) and selects one of
+          three dispatch paths:
+            - `Mountain` (default) - all calls go directly to Mountain via
+              `@tauri-apps/api` `invoke`.
+            - `NodeDeferred` - Mountain is tried first; on a miss or `undefined`
+              result the call falls through to Cocoon via the `cocoon:request`
+              bridge.
+            - `Node` - all calls go directly to Cocoon; Mountain is used only
+              for window management and PTY.
+        - **`TierTasks`** defaults to `Node` because task execution relies on
+          Cocoon's `ExtHostTaskService` for provider enumeration and execution.
+        - **`TierAuth`** defaults to `Node` because authentication flows go
+          through Cocoon's `ExtHostAuthentication` shim.
+
 2. **Naming convention**
     - Variables use `PascalCase` with the `Tier` prefix.
     - Infrastructure values use `Layer2..Layer5` where L2 is a round-trip RPC,

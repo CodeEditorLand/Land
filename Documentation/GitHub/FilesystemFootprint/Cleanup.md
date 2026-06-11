@@ -316,6 +316,22 @@ ditto "$ARCH/Home/.land" "$HOME/.land"
 
 ---
 
+## Developer: Clear Pre-Baked Extension Manifest 🗂️
+
+`PreBake.ts` writes `Element/Mountain/Target/<profile>/extensions.manifest.json`
+at bundle time to accelerate boot-time extension scanning (<50 ms vs ~1200 ms
+cold scan). Clear it to force a live re-scan on next boot:
+
+```sh
+# Clear pre-baked extension manifest (forces full extension re-scan on next boot)
+find Element/Mountain/Target -name "extensions.manifest.json" -delete 2> /dev/null
+```
+
+This is an in-tree developer artefact; it is never written inside the installed
+`.app` bundle. Normal user cleanup does not require this step.
+
+---
+
 ## See Also 📚
 
 - [`UserDotfile.md`](UserDotfile.md) - what's inside `~/.fiddee/`.

@@ -72,7 +72,7 @@ sequenceDiagram
 
 ## Wind Service Layer 🧩
 
-`Wind` provides ~40 `Effect-TS` services that replace the VS Code workbench
+`Wind` provides ~36 `Effect-TS` services that replace the VS Code workbench
 service implementations. Each service follows a consistent module structure with
 three files:
 
@@ -197,7 +197,7 @@ graph TB
     Tauri --> Clipboard[ClipboardLayer]
     Tauri --> Dialog[DialogLayer]
     Tauri --> Window[WindowLayer]
-    Tauri --> Services[... all ~40 services]
+    Tauri --> Services[... all ~36 services]
 
     Electron --> ElectronImpl[Electron-specific impls]
 
@@ -217,23 +217,73 @@ Wind/Source/Function/Install/index.ts
     +---> Provides Runtime to Sky UI components
 ```
 
-Each Layer wire uses the `Effect-TS` `Layer.merge` combinator to compose
-services with their explicit dependency graphs:
+Each Layer wire uses the `Effect-TS` `Layer.mergeAll` combinator to compose
+services. Individual services use `Layer.succeed` to wrap a concrete
+implementation object:
 
 ```typescript
 export const TauriLiveLayer: Layer<...> = Layer.mergeAll(
-    ConfigurationLayer,
-    IPCLayer,
-    EditorLayer,
-    FileServiceLayer,
-    TerminalLayer,
-    // ... all service layers
+    ConfigurationWithSyncLive,
+    SandboxLive,
+    EditorLive,
+    FilesLive,
+    TerminalLive,
+    // ... all ~36 service layers
 );
+
+// Individual service pattern:
+export const LiveEditorServiceLayer = Layer.succeed(EditorTag, makeEditorService());
 ```
 
 `Effect-TS`'s compile-time dependency tracking ensures that no service can be
 used without its dependencies being satisfied by the Layer stack. A missing
 dependency produces a `TypeScript` type error.
+
+### TierIPC Routing
+
+`TauriMainProcessService` reads the `TierIPC` env var (from `.env.Land` via
+`turbo.json` `globalEnv`) to select the IPC backend at runtime. It also supports
+per-subsystem overrides (`TierTerminal`, `TierSCM`, `TierStorage`, etc.) so
+individual channels can be routed independently.
+
+| Value          | Behaviour                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------ |
+| `Mountain`     | Default. All `channel.call()` invocations route to Mountain via Tauri `MountainIPCInvoke`.       |
+| `NodeDeferred` | Mountain first; if Mountain returns `undefined` or has no handler, falls through to Cocoon gRPC. |
+| `Node`         | All calls bypass Mountain and go directly to Cocoon via the `cocoon:request` gRPC bridge.        |
+
+Per-subsystem tier variables (all default to `Mountain` unless noted):
+
+| Variable               | Default    | Channels governed                                   |
+| ---------------------- | ---------- | --------------------------------------------------- |
+| `TierTerminal`         | `Mountain` | `terminal`, `localPty`                              |
+| `TierSCM`              | `Mountain` | `git` (localGit)                                    |
+| `TierDebug`            | `Mountain` | `extensionHostStarter`, `extensionhostdebugservice` |
+| `TierLanguageFeatures` | `Mountain` | `language`, `languages`                             |
+| `TierSearch`           | `Mountain` | `search`                                            |
+| `TierOutputChannel`    | `Mountain` | `output`                                            |
+| `TierNativeHost`       | `Mountain` | `nativeHost`                                        |
+| `TierTreeView`         | `Mountain` | `tree`                                              |
+| `TierStorage`          | `Mountain` | `storage`                                           |
+| `TierModel`            | `Mountain` | `model`, `textFile`, `file`                         |
+| `TierTasks`            | `Node`     | `tasks`                                             |
+| `TierAuth`             | `Node`     | `auth`                                              |
+| `TierEncryption`       | `Mountain` | `encryption`                                        |
+| `TierWebSocket`        | `Disabled` | Mist WebSocket transport (S6, not yet active)       |
+
+### ManagedRuntime
+
+`Wind/Source/Effect/LandWorkbench/LandWorkbenchRuntime.ts` provides a
+module-singleton `ManagedRuntime` wrapping `LandWorkbenchLayer`:
+
+- Initialized eagerly via IIFE at module load time - initialization cost is paid
+  once during Sky bundle evaluation, not deferred to the first call.
+- Stored on `globalThis.__CEL_WIND_RUNTIME__` so multiple Sky chunks that import
+  this module share a single runtime instance.
+- `LandWorkbenchRuntime.Get()` returns the pre-warmed runtime; service lookups
+  are sub-5 ms after initialization.
+- `LandWorkbenchRuntime.Dispose()` tears down the runtime and clears the global
+  slot (used on window unload).
 
 ---
 

@@ -173,3 +173,40 @@ sequenceDiagram
     - The UI updates to remove the dirty indicator (the filled circle) from the
       editor tab.
     - **The save operation is complete.**
+
+---
+
+#### **applyEdit round-trip**
+
+`workspace.applyEdit(edit)` is a full awaitable round-trip via
+`Call(Context, "applyEdit", [edit])` (Mountain `sendRequest`, not a
+fire-and-forget notification). The extension's `await workspace.applyEdit(...)`
+resolves only after Sky's `sky://workspace/applyEdit` handler finishes applying
+the edit to the Monaco model and returns a success boolean. Mountain treats a
+`null` response from Sky as `true` (matching VS Code's own `MainThreadBulkEdits`
+behaviour).
+
+The `WorkspaceEdit` payload is normalised inside the Sky bridge to handle
+multiple wire shapes:
+
+- `_edits` array with `_type: 2` entries (extHostTypes text edit) - `_range`
+  uses `_start._line` / `_end._line` (0-based, converted to Monaco 1-based)
+- `_edits` array with `_type: 1` entries (file operations: create, rename,
+  delete)
+- Serialised `vscode.Uri` objects (`_scheme` / `_path` fields)
+
+`IBulkEditService` is tried first; if unavailable, the bridge falls back to
+direct Monaco model operations.
+
+#### **saveAll correction**
+
+`workspace.saveAll()` previously called `Document.Save` with no arguments
+(always an error). It now correctly calls `Workspace.SaveAll`, which routes to
+`sky://workspace/saveAll` and dispatches `workbench.action.files.saveAll` in the
+renderer.
+
+`workspace.save(uri)` routes to `sky://workspace/save` (saves the specific
+document via `ITextFileService.save` or the workbench save command as a
+fallback). `workspace.saveAs(uri)` routes to `sky://workspace/saveAs` (opens the
+save-as dialog). Both are round-trip request channels that resolve the
+extension's awaited promise.

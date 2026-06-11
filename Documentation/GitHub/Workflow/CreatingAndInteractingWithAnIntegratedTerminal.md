@@ -110,9 +110,13 @@ flowchart TB
     - The `TerminalStateDto`, now containing the `mpsc` sender and task handles,
       is stored in **`AppState.ActiveTerminals`**.
 
-4.  **Initial Notifications (`Mountain` -> `Cocoon`)**
+4.  **Initial Notifications (`Mountain` -> `Cocoon` and `Sky`)**
     - **Action:** The handler sends a **`$acceptTerminalOpened` gRPC
       notification to `Cocoon`**, including the `TerminalId` and its name.
+      Cocoon's notification handler adds the terminal to the `__terminals` cache
+      and fires the `onDidOpenTerminal` event to any listening extensions.
+    - It also emits the same event to `Sky` via `AppHandle.emit` so the
+      workbench UI can register the new terminal entry.
     - It also sends a **`$acceptTerminalProcessId` notification**, providing the
       OS-level `pid`.
     - Finally, it returns the creation details (ID, name, PID) as the successful
@@ -180,3 +184,54 @@ flowchart TB
     - The loop begins again from **Step 6/7**, sending the output data to both
       `Cocoon` and the `Wind/Sky` UI.
     - **The user sees the command's output printed in their terminal.**
+
+---
+
+#### **Phase 5: Terminal Lifecycle Events**
+
+When a terminal closes (shell exits or the user explicitly closes it):
+
+- The **Waiter Task** fires **`$acceptTerminalClosed`** to `Cocoon`, which
+  removes the terminal from the `__terminals` cache and fires the
+  `onDidCloseTerminal` event.
+- `Mountain` also emits the closure to `Sky` via Tauri event so the workbench
+  removes the terminal tab.
+
+The full lifecycle event set available to extensions is:
+
+| Event                       | Trigger                                    |
+| --------------------------- | ------------------------------------------ |
+| `onDidOpenTerminal`         | `$acceptTerminalOpened` gRPC from Mountain |
+| `onDidCloseTerminal`        | `$acceptTerminalClosed` gRPC from Mountain |
+| `onDidChangeActiveTerminal` | Focus change notification from `Wind/Sky`  |
+
+---
+
+#### **Phase 6: OSC 633 Shell Integration**
+
+Modern shells emit OSC 633 escape sequences to signal command lifecycle
+boundaries. Land processes these sequences through the PTY Reader Task and
+routes them as IPC calls:
+
+```
+OSC 633 ; A          shell prompt start (decoration marker)
+OSC 633 ; B          shell prompt end (decoration marker)
+OSC 633 ; C          command start
+                         → localPty:shellExecutionStart IPC
+                         → Mountain stores in InflightExecution Map
+                         → $acceptTerminalShellExecutionStart gRPC → Cocoon
+OSC 633 ; D[;<exit>] command end
+                         → localPty:shellExecutionEnd IPC
+                         → $acceptTerminalShellExecutionEnd gRPC → Cocoon
+                         → $acceptExecutedTerminalCommand gRPC → Cocoon
+OSC 633 ; E;<line>   command line capture
+                         → stored per-terminal in InflightExecution Map
+                           (associated with the next OSC 633 ; D flush)
+```
+
+Extension subscribers receive these events via:
+
+- `window.onDidStartTerminalShellExecution` - fires on OSC 633 ; C
+- `window.onDidEndTerminalShellExecution` - fires on OSC 633 ; D
+- `window.onDidExecuteTerminalCommand` - fires after OSC 633 ; D with the
+  captured command line and exit code

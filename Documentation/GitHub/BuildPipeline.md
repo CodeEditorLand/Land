@@ -26,30 +26,43 @@ The pipeline is a multi-stage, multi-language process that coordinates `Rust`,
 
 ## Pipeline Overview 📋
 
-The **Land** build is a two-stage linear flow:
+The **Land** build has six stages:
 
-- **Stage 1** - Produces the compiled VS Code platform code
-- **Stage 2** - Compiles the native `Rust` backend and bundles the `TypeScript`
-  frontend
+1. **VS Code platform compile** — produces the compiled JavaScript platform code
+2. **TypeScript build** — `pnpm prepublishOnly` for Wind, Cocoon, Output, Sky,
+   Worker
+3. **PreBake** — walks extension roots, writes `extensions.manifest.json` (runs
+   via `beforeBundleCommand`)
+4. **Rust build** — `cargo build -p Mountain`
+5. **Tauri bundle** — `pnpm tauri build`
+6. **Re-sign** — `Maintain/Script/SignBundle.sh` strips quarantine bits and
+   re-applies entitlements
 
 ```mermaid
 sequenceDiagram
     participant Env as .env.Land files
     participant BS as Maintain/Debug/Build.sh
     participant S1 as Stage 1: VS Code
-    participant S2R as Stage 2a: Rust
-    participant S2T as Stage 2b: TypeScript
+    participant S2T as Stage 2: TypeScript
+    participant S3 as Stage 3: PreBake
+    participant S4R as Stage 4: Rust
+    participant S5 as Stage 5: Tauri bundle
+    participant S6 as Stage 6: Re-sign
     participant App as Land Application
 
     Env->>BS: Export 18 env files across 6 domains
     BS->>S1: Invoke npm install + npm run compile
-    BS->>S2R: Invoke cargo build
-    BS->>S2T: Invoke ESBuild / Vite / Astro
-    S1-->>S2R: Compiled platform code
+    BS->>S2T: Invoke pnpm prepublishOnly (ESBuild / Vite / Astro)
+    BS->>S4R: Invoke cargo build -p Mountain
+    S4R->>S5: pnpm tauri build
+    S5->>S3: beforeBundleCommand triggers PreBake
+    S3-->>S5: extensions.manifest.json written
+    S5->>S6: BundleLevel=debug sh Maintain/Script/SignBundle.sh
+    S1-->>S4R: Compiled platform code
     S1-->>S2T: Compiled platform code
-    S2R->>App: Native backend (Mountain, Echo, Mist, etc.)
+    S4R->>App: Native backend (Mountain, Echo, Mist, etc.)
     S2T->>App: Frontend bundles (Sky, Wind, Cocoon)
-    BS->>App: Bundle into Mountain .app
+    S6->>App: Correctly-entitled .app bundle
 ```
 
 ### Stage 1: VS Code Platform Compilation
@@ -95,13 +108,26 @@ export Trace=all Record=1 Disable=false
 
 The build script invokes, in sequence:
 
-1. **Rust workspace compilation** via `cargo build` for `Common`, `Echo`,
-   `Mist`, `Mountain`, `Rest`, `SideCar`, `Air`, `Vine`, `Grove`
-2. **Output artifact bundling** via `ESBuild` for the VS Code platform code
-3. **Cocoon compilation** via `ESBuild` for the extension host
-4. **Worker compilation** via `ESBuild` for the service worker
-5. **Wind + Sky compilation** via `Vite`/`Astro` for the UI layer
-6. **Tauri bundling** for the final `.app` bundle
+1. **TypeScript build** (`pnpm prepublishOnly`) — Output, Cocoon, Worker, Wind,
+   Sky
+    - Output artifact bundling via `ESBuild` for the VS Code platform code
+    - Cocoon compilation via `ESBuild` for the extension host
+    - Worker compilation via `ESBuild` for the service worker
+    - Wind + Sky compilation via `Vite`/`Astro` for the UI layer
+2. **PreBake** (`Maintain/Build/Manifest/PreBake.ts`) — runs via
+   `beforeBundleCommand` inside `tauri.conf.json`; walks extension roots and
+   writes `extensions.manifest.json`. Fires in **all** build paths (direct
+   `pnpm tauri build`, `Build.sh`, CI) — not only via the wrapper script.
+   Consumed by `LoadFromCache.rs` at boot (<50 ms vs ~1200 ms live scan).
+3. **Rust workspace compilation** via `cargo build -p Mountain`
+4. **Tauri bundling** for the final `.app` bundle
+5. **Re-sign** (`Maintain/Script/SignBundle.sh`) — strips macOS quarantine bits
+   with `xattr -cr`, then re-signs with `codesign --force --deep --sign -` plus
+   `Entitlements.plist` (hardened runtime + JIT + file-picker TCC). Invoked
+   automatically by `Build.sh`:
+    ```sh
+    BundleLevel=debug sh Maintain/Script/SignBundle.sh
+    ```
 
 ---
 
@@ -386,6 +412,7 @@ graph TB
     Mountain --> MountainDebug[debug or release/]
     MountainDebug --> MountainBin[Mountain]
     MountainDebug --> MountainApp[Mountain.app]
+    MountainDebug --> MountainManifest[extensions.manifest.json]
 
     Cocoon --> CocoonBootstrap[cocoon-bootstrap.js]
     Cocoon --> CocoonBundles[bundles/]
@@ -401,6 +428,17 @@ graph TB
     Wind --> WindTarget[Target/]
     WindTarget --> WindFn[Function/Install/]
 ```
+
+Notable artifacts:
+
+| Path                                                       | Description                                                 |
+| ---------------------------------------------------------- | ----------------------------------------------------------- |
+| `Element/Mountain/Target/<level>/Mountain`                 | Native binary                                               |
+| `Element/Mountain/Target/<level>/bundle/macos/*.app`       | Signed `.app` bundle                                        |
+| `Element/Mountain/Target/<level>/extensions.manifest.json` | Pre-baked extension list (~50 ms load vs 1200 ms live scan) |
+| `Element/Sky/Target/Static/Application/`                   | VS Code workbench assets                                    |
+| `Element/Sky/Target/Static/Bundled/Electron/`              | Vite-bundled workbench (bundled profiles only)              |
+| `Element/Cocoon/Compiled/cocoon-bootstrap.js`              | Extension host bundle                                       |
 
 ---
 

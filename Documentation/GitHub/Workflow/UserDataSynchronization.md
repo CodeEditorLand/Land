@@ -172,3 +172,30 @@ sequenceDiagram
       its new settings and adjust its behavior accordingly.
     - **The synchronization process for settings is now complete.** The same
       pattern is repeated for keybindings, snippets, and extensions.
+
+---
+
+#### **Extension storage via Mountain**
+
+Extension `workspaceState` and `globalState` (`Memento`) are backed by Mountain
+`storage:get` / `storage:set` IPC rather than a local file. The `Memento`
+implementation in `Handler/Extension/Host/ActivateExtension.ts` reads initial
+values via `storage:get` during activation and writes through `storage:set` on
+every `update()` call. This means extension state persists across Cocoon
+restarts without the extension needing to manage its own storage file.
+
+#### **Extension secrets via Mountain encryption**
+
+`context.secrets` uses Mountain's AES-256-GCM encryption layer rather than
+plaintext storage:
+
+- `secrets.store(key, value)` calls Mountain `encryption:encrypt` with the
+  plaintext value, then `storage:set` with the ciphertext.
+- `secrets.get(key)` calls `storage:get` for the ciphertext and then
+  `encryption:decrypt` to recover the plaintext.
+- `secrets.delete(key)` calls `storage:set` with an empty string.
+
+The encryption key is derived from a SHA-256 hash of the machine UUID
+(`Encryption/Key.rs`), making it machine-stable across sessions. Secrets are
+never written to disk in plaintext. The `onDidChange` event fires after every
+`store` or `delete` call.

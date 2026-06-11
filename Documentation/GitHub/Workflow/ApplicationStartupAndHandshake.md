@@ -78,7 +78,12 @@ sequenceDiagram
       to load all `settings.json` files from disk into `AppState`.
     - It calls
       [`ExtensionManagement`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/ExtensionManagement)
-      to find all extensions and load their manifests into `AppState`.
+      to find all extensions and load their manifests into `AppState`. If a
+      pre-baked `extensions.manifest.json` exists in the bundle (written by
+      `Maintain/Build/Manifest/PreBake.ts` during `beforeBundleCommand`),
+      Mountain reads it in <50 ms. On first boot (or when the cache is absent),
+      it falls back to a parallel `join_all` live scan (~1200 ms) and caches the
+      result for subsequent launches.
     - It calls
       **[`vine::server::Initialize`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Vine)**,
       which starts the **gRPC server** to listen for connections from
@@ -99,20 +104,24 @@ sequenceDiagram
 #### **Phase 2: Sidecar Handshake and UI Launch ([`Cocoon`](https://github.com/CodeEditorLand/Cocoon) & [`Wind`](https://github.com/CodeEditorLand/Wind))**
 
 4.  **`Cocoon` Initialization
-    ([`Cocoon`](https://github.com/CodeEditorLand/Cocoon))**
-    - **Action:** The `Cocoon` process starts.
-    - The
-      [`RunProcessPatches`](https://github.com/CodeEditorLand/Cocoon/tree/Current#L1)
-      effect executes, setting up `console.log` piping and other critical
-      process patches.
-    - The
-      [`IpcProvider`](https://github.com/CodeEditorLand/Cocoon/tree/Current#L1)
-      starts `Cocoon`'s gRPC client.
-    - Upon successful connection, it sends the **`$initialHandshake` gRPC
-      notification to `Mountain`** to signal that it is ready to receive
-      initialization data.
-    - It then registers an RPC handler for the `initExtensionHost` method and
-      waits.
+    ([`Cocoon/Source/Effect/Bootstrap.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Effect/Bootstrap.ts))**
+    - **Action:** The `Cocoon` process runs its bootstrap stages in order:
+        1. **Environment** - records Node.js version, platform, arch.
+        2. **Configuration** - resolves `MOUNTAIN_GRPC_PORT` (50051) and
+           `COCOON_GRPC_PORT` (50052); populates
+           `globalThis.__cocoonBootstrapConfig` and `globalThis.__LandTiers`.
+        3. **RPCServer** - binds Cocoon's own gRPC server on port 50052. **This
+           must complete before Mountain's 30-second gRPC connection budget
+           expires.**
+        4. **ModuleInterceptor** - installs the `require()` interceptor,
+           remapping `electron` to Tauri stubs and patching VS Code bundle
+           loading.
+        5. **MountainConnection** - TCP-probes Mountain on port 50051, opens the
+           gRPC channel, and sends the **`$initialHandshake`** notification to
+           signal readiness.
+        6. **Extensions** - activates enabled extensions concurrently (up to 8
+           in parallel). See step 6 for activation ordering details.
+        7. **HealthCheck** - optional final service health sweep.
 
 5.  **`Mountain` Responds to Handshake**
     ([`ProcessManagement`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/ProcessManagement))\*\*
@@ -122,7 +131,7 @@ sequenceDiagram
       gathering all necessary data from `AppState` (workspace info, extension
       lists, configuration, etc.).
     - It sends the **`initExtensionHost` gRPC request back to `Cocoon`**,
-      containing this massive initialization payload.
+      containing this initialization payload.
 
 6.  **`Cocoon` Final Initialization
     ([`Cocoon`](https://github.com/CodeEditorLand/Cocoon))**
@@ -131,16 +140,13 @@ sequenceDiagram
       handler in `Cocoon` fires.
     - It uses the received payload to create and provide the
       [`InitDataLayer`](https://github.com/CodeEditorLand/Cocoon/tree/Current#L1).
-    - **It runs the
-      [`FullAppInitialization`](https://github.com/CodeEditorLand/Cocoon/tree/Current#L1)
-      effect.**
-    - Inside this effect, the
-      [`RequireInterceptor`](https://github.com/CodeEditorLand/Cocoon/tree/Current#L1)
-      is installed, patching `require()`.
-    - The
+    - **It runs `FullAppInitialization`,** resolving the
       [`ExtensionHostProvider`](https://github.com/CodeEditorLand/Cocoon/tree/Current#L1)
-      is resolved, and it begins activating "startup" extensions (`*` activation
-      event). At this point, workflows like **#3 (Language Features)** and **#6
+      and activating startup extensions (`*` activation event).
+    - Extension activation uses **topological ordering**: if extension A
+      declares `extensionDependencies: ["B"]`, extension B is activated first.
+      An `InProgress` Set prevents circular dependency deadlocks.
+    - At this point, workflows like **#3 (Language Features)** and **#6
       (Webviews)** can begin, as extensions register their providers.
 
 7.  **Simultaneously, the UI Loads

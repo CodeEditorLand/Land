@@ -192,3 +192,31 @@ sequenceDiagram
     - **Action:** The hover controller receives the content and renders the
       tooltip widget on the screen.
     - **The user now sees the "Hello World" tooltip.**
+
+---
+
+#### **Resolve methods**
+
+The same `InvokeLanguageProvider` dispatch path used for `$provideHover` also
+handles the resolve phase of two-phase providers. The following methods are
+fully routed through `FeatureMethods.rs` and return results to the caller rather
+than being dropped:
+
+- `$resolveCodeAction`
+- `$resolveCompletionItem`
+- `$resolveHover`
+- `$resolveInlayHint`
+- `$resolveDocumentLink`
+- `$resolveWorkspaceSymbol`
+
+#### **Inline completions**
+
+The same gRPC dispatch path handles inline completion providers (used by Copilot
+and similar AI tools). When an extension calls
+`vscode.languages.registerInlineCompletionItemProvider()`, the handle is stored
+in `AppState.LanguageProviders` under the `InlineCompletion` type. Sky registers
+the provider with `ILanguageFeaturesService.inlineCompletionsProvider` via the
+`sky://language/register-inline-completions` bridge channel. When the editor
+requests completions, Mountain routes `language:provideInlineCompletions`
+through the same `LanguageFeatureProviderRegistry` trait and gRPC path as hover,
+returning `InlineCompletionItem[]` to the editor.

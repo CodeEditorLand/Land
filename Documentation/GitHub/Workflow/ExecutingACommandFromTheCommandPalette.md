@@ -186,3 +186,34 @@ _(Steps 8 and 9 are the same)_
     - `Mountain` receives the gRPC response and forwards it back to `Wind` as
       the result of the `TauriInvoke` promise.
     - The command execution is complete.
+
+---
+
+#### **registerTextEditorCommand**
+
+`vscode.commands.registerTextEditorCommand(id, callback)` wraps the callback so
+it always receives `(textEditor, editBuilder, ...args)` with live objects:
+
+- `textEditor` is the active `TextEditor` proxy, including `.edit()`,
+  `.setDecorations()`, and `.revealRange()`.
+- `editBuilder` is the real `TextEditorEdit` buffer tied to the active Monaco
+  model. Edits collected via `builder.replace()` / `builder.insert()` /
+  `builder.delete()` are applied atomically when the callback returns. If the
+  callback is async (returns a `Promise`), the builder waits for it to resolve
+  before flushing.
+
+When no editor is active, a no-op builder is passed so the extension's pre-edit
+setup still runs.
+
+#### **onDidExecuteCommand**
+
+Mountain emits `sky://commands/executed` to the Sky renderer after every command
+dispatch, and simultaneously sends `$acceptCommandExecuted` over the Vine gRPC
+channel to Cocoon. `Notification/Handler.ts` in Cocoon catches the Vine
+notification and re-emits it on the shared `Emitter` channel
+`commands.executed`. The `onDidExecuteCommand` subscription in
+`Commands/Namespace.ts` listens on that channel, so extensions receive the event
+for both native and extension-contributed commands. Local (Cocoon-to-Cocoon)
+`executeCommand` calls also emit on `commands.executed` directly, ensuring
+extension-to-extension calls are visible to listeners without a Mountain
+round-trip.

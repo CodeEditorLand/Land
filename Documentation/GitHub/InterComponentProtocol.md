@@ -68,6 +68,23 @@ graph BT
 
 ## Tauri IPC 🎮
 
+### TierIPC Runtime Routing
+
+The `TierIPC` environment variable controls how `Wind` and `Output` route Tauri
+IPC calls at runtime. No rebuild is required to switch tiers.
+
+| Value          | Behaviour                                                                                       |
+| -------------- | ----------------------------------------------------------------------------------------------- |
+| `Mountain`     | All calls route to Mountain (default)                                                           |
+| `NodeDeferred` | Mountain first; on miss or `undefined` result, falls back to Cocoon via `cocoon:request` bridge |
+| `Node`         | All calls bypass Mountain and route directly to Cocoon via `cocoon:request`                     |
+
+Individual subsystems have their own tier constants (e.g. `TierTerminal`,
+`TierStorage`, `TierSearch`) baked at compile time from `.env.Land`. A runtime
+shell export (e.g. `export TierStorage=Node`) overrides the baked value without
+a rebuild. The active tier for each subsystem is logged at boot by
+`Mountain/Source/LandFixTier.rs`.
+
 ### Commands (Request-Response)
 
 `Wind` invokes `Mountain` handlers through `@tauri-apps/api` `invoke()`. Each
@@ -108,22 +125,139 @@ fn main() {
 
 ### Command Catalog
 
-| Command             | Parameters                                    | Returns          | Purpose                   |
-| ------------------- | --------------------------------------------- | ---------------- | ------------------------- |
-| `read_file`         | `{ path: string }`                            | `Uint8Array`     | Read file from disk       |
-| `write_file`        | `{ path: string, content: Uint8Array }`       | `void`           | Write file to disk        |
-| `get_configuration` | `{ key?: string }`                            | `Configuration`  | Read configuration values |
-| `set_configuration` | `{ key: string, value: any, target: string }` | `void`           | Update configuration      |
-| `open_dialog`       | `{ options: DialogOptions }`                  | `string[]`       | Open native file dialog   |
-| `save_dialog`       | `{ options: DialogOptions }`                  | `string \| null` | Open native save dialog   |
-| `show_message`      | `{ message: string, type: string }`           | `string`         | Show OS message box       |
-| `create_terminal`   | `{ name: string, cwd?: string }`              | `number`         | Create PTY terminal       |
-| `write_terminal`    | `{ id: number, data: string }`                | `void`           | Write to terminal PTY     |
-| `execute_command`   | `{ commandId: string, args: any[] }`          | `any`            | Execute a command         |
-| `get_clipboard`     | `{ format: string }`                          | `string`         | Read clipboard contents   |
-| `set_clipboard`     | `{ text: string }`                            | `void`           | Write to clipboard        |
-| `get_environment`   | `{ name: string }`                            | `string`         | Read environment variable |
-| `search_files`      | `{ pattern: string, options: SearchOptions }` | `SearchResult[]` | Search for files          |
+All commands are dispatched through the single Tauri command `MountainIPCInvoke`
+with `{ method: string, params: any[] }`. The method string corresponds to the
+channel wire name defined in `Common/Source/IPC/Channel.rs`.
+
+#### Encryption
+
+| Command              | Parameters             | Returns  | Purpose                                                                    |
+| -------------------- | ---------------------- | -------- | -------------------------------------------------------------------------- |
+| `encryption:encrypt` | `[plaintext: string]`  | `string` | AES-256-GCM encryption; key is SHA-256 of machine UUID, cached per-process |
+| `encryption:decrypt` | `[ciphertext: string]` | `string` | Symmetric decryption; used by extension context `secrets` API              |
+
+The encryption key is derived once per process in `Encryption/Key.rs` using
+`SHA-256("Land-Encryption-v1" + machine_id)`. Returns an empty string on failure
+rather than throwing, so callers treat a corrupt blob as "no stored secret".
+
+#### File System
+
+| Command          | Parameters                            | Returns      | Purpose                                                             |
+| ---------------- | ------------------------------------- | ------------ | ------------------------------------------------------------------- |
+| `file:watch`     | `[path: string, options?]`            | `void`       | Register a file watcher via `FileWatcherProvider`                   |
+| `file:unwatch`   | `[path: string]`                      | `void`       | Deregister a file watcher                                           |
+| `file:open`      | `[path: string, opts?]`               | `number`     | Open a file descriptor; fd is tracked in Mountain's fd table        |
+| `file:close`     | `[fd: number]`                        | `void`       | Close a tracked file descriptor                                     |
+| `file:stat`      | `[path: string]`                      | `FileStat`   | Stat a path                                                         |
+| `file:readFile`  | `[path: string]`                      | `Uint8Array` | Read file (VS Code native path)                                     |
+| `file:readdir`   | `[path: string]`                      | `DirEntry[]` | List directory entries                                              |
+| `file:writeFile` | `[path: string, content: Uint8Array]` | `void`       | Write file                                                          |
+| `file:delete`    | `[path: string, opts?]`               | `void`       | Delete file or directory; fires `$acceptDidDeleteFiles`             |
+| `file:rename`    | `[from: string, to: string]`          | `void`       | Rename/move file; fires `$acceptDidRenameFiles`                     |
+| `file:mkdir`     | `[path: string]`                      | `void`       | Create directory; fires `$acceptDidCreateFiles`                     |
+| `file:copy`      | `[from: string, to: string]`          | `void`       | Copy file                                                           |
+| `file:cloneFile` | `[from: string, to: string]`          | `void`       | Clone file (reflink where supported); fires `$acceptDidCreateFiles` |
+| `file:realpath`  | `[path: string]`                      | `string`     | Resolve symlinks                                                    |
+| `file:exists`    | `[path: string]`                      | `boolean`    | Check existence                                                     |
+
+`file:open` / `file:close` are classified as high-frequency and short-circuit
+the Echo scheduler.
+
+#### Terminal
+
+| Command                            | Parameters                             | Returns       | Purpose                                                                                                                                   |
+| ---------------------------------- | -------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `localPty:createProcess`           | `[shellLaunchConfig, cols, rows, ...]` | `{ id, pid }` | Spawn a PTY process; returns its internal id and OS PID                                                                                   |
+| `localPty:resize`                  | `[id, cols, rows]`                     | `void`        | Resize PTY via SIGWINCH                                                                                                                   |
+| `localPty:attachToProcess`         | `[id: number]`                         | `{ id, pid }` | Reconnect workbench to an existing live PTY after window reload                                                                           |
+| `localPty:detachFromProcess`       | `[id: number]`                         | `void`        | Detach the workbench from a PTY without killing the process                                                                               |
+| `localPty:reviveTerminalProcesses` | `[states: TerminalState[]]`            | `void`        | Re-spawn terminals from serialised state after reload; populates id-remap table                                                           |
+| `localPty:shellExecutionStart`     | `[{ id, commandLine, cwd }]`           | `void`        | Fired by Sky on OSC 633 ;C (command output begins); forwards `$acceptTerminalShellExecutionStart` to Cocoon                               |
+| `localPty:shellExecutionEnd`       | `[{ id, commandLine, cwd, exitCode }]` | `void`        | Fired by Sky on OSC 633 ;D (command finished); fans out `$acceptTerminalShellExecutionEnd` and `$acceptExecutedTerminalCommand` to Cocoon |
+| `localPty:freePortKillProcess`     | `[port: number]`                       | `void`        | Find process owning a port (lsof) and SIGKILL it                                                                                          |
+| `localPty:getDefaultShell`         | `[]`                                   | `string`      | Return the user's default login shell path                                                                                                |
+| `localPty:getEnvironment`          | `[]`                                   | `object`      | Return the login-shell environment variables                                                                                              |
+| `localPty:getProfiles`             | `[includeDetected?]`                   | `Profile[]`   | List available shell profiles                                                                                                             |
+| `terminal:create`                  | `[options]`                            | `{ id }`      | Create a terminal tab (calls `TerminalProvider`)                                                                                          |
+| `terminal:sendText`                | `[id, text]`                           | `void`        | Write text to terminal PTY                                                                                                                |
+| `terminal:show`                    | `[id]`                                 | `void`        | Reveal terminal tab in UI                                                                                                                 |
+| `terminal:hide`                    | `[id]`                                 | `void`        | Hide terminal tab                                                                                                                         |
+| `terminal:dispose`                 | `[id]`                                 | `void`        | Destroy terminal and PTY                                                                                                                  |
+
+#### NativeHost
+
+| Command                                     | Purpose                                                               |
+| ------------------------------------------- | --------------------------------------------------------------------- |
+| `nativeHost:quit`                           | Request graceful application quit                                     |
+| `nativeHost:exit`                           | Exit with process code                                                |
+| `nativeHost:relaunch`                       | Restart the application                                               |
+| `nativeHost:reload`                         | Reload the webview                                                    |
+| `nativeHost:openDevTools`                   | Open Tauri/WebView developer tools                                    |
+| `nativeHost:toggleDevTools`                 | Toggle developer tools visibility                                     |
+| `nativeHost:killProcess`                    | Kill a process by PID                                                 |
+| `nativeHost:installShellCommand`            | Install `fiddee` CLI symlink in `/usr/local/bin`                      |
+| `nativeHost:uninstallShellCommand`          | Remove `fiddee` CLI symlink                                           |
+| `nativeHost:findFreePort`                   | Find an available TCP port                                            |
+| `nativeHost:isPortFree`                     | Check whether a specific port is free (real TCP bind check)           |
+| `nativeHost:resolveProxy`                   | Read `HTTPS_PROXY` / `HTTP_PROXY` environment variables               |
+| `nativeHost:getEnvironmentPaths`            | Return `home`, `appRoot`, `userData`, `temp` and related paths        |
+| `nativeHost:isRunningUnderARM64Translation` | Detect Rosetta 2 translation on macOS                                 |
+| `nativeHost:moveItemToTrash`                | Move a file to the OS trash                                           |
+| `nativeHost:showMessageBox`                 | Show a native OS alert/confirm dialog                                 |
+| `nativeHost:showSaveDialog`                 | Show a native save-file dialog                                        |
+| `nativeHost:showOpenDialog`                 | Show a native open-file/folder dialog                                 |
+| `nativeHost:readClipboardText`              | Read text from clipboard                                              |
+| `nativeHost:writeClipboardText`             | Write text to clipboard                                               |
+| `nativeHost:readClipboardFindText`          | Read macOS find-pasteboard text                                       |
+| `nativeHost:writeClipboardFindText`         | Write macOS find-pasteboard text                                      |
+| `nativeHost:readClipboardBuffer`            | Read clipboard in a specific format (e.g. `text/html`)                |
+| `nativeHost:writeClipboardBuffer`           | Write clipboard in a specific format                                  |
+| `nativeHost:hasClipboard`                   | Test whether clipboard contains data in a given format                |
+| `nativeHost:readImage`                      | Read an image from clipboard as PNG bytes                             |
+| `nativeHost:triggerPaste`                   | Programmatically trigger a paste action in the focused element        |
+| `nativeHost:setMinimumSize`                 | Set the window minimum size constraints                               |
+| `nativeHost:positionWindow`                 | Reposition or resize the window                                       |
+| `nativeHost:setRepresentedFilename`         | Set the macOS proxy-icon path in the window title bar                 |
+| `nativeHost:getWindows`                     | Return the list of open windows with product name and active document |
+| `nativeHost:getOSColorScheme`               | Return the current OS light/dark/high-contrast scheme                 |
+| `nativeHost:getOSProperties`                | Return OS name, version, architecture                                 |
+| `nativeHost:getOSStatistics`                | Return memory and CPU usage snapshot                                  |
+
+#### Language
+
+| Command                             | Parameters                 | Returns              | Purpose                                                                                                                 |
+| ----------------------------------- | -------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `language:provideInlineCompletions` | `[uri, position, context]` | `InlineCompletion[]` | Request inline completion items via `LanguageFeatureProviderRegistry`; used by Sky's Monaco `InlineCompletionsProvider` |
+| `language:getLanguages`             | `[]`                       | `string[]`           | Return all registered Monaco language IDs                                                                               |
+
+#### Other Core Commands
+
+| Command                                                                      | Purpose                                                  |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `commands:execute`                                                           | Execute a registered VS Code command by ID               |
+| `configuration:get`                                                          | Read a configuration value                               |
+| `configuration:update`                                                       | Write a configuration value                              |
+| `storage:get` / `storage:set` / `storage:delete`                             | Key-value storage backed by Mountain's `StorageProvider` |
+| `textFile:read` / `textFile:write` / `textFile:save`                         | Editor working-copy surface                              |
+| `output:create` / `output:append` / `output:appendLine`                      | Output channel management                                |
+| `notification:show` / `notification:showProgress`                            | User-facing notifications                                |
+| `quickInput:showQuickPick` / `quickInput:showInputBox`                       | Quick-pick and input-box UI round-trips                  |
+| `themes:getActive` / `themes:list` / `themes:set`                            | Theme management                                         |
+| `workspaces:getFolders` / `workspaces:addFolder` / `workspaces:removeFolder` | Workspace folder management                              |
+| `decorations:get` / `decorations:set` / `decorations:clear`                  | File decoration provider                                 |
+| `keybinding:add` / `keybinding:remove` / `keybinding:lookup`                 | Keybinding registry                                      |
+| `lifecycle:getPhase` / `lifecycle:whenPhase`                                 | Workbench lifecycle phase queries                        |
+| `model:open` / `model:get` / `model:updateContent` / `model:close`           | Text model management                                    |
+| `search:findFiles` / `search:findInFiles`                                    | File search (routes to Cocoon when `TierSearch=Node`)    |
+| `update:checkForUpdates` / `update:downloadUpdate` / `update:applyUpdate`    | Update service (all stubs; no update server)             |
+| `auth:getSessions` / `auth:createSession` / `auth:removeSession`             | Authentication (routes to Cocoon)                        |
+| `tasks:executeTask` / `tasks:getTasks`                                       | Task execution (routes to Cocoon)                        |
+| `scm:createSourceControl` / `scm:getSourceControls`                          | Source control management                                |
+| `debug:startDebugging` / `debug:getSessions` / `debug:addBreakpoints`        | Debug session management                                 |
+
+> The full channel enum is defined in `Common/Source/IPC/Channel.rs` (Rust) and
+> mirrored in `Wind/Source/IPC/Channel.ts` (TypeScript). Both must be kept in
+> lockstep — adding a channel to one requires adding it to the other.
 
 ### Events (Push from Mountain)
 
@@ -413,6 +547,13 @@ decides per-call whether to:
 ## Connection Lifecycle 🔄
 
 ### Mountain-Cocoon Connection
+
+**Bootstrap order (critical):** Cocoon's gRPC server (port 50052) must bind
+before Cocoon attempts to connect to Mountain's gRPC server (port 50051). The
+bootstrap stage order is: `RPCServer` (Stage 5) bind → `MountainConnection`
+(Stage 3) connect. Mountain allows a 30-second connection budget; reversing this
+order causes Mountain to time out before Cocoon is ready to accept the
+handshake.
 
 ```mermaid
 sequenceDiagram

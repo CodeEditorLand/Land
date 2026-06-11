@@ -1,4 +1,4 @@
-# Land Documentation 📖
+# Land Documentation
 
 This is the master index for the Land code editor's GitHub-facing documentation.
 Every document in `Documentation/GitHub/` and all per-Element
@@ -6,7 +6,7 @@ Every document in `Documentation/GitHub/` and all per-Element
 
 ---
 
-## Table of Contents 📑
+## Table of Contents
 
 1. [System Architecture](#system-architecture)
 2. [Build System](#build-system)
@@ -17,23 +17,24 @@ Every document in `Documentation/GitHub/` and all per-Element
 
 ---
 
-## System Architecture 🏗️
+## System Architecture
 
 Documents covering the overall Land system, its components, and their
 interactions.
 
-| Document                                                 | Lines | Topics                                                                                                                                                                                                                                                  |
-| -------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`Architecture.md`](Architecture.md)                     | 360+  | Process model, component map, IPC architecture, service layers, data flow patterns                                                                                                                                                                      |
-| [`EditorCore.md`](EditorCore.md)                         | 440+  | Workbench adaptation, Wind service layer (~40 services), Layer stacks, command dispatch, workbench variants                                                                                                                                             |
-| [`Polyfills.md`](Polyfills.md)                           | 480+  | Preload.ts shim, SkyBridge, Cocoon prelude, Output transforms, Worker SW, LandFix diagnostics, telemetry bridge                                                                                                                                         |
-| [`RustInfrastructure.md`](RustInfrastructure.md)         | 640+  | Common traits, Echo scheduler, Mountain internals, Mist DNS, Air daemon, Rest OXC, SideCar, Grove                                                                                                                                                       |
-| [`InterComponentProtocol.md`](InterComponentProtocol.md) | 610+  | Tauri IPC catalog, Vine gRPC proto definitions, Spine protocol, connection lifecycle, health monitoring                                                                                                                                                 |
-| [`FilesystemFootprint.md`](FilesystemFootprint.md)       | 200+  | Index + ownership domains + bundle-identifier story. Six sub-documents under [`FilesystemFootprint/`](FilesystemFootprint/): `UserDotfile`, `PlatformPaths` (macOS / Linux / Windows), `PerElement`, `EnvironmentVariables`, `Cleanup`, `Encapsulation` |
+| Document                                                         | Lines | Topics                                                                                                                                                                                                                                                  |
+| ---------------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`Architecture.md`](Architecture.md)                             | 360+  | Process model, component map, IPC architecture, service layers, data flow patterns                                                                                                                                                                      |
+| [`EditorCore.md`](EditorCore.md)                                 | 440+  | Workbench adaptation, Wind service layer (~40 services), Layer stacks, command dispatch, workbench variants                                                                                                                                             |
+| [`Polyfills.md`](Polyfills.md)                                   | 480+  | Preload.ts shim, SkyBridge, Cocoon prelude, Output transforms, Worker SW, LandFix diagnostics, telemetry bridge                                                                                                                                         |
+| [`RustInfrastructure.md`](RustInfrastructure.md)                 | 640+  | Common traits, Echo scheduler, Mountain internals, Mist DNS, Air daemon, Rest OXC, SideCar, Grove                                                                                                                                                       |
+| [`InterComponentProtocol.md`](InterComponentProtocol.md)         | 610+  | Tauri IPC catalog, Vine gRPC proto definitions, Spine protocol, connection lifecycle, health monitoring                                                                                                                                                 |
+| [`VSCode-API-Coverage-Matrix.md`](VSCode-API-Coverage-Matrix.md) | 420+  | Authoritative map of every top-level `vscode.*` API surface and its implementation split across Sky, Cocoon, and Mountain; Track A vs Track B strategy; coverage delta 75%→88% weighted (TextEditor 95%, Workspace 96%, SCM 95%, Window 95%)            |
+| [`FilesystemFootprint.md`](FilesystemFootprint.md)               | 200+  | Index + ownership domains + bundle-identifier story. Six sub-documents under [`FilesystemFootprint/`](FilesystemFootprint/): `UserDotfile`, `PlatformPaths` (macOS / Linux / Windows), `PerElement`, `EnvironmentVariables`, `Cleanup`, `Encapsulation` |
 
 ---
 
-## Build System 🔧
+## Build System
 
 Documents covering the build pipeline, environment configuration, and build
 profiles.
@@ -47,7 +48,7 @@ profiles.
 
 ---
 
-## Workflow Examples 🔄
+## Workflow Examples
 
 Detailed end-to-end walkthroughs of specific user interactions and system
 operations.
@@ -68,7 +69,7 @@ operations.
 
 ---
 
-## Per-Element Documentation 🗺️
+## Per-Element Documentation
 
 Each Land Element has an `Architecture.md` in its own `Documentation/GitHub/`
 directory covering internal module structure, data flow, and implementation
@@ -105,7 +106,7 @@ details.
 
 ---
 
-## Legacy / Pre-existing Deep Dives 🔬
+## Legacy / Pre-existing Deep Dives
 
 Each Element also contains a `DeepDive.md` in its `Documentation/GitHub/`
 directory. These pre-existing documents provide historical technical depth and
@@ -143,7 +144,7 @@ Some Elements contain additional documentation beyond `DeepDive.md` and
 
 ---
 
-## Related Documentation 📚
+## Related Documentation
 
 - [`Documentation/Module/Telemetry/`](../Module/Telemetry/) - Telemetry system
   docs (Effect-OTel, Sidecars, Tree-Shaking)
@@ -154,7 +155,24 @@ Some Elements contain additional documentation beyond `DeepDive.md` and
 
 ---
 
+## Coverage Summary
+
+> [!NOTE] VS Code API weighted coverage as of 2026-05-23: **88%** overall.
+>
+> | Namespace    | Coverage |
+> | ------------ | -------- |
+> | TextEditor   | 95%      |
+> | Workspace    | 96%      |
+> | SCM          | 95%      |
+> | Window       | 95%      |
+> | LSP/Language | 95%      |
+>
+> Full breakdown in
+> [`VSCode-API-Coverage-Matrix.md`](VSCode-API-Coverage-Matrix.md).
+
+---
+
 **Project Maintainers:** Source Open
-([Source/Open@editor.land](mailto:Source/Open@editor.land)) |
+([Source/Open@Editor.Land](mailto:Source/Open@Editor.Land)) |
 [GitHub Repository](https://github.com/CodeEditorLand/Land) |
 [Report an Issue](https://github.com/CodeEditorLand/Land/issues)
