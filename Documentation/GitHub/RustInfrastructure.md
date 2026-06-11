@@ -628,7 +628,7 @@ consumed by `Mountain`, `Air`, and any other element that speaks `gRPC`.
 | File                             | Purpose                                                    |
 | -------------------------------- | ---------------------------------------------------------- |
 | `Element/Vine/Proto/Vine.proto`  | Core service contracts (ExtensionHost, BackgroundServices) |
-| `Element/Vine/Source/Build.rs`   | `prost-build` codegen invocation                           |
+| `Element/Vine/build.rs`          | `prost-build` codegen invocation                           |
 | `Element/Vine/Source/Library.rs` | Re-exports generated types for consumers                   |
 
 Protocol evolution is centralised here - adding or changing an RPC updates one

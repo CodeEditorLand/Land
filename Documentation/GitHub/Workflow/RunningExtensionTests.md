@@ -2,7 +2,7 @@
 
 > **⚠️ Verification Status:** This workflow describes a conceptual test runner
 > architecture. The actual implementation details should be verified against
-> [`Element/Mountain/Source/Testing/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Testing/)
+> [`Element/Mountain/Source/Environment/TestProvider/`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/TestProvider/)
 > and
 > [`Element/Cocoon/Source/Services/Extension.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Extension.ts)
 > for extension activation.

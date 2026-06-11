@@ -152,8 +152,7 @@ sequenceDiagram
 7.  **Simultaneously, the UI Loads
     ([`Wind/Source/Preload.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Preload.ts#L1))**
     - **Action:** The main Tauri window opens, loading the `index.html` built by
-      Sky's Astro pipeline (entry layout:
-      [`Sky/Source/Layout/Base.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Layout/Base.astro)).
+      [`Sky/Source/pages/Mountain.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/pages/Mountain.astro)).
     - The
       [`Preload.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Preload.ts#L1)
       script executes first, shimming the `window.vscode` global with

@@ -84,7 +84,7 @@ sequenceDiagram
     - It passes the request to the `track` dispatcher.
 
 4.  **Dispatcher
-    ([`Mountain/Source/Track/TrackLogic.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Track/TrackLogic.rs))**
+    ([`Mountain/Source/Track/mod.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Track/mod.rs))**
 
 - **Action:** `DispatchSidecarRequest` is called.
     - It maps the method name (`$registerHoverProvider`) to an `ActionEffect`
