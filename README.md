@@ -1112,7 +1112,7 @@ This project is funded through
 				</a>
 			</td>
 			<td align="left" valign="middle">
-				<a href="https://editor.land">
+				<a href="https://PlayForm.Cloud">
 					<img width="76" src="https://raw.githubusercontent.com/PlayForm/Asset/refs/heads/Current/Logo/PlayForm.svg" alt="PlayForm" />
 				</a>
 			</td>
