@@ -84,18 +84,18 @@ flowchart TB
       `IEditorService`.
 
 2.  **`IEditorService.openEditor()`**
-    ([`Wind/Source/Application/Editor/Definition.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1))\*\*
+    ([`Wind/Source/Effect/Editor`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Editor))\*\*
     - **Action:** The UI calls
-      [`editorService.openEditor({ resource: fileUri })`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1).
+      [`editorService.openEditor({ resource: fileUri })`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Editor).
     - The
-      [`openEditorEffect`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1)
+      [`openEditorEffect`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Editor)
       inside our `Definition.ts` is executed.
     - The input is an
-      [`IUntypedEditorInput`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1).
+      [`IUntypedEditorInput`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Editor).
       The effect first calls the
-      [`TextEditorService`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1)
+      [`TextEditorService`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Editor)
       to resolve it into a concrete
-      [`EditorInput`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1)
+      [`EditorInput`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Editor)
       instance.
     - Next, it calls `findGroup` to determine which editor group should handle
       the opening (e.g., the currently active group).
@@ -103,7 +103,7 @@ flowchart TB
 #### **Phase 2: Editor and Filesystem Logic ([`Wind`](https://github.com/CodeEditorLand/Wind/tree/Current) -> [`Mountain`](https://github.com/CodeEditorLand/Mountain/tree/Current))**
 
 3.  **`EditorGroupsService`**
-    ([`Wind/Source/Application/EditorGroups/Definition.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/EditorGroups/Definition.ts#L1))\*\*
+    ([`Wind/Source/Effect/Editor`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Editor))\*\*
     - **Action:** The `openEditor` method is called on the target
       `EditorGroupModel`.
     - The group model checks if an editor for this `fileUri` is already open. If
@@ -112,48 +112,48 @@ flowchart TB
       `EditorInput`'s `resolve()` method to get the editor model.
 
 4.  **`EditorInput.resolve()` ->
-    [`TextFileEditorModel.load()`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1)**
+    [`TextFileEditorModel.load()`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Editor)**
     - **Action:** To display the content, the editor input needs to load its
       underlying model. The `TextFileEditorModel` is responsible for this.
     - Its
-      [`load()`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/Editor/Definition.ts#L1)
+      [`load()`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Editor)
       method needs to get the file's content. It achieves this by calling the
-      [`IFileService`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/File/Live.ts#L1).
+      [`IFileService`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/FileSystem).
 
 5.  **`IFileService.readFile()`
-    ([`Wind/Source/Application/File/Live.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/File/Live.ts#L1))**
+    ([`Wind/Source/FileSystem`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/FileSystem))**
     - **Action:** The file service's `readFile(fileUri)` method is called.
     - It looks up the registered provider for the URI's scheme (in this case,
       `file:`).
     - It finds our
-      [`TauriDiskFileSystemProvider`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/FileSystem/Definition.ts#L1)
+      [`TauriDiskFileSystemProvider`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/FileSystem)
       (from
-      [`FileSystem/Definition.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/FileSystem/Definition.ts#L1)).
+      [`FileSystem/Definition.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/FileSystem)).
 
 6.  **`TauriDiskFileSystemProvider.readFile()`**
-    ([`Wind/Source/Application/FileSystem/Definition.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/FileSystem/Definition.ts#L1))\*\*
+    ([`Wind/Source/FileSystem`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/FileSystem))\*\*
     - **Action:** The provider's
-      [`readFile`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/FileSystem/Definition.ts#L1)
+      [`readFile`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/FileSystem)
       method is called.
     - This method immediately executes the
-      [`ReadFile`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/FileSystem/Definition.ts#L1)
+      [`ReadFile`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/FileSystem)
       effect from our Tauri `Integration` layer:
-      [`Effect.runPromise(ReadFile(fileUri))`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/FileSystem/Definition.ts#L1).
+      [`Effect.runPromise(ReadFile(fileUri))`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/FileSystem).
 
-7.  **`Integration/Tauri/Wrap/ReadFile.ts`**
+7.  **`Wind/Source/Service/TauriMainProcessService.ts`**
     - **Action:** The
-      [`ReadFile`](https://github.com/CodeEditorLand/Wind/tree/Current/Integration/Tauri/Wrap/ReadFile.ts#L1)
+      [`ReadFile`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Service/TauriMainProcessService.ts)
       effect executes.
     - It calls
-      [`TauriInvoke('plugin:fs|ReadFile', { path: fileUri.fsPath })`](https://github.com/CodeEditorLand/Wind/tree/Current/Integration/Tauri/Wrap/ReadFile.ts#L1).
+      [`TauriInvoke('plugin:fs|ReadFile', { path: fileUri.fsPath })`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Service/TauriMainProcessService.ts).
       This sends the request from the webview to the `Mountain` backend.
 
 #### **Phase 3: Native File I/O and Response ([`Mountain`](https://github.com/CodeEditorLand/Mountain/tree/Current))**
 
-8.  **[`Mountain/src/main.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/src/main.rs#L1)
+8.  **[`Mountain/Source/Binary/Main/Entry.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Binary/Main/Entry.rs)
     -> Tauri `fs` Plugin**
     - **Action:** Tauri receives the
-      [`plugin:fs|ReadFile`](https://github.com/CodeEditorLand/Wind/tree/Current/Integration/Tauri/Wrap/ReadFile.ts#L1)
+      [`plugin:fs|ReadFile`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Service/TauriMainProcessService.ts)
       command.
     - It routes this to the `tauri-plugin-fs`'s internal Rust handler.
     - The plugin performs the native filesystem operation:
@@ -164,7 +164,7 @@ flowchart TB
 
 #### **Phase 4: Data Unwinds and UI Renders ([`Wind`](https://github.com/CodeEditorLand/Wind/tree/Current))**
 
-9.  **`Integration/Tauri/Wrap/ReadFile.ts` (continued)**
+9.  **`TauriMainProcessService.ts` (continued)**
     - **Action:** The `TauriInvoke` promise resolves with the file content.
     - The `ReadFile` Effect succeeds, yielding the `Uint8Array`.
 
@@ -176,7 +176,7 @@ flowchart TB
 11. **`EditorGroupsService` (continued)**
     - **Action:** The `openEditor` method now has a resolved input and model.
     - It creates a new
-      [`TextEditorPane`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Application/EditorGroups/Definition.ts#L1)
+      [`TextEditorPane`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Effect/Editor)
       (or similar UI component) within the editor group.
     - It sets the `TextFileEditorModel` on the underlying Monaco editor instance
       within that pane.

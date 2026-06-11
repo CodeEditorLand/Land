@@ -151,8 +151,9 @@ sequenceDiagram
 
 7.  **Simultaneously, the UI Loads
     ([`Wind/Source/Preload.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Preload.ts#L1))**
-    - **Action:** The main Tauri window opens, loading
-      [`index.html`](https://github.com/CodeEditorLand/Wind/tree/Current/Target/index.html).
+    - **Action:** The main Tauri window opens, loading the `index.html` built by
+      Sky's Astro pipeline (entry layout:
+      [`Sky/Source/Layout/Base.astro`](https://github.com/CodeEditorLand/Sky/tree/Current/Source/Layout/Base.astro)).
     - The
       [`Preload.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Preload.ts#L1)
       script executes first, shimming the `window.vscode` global with
@@ -173,11 +174,11 @@ sequenceDiagram
       [`LiveEditorService`](https://github.com/CodeEditorLand/Wind)).
     - It converts this `Layer` into a `Runtime` and resolves the core services.
     - It instantiates the VS Code
-      [`Workbench`](https://github.com/CodeEditorLand/Grove/tree/Current/Source/vscode/vs/workbench/browser/workbench.ts)
+      [`Workbench`](https://github.com/CodeEditorLand/Output/tree/Current/Source)
       class: **`new Workbench(...)`**.
 
 9.  **VS Code Workbench Startup
-    ([`Workbench`](https://github.com/CodeEditorLand/Grove/tree/Current/Source/vscode/vs/workbench/browser/workbench.ts))**
+    ([`Workbench`](https://github.com/CodeEditorLand/Output/tree/Current/Source))**
     - **Action:** The `Workbench.startup()` method is called.
     - This kicks off the entire UI rendering lifecycle. It creates all the core
       UI parts: the Activity Bar, Status Bar, Side Bar, Editor Part, etc.
