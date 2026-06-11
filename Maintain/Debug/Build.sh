@@ -480,6 +480,19 @@ LandCapturePhaseBegin "clean-generated" "clean" "${Clean:-false}"
 . Maintain/Script/CleanGenerated.sh
 LandCapturePhaseEnd "clean-generated"
 
+# Air daemon sidecar - separate crate with its own Target dir
+# (Element/Air/.cargo/config.toml). Built here so SignBundle.sh can copy
+# it into the .app Resources and AirStart.rs finds it in dev runs.
+# Tolerant: AirStart degrades gracefully without the binary, so an Air
+# build failure must not fail the workbench build.
+LandCapturePhaseBegin "air-build"
+if (cd Element/Air && cargo build 2>&1 | tail -3); then
+	LandCapturePhaseEnd "air-build" "ok" "true"
+else
+	LandCapturePhaseEnd "air-build" "ok" "false"
+	echo "warn: Air build failed - workbench will run without the Air daemon"
+fi
+
 echo ""
 echo "Starting build..."
 echo ""

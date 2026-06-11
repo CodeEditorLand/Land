@@ -479,6 +479,16 @@ esac
 # shellcheck disable=SC1091
 . Maintain/Script/ProfileMarker.sh
 
+# Air daemon sidecar - separate crate with its own Target dir
+# (Element/Air/.cargo/config.toml). Built here so SignBundle.sh can copy
+# it into the .app Resources. Tolerant: AirStart degrades gracefully
+# without the binary, so an Air build failure must not fail the build.
+if (cd Element/Air && cargo build --release 2>&1 | tail -3); then
+	:
+else
+	echo "warn: Air build failed - bundle ships without the Air daemon"
+fi
+
 echo ""
 echo "Starting release build..."
 echo ""

@@ -60,6 +60,20 @@ fi
 
 AppName="$(basename "$AppPath")"
 
+# Ship the Air daemon inside the bundle so AirStart.rs's
+# `resolve("Air", BaseDirectory::Resource)` finds it in packaged builds.
+# Copied here (not via tauri.conf.json resources) because Air is optional:
+# a missing binary must not fail `tauri build` - AirStart degrades
+# gracefully. Must run BEFORE codesign so the signature covers it.
+AirBinary="Element/Air/Target/${BundleLevel}/Air"
+if [ -f "$AirBinary" ]; then
+	echo "[SignBundle] Bundling Air daemon from $AirBinary"
+	cp "$AirBinary" "$AppPath/Contents/Resources/Air"
+	chmod +x "$AppPath/Contents/Resources/Air"
+else
+	echo "[SignBundle] Air binary not found at $AirBinary - bundle ships without Air"
+fi
+
 echo "[SignBundle] Signing $AppName ($BundleLevel)"
 
 # Strip macOS extended attributes (Finder info, resource forks) that cause
