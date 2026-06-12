@@ -28,19 +28,19 @@
 # anything. These take final precedence over every .env file.
 # We write to a temp file so values containing spaces/special chars survive.
 # ---------------------------------------------------------------------------
-_LandUserOverrides=$(mktemp 2> /dev/null || echo "/tmp/land_user_overrides_$$")
+_LandUserOverrides=$(mktemp 2>/dev/null || echo "/tmp/land_user_overrides_$$")
 
 _LandSnapshotKeys="Tier Product Network Disable DisableUIFixes Trace Record Inspect Smoke Pack Boot Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand Pipe Emit Capture LandIsProduction"
 
 # Capture Tier*/Product*/Network* prefix vars
 for _k in $(env | cut -d= -f1 | grep -E '^(Tier|Product|Network)'); do
-	printf '%s=%s\n' "$_k" "$(printenv "$_k")" >> "$_LandUserOverrides"
+	printf '%s=%s\n' "$_k" "$(printenv "$_k")" >>"$_LandUserOverrides"
 done
 
 # Capture known runtime keys
 for _k in Disable DisableUIFixes Trace Record Inspect Smoke Pack Boot Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand Pipe Emit Capture LandIsProduction; do
-	if printenv "$_k" > /dev/null 2>&1; then
-		printf '%s=%s\n' "$_k" "$(printenv "$_k")" >> "$_LandUserOverrides"
+	if printenv "$_k" >/dev/null 2>&1; then
+		printf '%s=%s\n' "$_k" "$(printenv "$_k")" >>"$_LandUserOverrides"
 	fi
 done
 
@@ -103,7 +103,7 @@ if [ "${NODE_ENV:-}" = "production" ]; then
 	LandIsProduction="true"
 fi
 case "${Profile:-}" in
-	*release* | *Release*) LandIsProduction="true" ;;
+*release* | *Release*) LandIsProduction="true" ;;
 esac
 export LandIsProduction
 
@@ -213,7 +213,7 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	LandRuntimeKeys="Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand Pipe Emit Capture Inspect Smoke Trace Record Disable DisableUIFixes Pack Boot LandIsProduction"
 	LandRuntimeVars=""
 	for Key in $LandRuntimeKeys; do
-		Value=$(printenv "$Key" 2> /dev/null || true)
+		Value=$(printenv "$Key" 2>/dev/null || true)
 		if [ -n "$Value" ]; then
 			LandRuntimeVars="${LandRuntimeVars}${Key}=${Value}
 "
@@ -248,7 +248,7 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	# var becomes a `__Land<Section>_<Capability>__` replacement token.
 	# Cocoon's TargetConfig.ts reads CocoonEsbuildDefine and merges it
 	# into its esbuild options.
-	if command -v node > /dev/null 2>&1; then
+	if command -v node >/dev/null 2>&1; then
 		CocoonEsbuildDefine=$(node -e "
 const prefixes = [
 	{ src: 'Tier', token: 'Tier' },
