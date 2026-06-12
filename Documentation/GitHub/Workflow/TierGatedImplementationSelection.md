@@ -173,7 +173,7 @@ sequenceDiagram
         (`fiddee-F8`, `fiddee-FR`, `fiddee-FN`, `fiddee-FC`) instead of the
         10-char encoding. The flavor code is appended to every filesystem
         identity (data folder, URL protocol, binary identifier) so each flavor
-        runs in complete isolation — no shared state, no collisions.
+        runs in complete isolation - no shared state, no collisions.
 
 ---
 
