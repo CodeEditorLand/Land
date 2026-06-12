@@ -27,25 +27,25 @@ WINDOW_SECONDS="20"
 
 while [ $# -gt 0 ]; do
 	case $1 in
-		--profile | -p)
-			PROFILE_FILTER="$2"
-			shift 2
-			;;
-		--window | -w)
-			WINDOW_SECONDS="$2"
-			shift 2
-			;;
-		--help | -h)
-			echo "Usage: $0 [--profile <name>] [--window <seconds>]"
-			echo ""
-			echo "Smoke-tests each shippable profile. Without --profile, runs all."
-			echo "Profiles: full, minimal, mountain-only, cocoon-headless, kernel"
-			exit 0
-			;;
-		*)
-			echo "Unknown option: $1"
-			exit 1
-			;;
+	--profile | -p)
+		PROFILE_FILTER="$2"
+		shift 2
+		;;
+	--window | -w)
+		WINDOW_SECONDS="$2"
+		shift 2
+		;;
+	--help | -h)
+		echo "Usage: $0 [--profile <name>] [--window <seconds>]"
+		echo ""
+		echo "Smoke-tests each shippable profile. Without --profile, runs all."
+		echo "Profiles: full, minimal, mountain-only, cocoon-headless, kernel"
+		exit 0
+		;;
+	*)
+		echo "Unknown option: $1"
+		exit 1
+		;;
 	esac
 done
 
@@ -75,21 +75,21 @@ RunProfile() {
 
 	# Launch + tail window, then SIGTERM.
 	env $EnvLine Trace=short NODE_ENV=development TAURI_ENV_DEBUG=true \
-		"$BINARY" > /tmp/smoke_${ProfileName}.stdout 2>&1 &
+		"$BINARY" >/tmp/smoke_${ProfileName}.stdout 2>&1 &
 	PID=$!
 
 	Elapsed=0
 	while [ "$Elapsed" -lt "$WINDOW_SECONDS" ]; do
-		if ! kill -0 "$PID" 2> /dev/null; then break; fi
+		if ! kill -0 "$PID" 2>/dev/null; then break; fi
 		sleep 2
 		Elapsed=$((Elapsed + 2))
 	done
 
-	kill "$PID" 2> /dev/null || true
-	wait "$PID" 2> /dev/null || true
+	kill "$PID" 2>/dev/null || true
+	wait "$PID" 2>/dev/null || true
 
 	# Find the just-written log session.
-	LogSession=$(ls -t "$LOG_ROOT" 2> /dev/null | head -1)
+	LogSession=$(ls -t "$LOG_ROOT" 2>/dev/null | head -1)
 	if [ -z "$LogSession" ]; then
 		echo "[SmokeProfiles] $ProfileName: FAIL - no log session produced"
 		return 1
@@ -101,7 +101,7 @@ RunProfile() {
 	Missing=""
 	IFS="|"
 	for Signature in $ExpectedSignatures; do
-		if ! grep -q "$Signature" "$LogFile" 2> /dev/null; then
+		if ! grep -q "$Signature" "$LogFile" 2>/dev/null; then
 			Missing="$Missing\n  missing: $Signature"
 		fi
 	done
@@ -109,7 +109,7 @@ RunProfile() {
 	Forbidden=""
 	for Signature in $ForbiddenSignatures; do
 		if [ -z "$Signature" ]; then continue; fi
-		if grep -q "$Signature" "$LogFile" 2> /dev/null; then
+		if grep -q "$Signature" "$LogFile" 2>/dev/null; then
 			Forbidden="$Forbidden\n  forbidden: $Signature"
 		fi
 	done
@@ -132,36 +132,36 @@ OverallStatus=0
 RunProfile "full" \
 	"" \
 	"Extension scan complete. Found|Cocoon handshake complete|vscode API shim critical symbols OK" \
-	"Skip=true|Skipping spawn (Spawn=false)" \
-	|| OverallStatus=1
+	"Skip=true|Skipping spawn (Spawn=false)" ||
+	OverallStatus=1
 
 # Minimal - no built-in extensions
 RunProfile "minimal" \
 	"Skip=true" \
 	"Skip=true|Found 0 extensions|Cocoon handshake complete" \
-	"Step 13: Copied [0-9]+ built-in" \
-	|| OverallStatus=1
+	"Step 13: Copied [0-9]+ built-in" ||
+	OverallStatus=1
 
 # Mountain-only - no Cocoon
 RunProfile "mountain-only" \
 	"Spawn=false" \
 	"Skipping spawn (Spawn=false)|Extension scan complete" \
-	"Cocoon handshake complete|vscode API shim critical symbols OK" \
-	|| OverallStatus=1
+	"Cocoon handshake complete|vscode API shim critical symbols OK" ||
+	OverallStatus=1
 
 # Cocoon-headless - Wind preload off (logged via performance mark, not in Mountain.dev.log)
 RunProfile "cocoon-headless" \
 	"Render=false" \
 	"Cocoon handshake complete|Extension scan complete" \
-	"" \
-	|| OverallStatus=1
+	"" ||
+	OverallStatus=1
 
 # Kernel - all three off
 RunProfile "kernel" \
 	"Skip=true Spawn=false Render=false" \
 	"Skipping spawn (Spawn=false)|Found 0 extensions" \
-	"Cocoon handshake complete" \
-	|| OverallStatus=1
+	"Cocoon handshake complete" ||
+	OverallStatus=1
 
 echo ""
 echo "================================================================"
@@ -190,21 +190,21 @@ APP_BUNDLE="Element/Mountain/Target/debug/bundle/macos/DevelopmentNodeEnvironmen
 SKY_EXTENSIONS="Element/Sky/Target/Static/Application/extensions"
 
 if [ -d "$APP_BUNDLE" ]; then
-	BundleSize=$(du -sh "$APP_BUNDLE" 2> /dev/null | awk '{print $1}')
-	BundleBytes=$(du -sk "$APP_BUNDLE" 2> /dev/null | awk '{print $1 * 1024}')
+	BundleSize=$(du -sh "$APP_BUNDLE" 2>/dev/null | awk '{print $1}')
+	BundleBytes=$(du -sk "$APP_BUNDLE" 2>/dev/null | awk '{print $1 * 1024}')
 	echo "  .app bundle:           $BundleSize (${BundleBytes} bytes)"
 else
 	echo "  .app bundle:           (not present; run build first)"
 fi
 
 if [ -f "$BINARY" ]; then
-	BinarySize=$(du -sh "$BINARY" 2> /dev/null | awk '{print $1}')
+	BinarySize=$(du -sh "$BINARY" 2>/dev/null | awk '{print $1}')
 	echo "  Mountain binary:       $BinarySize"
 fi
 
 if [ -d "$SKY_EXTENSIONS" ]; then
-	ExtensionCount=$(ls "$SKY_EXTENSIONS" 2> /dev/null | wc -l | tr -d ' ')
-	ExtensionBytes=$(du -sh "$SKY_EXTENSIONS" 2> /dev/null | awk '{print $1}')
+	ExtensionCount=$(ls "$SKY_EXTENSIONS" 2>/dev/null | wc -l | tr -d ' ')
+	ExtensionBytes=$(du -sh "$SKY_EXTENSIONS" 2>/dev/null | awk '{print $1}')
 	echo "  Bundled extensions:    $ExtensionCount dirs ($ExtensionBytes)"
 else
 	echo "  Bundled extensions:    (none - minimal or kernel profile)"
@@ -212,13 +212,13 @@ fi
 
 CocoonBundle="Element/Cocoon/Target/Bootstrap/Implementation/Cocoon/Main.js"
 if [ -f "$CocoonBundle" ]; then
-	CocoonSize=$(du -sh "$CocoonBundle" 2> /dev/null | awk '{print $1}')
+	CocoonSize=$(du -sh "$CocoonBundle" 2>/dev/null | awk '{print $1}')
 	echo "  Cocoon/Main.js:        $CocoonSize"
 fi
 
 WindBundle="Element/Wind/Target"
 if [ -d "$WindBundle" ]; then
-	WindBytes=$(du -sh "$WindBundle" 2> /dev/null | awk '{print $1}')
+	WindBytes=$(du -sh "$WindBundle" 2>/dev/null | awk '{print $1}')
 	echo "  Wind compiled:         $WindBytes"
 fi
 

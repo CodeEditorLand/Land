@@ -34,42 +34,42 @@ FLAVOR=""
 
 while [ $# -gt 0 ]; do
 	case $1 in
-		--profile | -p)
-			PROFILE="$2"
-			shift 2
-			;;
-		--flavor | -f)
-			FLAVOR="$2"
-			shift 2
-			;;
-		--help | -h)
-			echo "Usage: $0 [OPTIONS]"
-			echo ""
-			echo "Options:"
-			echo "  --profile, -p <name>  Build profile to use (default: production)"
-			echo "  --help, -h            Show this help message"
-			echo ""
-			echo "Available profiles:"
-			echo "  production       - Production build with Mountain workbench (default)"
-			echo "  release          - Full release with packaging and signing"
-			echo "  release-electron         - Electron workbench + Rest OXC (full desktop)"
-			echo "  release-electron-minimal - Electron without built-in extensions (Atom J4)"
-			echo "  release-mountain-only    - Mountain without Cocoon subprocess (Atom N mirror)"
-			echo "  release-cocoon-headless  - Electron + Cocoon, no Wind preload (Atom N3b)"
-			echo "  release-kernel           - Pure Mountain: no built-ins, no Cocoon, no Wind (Atom N3c)"
-			echo "  release-electron-bundled  - Electron workbench compiled through Vite/Astro"
-			echo "  release-browser-bundled   - Browser workbench compiled through Vite/Astro"
-			echo "  release-sessions-bundled  - Sessions workbench compiled through Vite/Astro"
-			echo "  release-workbench-bundled - Base workbench compiled through Vite/Astro"
-			echo "  release-bundled-all       - All four workbenches bundled in one pass"
-			echo "  web-browser              - Web browser deployment (no Tauri)"
-			exit 0
-			;;
-		*)
-			echo "Unknown option: $1"
-			echo "Use --help for usage information"
-			exit 1
-			;;
+	--profile | -p)
+		PROFILE="$2"
+		shift 2
+		;;
+	--flavor | -f)
+		FLAVOR="$2"
+		shift 2
+		;;
+	--help | -h)
+		echo "Usage: $0 [OPTIONS]"
+		echo ""
+		echo "Options:"
+		echo "  --profile, -p <name>  Build profile to use (default: production)"
+		echo "  --help, -h            Show this help message"
+		echo ""
+		echo "Available profiles:"
+		echo "  production       - Production build with Mountain workbench (default)"
+		echo "  release          - Full release with packaging and signing"
+		echo "  release-electron         - Electron workbench + Rest OXC (full desktop)"
+		echo "  release-electron-minimal - Electron without built-in extensions (Atom J4)"
+		echo "  release-mountain-only    - Mountain without Cocoon subprocess (Atom N mirror)"
+		echo "  release-cocoon-headless  - Electron + Cocoon, no Wind preload (Atom N3b)"
+		echo "  release-kernel           - Pure Mountain: no built-ins, no Cocoon, no Wind (Atom N3c)"
+		echo "  release-electron-bundled  - Electron workbench compiled through Vite/Astro"
+		echo "  release-browser-bundled   - Browser workbench compiled through Vite/Astro"
+		echo "  release-sessions-bundled  - Sessions workbench compiled through Vite/Astro"
+		echo "  release-workbench-bundled - Base workbench compiled through Vite/Astro"
+		echo "  release-bundled-all       - All four workbenches bundled in one pass"
+		echo "  web-browser              - Web browser deployment (no Tauri)"
+		exit 0
+		;;
+	*)
+		echo "Unknown option: $1"
+		echo "Use --help for usage information"
+		exit 1
+		;;
 	esac
 done
 
@@ -154,325 +154,325 @@ sh Maintain/Script/ResolveIdentity.sh
 unset Compiler
 
 case $PROFILE in
-	production)
-		echo "Using Mountain workbench (production)"
-		export Mountain=true
-		export Bundle=false
-		export Clean=true
-		export Compile=true
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=24
-		export NODE_OPTIONS="--max-old-space-size=8192"
-		export RUST_LOG=info
+production)
+	echo "Using Mountain workbench (production)"
+	export Mountain=true
+	export Bundle=false
+	export Clean=true
+	export Compile=true
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=24
+	export NODE_OPTIONS="--max-old-space-size=8192"
+	export RUST_LOG=info
 
-		export Compiler="${Compiler:-esbuild}"
-		if [ "$Compiler" = "Rest" ]; then
-			echo "Using Rest compiler"
-			export Compiler=Rest
+	export Compiler="${Compiler:-esbuild}"
+	if [ "$Compiler" = "Rest" ]; then
+		echo "Using Rest compiler"
+		export Compiler=Rest
+	else
+		echo "Using esbuild compiler"
+		export Compiler=esbuild
+	fi
+
+	if [ "$Compiler" = "Rest" ]; then
+		echo ""
+		echo "Stage 3: Rest compilation of VSCode output"
+		echo "=========================================="
+
+		if [ "$NODE_ENV" = "development" ]; then
+			VSCodeSourceDir="Dependency/Microsoft/Dependency/Editor/out"
 		else
-			echo "Using esbuild compiler"
-			export Compiler=esbuild
+			VSCodeSourceDir="Dependency/Microsoft/Dependency/Editor/out-build"
 		fi
 
-		if [ "$Compiler" = "Rest" ]; then
-			echo ""
-			echo "Stage 3: Rest compilation of VSCode output"
-			echo "=========================================="
+		RestOutputDir="Target/Rest/Microsoft/VSCode"
+		mkdir -p "$RestOutputDir"
 
-			if [ "$NODE_ENV" = "development" ]; then
-				VSCodeSourceDir="Dependency/Microsoft/Dependency/Editor/out"
-			else
-				VSCodeSourceDir="Dependency/Microsoft/Dependency/Editor/out-build"
-			fi
+		if [ ! -d "$VSCodeSourceDir" ]; then
+			echo "[Rest] Warning: VSCode source directory not found: $VSCodeSourceDir"
+			echo "[Rest] Skipping Rest compilation - ensure VSCode is built first"
+		else
+			echo "[Rest] Compiling from: $VSCodeSourceDir"
+			echo "[Rest] Output directory: $RestOutputDir"
 
-			RestOutputDir="Target/Rest/Microsoft/VSCode"
-			mkdir -p "$RestOutputDir"
+			if command -v Rest >/dev/null 2>&1; then
+				Rest compile \
+					--input "$VSCodeSourceDir" \
+					--output "$RestOutputDir" \
+					--target es2024 \
+					--module commonjs \
+					${REST_OPTIONS:+ $REST_OPTIONS}
 
-			if [ ! -d "$VSCodeSourceDir" ]; then
-				echo "[Rest] Warning: VSCode source directory not found: $VSCodeSourceDir"
-				echo "[Rest] Skipping Rest compilation - ensure VSCode is built first"
-			else
-				echo "[Rest] Compiling from: $VSCodeSourceDir"
-				echo "[Rest] Output directory: $RestOutputDir"
-
-				if command -v Rest > /dev/null 2>&1; then
-					Rest compile \
-						--input "$VSCodeSourceDir" \
-						--output "$RestOutputDir" \
-						--target es2024 \
-						--module commonjs \
-						${REST_OPTIONS:+ $REST_OPTIONS}
-
-					if [ $? -eq 0 ]; then
-						echo "[Rest] Compilation successful"
-					else
-						echo "[Rest] Compilation failed - falling back to esbuild"
-						export Compiler=esbuild
-					fi
+				if [ $? -eq 0 ]; then
+					echo "[Rest] Compilation successful"
 				else
-					echo "[Rest] 'Rest' command not found - falling back to esbuild"
-					echo "[Rest] Install @codeeditorland/rest or set REST_BINARY_PATH"
+					echo "[Rest] Compilation failed - falling back to esbuild"
 					export Compiler=esbuild
 				fi
+			else
+				echo "[Rest] 'Rest' command not found - falling back to esbuild"
+				echo "[Rest] Install @codeeditorland/rest or set REST_BINARY_PATH"
+				export Compiler=esbuild
 			fi
 		fi
-		;;
-	release)
-		echo "Using Mountain workbench (full release)"
-		export Mountain=true
-		export Bundle=false
-		export Clean=true
-		export Compile=true
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=24
-		export NODE_OPTIONS="--max-old-space-size=8192"
-		export RUST_LOG=warn
+	fi
+	;;
+release)
+	echo "Using Mountain workbench (full release)"
+	export Mountain=true
+	export Bundle=false
+	export Clean=true
+	export Compile=true
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=24
+	export NODE_OPTIONS="--max-old-space-size=8192"
+	export RUST_LOG=warn
 
-		export Compiler="${Compiler:-esbuild}"
-		if [ "$Compiler" = "Rest" ]; then
-			echo "Using Rest compiler"
-			export Compiler=Rest
-		else
-			echo "Using esbuild compiler"
-			export Compiler=esbuild
-		fi
-		;;
-	release-electron)
-		echo "Using Electron workbench + Rest OXC (full desktop, gRPC proxy)"
-		export Electron=true
-		export Bundle=true
-		export Clean=true
-		export Compile=true
-		# TEMP: Rest compiler disabled (see kill-switch above). Restore with
-		# `export Compiler=Rest` to re-enable the OXC transform.
+	export Compiler="${Compiler:-esbuild}"
+	if [ "$Compiler" = "Rest" ]; then
+		echo "Using Rest compiler"
+		export Compiler=Rest
+	else
+		echo "Using esbuild compiler"
 		export Compiler=esbuild
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=24
-		export NODE_OPTIONS="--max-old-space-size=16384"
-		export RUST_LOG=info
+	fi
+	;;
+release-electron)
+	echo "Using Electron workbench + Rest OXC (full desktop, gRPC proxy)"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	# TEMP: Rest compiler disabled (see kill-switch above). Restore with
+	# `export Compiler=Rest` to re-enable the OXC transform.
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=24
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
 
-		# Build Rest compiler if binary is missing - only needed when the
-		# Rest path is actually active. With `Compiler=esbuild` this is a
-		# no-op; gate the cargo build so the temporary kill-switch doesn't
-		# pay for an unused compiler.
-		if [ "$Compiler" = "Rest" ] && [ ! -f "Element/Rest/Target/release/Rest" ]; then
-			echo ""
-			echo "Building Rest OXC compiler (first time only)..."
-			cargo build -p Rest --release 2>&1 | tail -5
-			echo ""
-		fi
-		;;
-	release-electron-minimal)
-		# Atom J4: release-electron with zero bundled built-in extensions.
-		# Sky Step 13 + Mountain Scanner observe `Skip`
-		# and skip the copy + scan. Kernel distribution surface.
-		echo "Using Electron workbench (minimal - no built-in extensions)"
-		export Electron=true
-		export Bundle=true
-		export Clean=true
-		export Compile=true
-		export Compiler=esbuild
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=24
-		export NODE_OPTIONS="--max-old-space-size=16384"
-		export RUST_LOG=info
-		export Skip=true
-		;;
-	release-mountain-only)
-		# Atom N mirror: release Mountain without the Cocoon subprocess.
-		# Extension-related IPC returns the empty-state envelope; binary
-		# footprint is the smallest shippable shape.
-		echo "Using Mountain workbench without Cocoon (release)"
-		export Mountain=true
-		export Bundle=true
-		export Clean=true
-		export Compile=true
-		export Compiler=esbuild
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=24
-		export NODE_OPTIONS="--max-old-space-size=16384"
-		export RUST_LOG=info
-		export Spawn=false
-		;;
-	release-cocoon-headless)
-		# Atom N3b release mirror: Mountain + Cocoon, no Wind preload.
-		# Useful for headless server deployments that want the extension
-		# host online but do not render the Effect-TS service layer.
-		echo "Using Electron + Cocoon, Wind preload disabled (release)"
-		export Electron=true
-		export Bundle=true
-		export Clean=true
-		export Compile=true
-		export Compiler=esbuild
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=24
-		export NODE_OPTIONS="--max-old-space-size=16384"
-		export RUST_LOG=info
-		export Render=false
-		;;
-	release-kernel)
-		# Atom J4b / N3c release mirror: smallest shippable binary.
-		# No built-in extensions, no Cocoon, no Wind. Pure Mountain.
-		echo "Using Mountain kernel (release - no built-ins, no Cocoon, no Wind)"
-		export Electron=true
-		export Bundle=true
-		export Clean=true
-		export Compile=true
-		export Compiler=esbuild
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=24
-		export NODE_OPTIONS="--max-old-space-size=16384"
-		export RUST_LOG=info
-		export Skip=true
-		export Spawn=false
-		export Render=false
-		;;
-	release-electron-bundled)
-		# Vite/Astro-native bundle of vs/code/electron-browser/workbench/.
-		# Sky reads Pack, wires the workbench module as a
-		# Rollup input, and lets Vite handle CSS extraction + chunk dedup.
-		# Output lands under Sky/Target/Static/Bundled/Electron/. The
-		# existing /Static/Application/ tree is still produced unchanged.
-		echo "Using Electron workbench bundled through Vite/Astro"
-		export Electron=true
-		export Bundle=true
-		export Clean=true
-		export Compile=true
-		export Compiler=esbuild
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=24
-		export NODE_OPTIONS="--max-old-space-size=16384"
-		export RUST_LOG=info
-		export Pack="electron"
-		export Boot=true
-		;;
-	release-browser-bundled)
-		# Vite/Astro-native bundle of vs/code/browser/workbench/.
-		echo "Using Browser workbench bundled through Vite/Astro"
-		export Browser=true
-		export Bundle=true
-		export Clean=true
-		export Compile=true
-		export Compiler=esbuild
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=24
-		export NODE_OPTIONS="--max-old-space-size=16384"
-		export RUST_LOG=warn
-		export Pack="browser"
-		export Boot=true
-		;;
-	release-sessions-bundled)
-		# Vite/Astro-native bundle of vs/sessions/browser/.
-		echo "Using Sessions workbench bundled through Vite/Astro"
-		export Mountain=true
-		export Bundle=true
-		export Clean=true
-		export Compile=true
-		export Compiler=esbuild
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=24
-		export NODE_OPTIONS="--max-old-space-size=16384"
-		export RUST_LOG=info
-		export Pack="sessions"
-		export Boot=true
-		;;
-	release-workbench-bundled)
-		# Vite/Astro-native bundle of the base vs/workbench module.
-		echo "Using base workbench bundled through Vite/Astro"
-		export Mountain=true
-		export Bundle=true
-		export Clean=true
-		export Compile=true
-		export Compiler=esbuild
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=24
-		export NODE_OPTIONS="--max-old-space-size=16384"
-		export RUST_LOG=info
-		export Pack="workbench"
-		export Boot=true
-		;;
-	release-bundled-all)
-		# Bundle all four workbench entry shapes in one Rollup pass.
-		# First build is heavy (each variant pulls a ~97-module graph);
-		# the four single-variant profiles exist precisely so each can be
-		# benchmarked in isolation.
-		echo "Bundling all four workbenches through Vite/Astro"
-		export Electron=true
-		export Bundle=true
-		export Clean=true
-		export Compile=true
-		export Compiler=esbuild
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=24
-		export NODE_OPTIONS="--max-old-space-size=16384"
-		export RUST_LOG=info
-		export Pack="electron browser sessions workbench"
-		export Boot=true
-		;;
-	web-browser)
-		echo "Using Browser workbench (web-only)"
-		export Browser=true
-		export Bundle=false
-		export Clean=true
-		export Compile=true
-		export Debug=false
-		export Level=silent
-		export Dependency=Microsoft/VSCode
-		export NODE_ENV=production
-		export NODE_VERSION=24
-		export NODE_OPTIONS="--max-old-space-size=8192"
-		export RUST_LOG=warn
+	# Build Rest compiler if binary is missing - only needed when the
+	# Rest path is actually active. With `Compiler=esbuild` this is a
+	# no-op; gate the cargo build so the temporary kill-switch doesn't
+	# pay for an unused compiler.
+	if [ "$Compiler" = "Rest" ] && [ ! -f "Element/Rest/Target/release/Rest" ]; then
+		echo ""
+		echo "Building Rest OXC compiler (first time only)..."
+		cargo build -p Rest --release 2>&1 | tail -5
+		echo ""
+	fi
+	;;
+release-electron-minimal)
+	# Atom J4: release-electron with zero bundled built-in extensions.
+	# Sky Step 13 + Mountain Scanner observe `Skip`
+	# and skip the copy + scan. Kernel distribution surface.
+	echo "Using Electron workbench (minimal - no built-in extensions)"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=24
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export Skip=true
+	;;
+release-mountain-only)
+	# Atom N mirror: release Mountain without the Cocoon subprocess.
+	# Extension-related IPC returns the empty-state envelope; binary
+	# footprint is the smallest shippable shape.
+	echo "Using Mountain workbench without Cocoon (release)"
+	export Mountain=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=24
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export Spawn=false
+	;;
+release-cocoon-headless)
+	# Atom N3b release mirror: Mountain + Cocoon, no Wind preload.
+	# Useful for headless server deployments that want the extension
+	# host online but do not render the Effect-TS service layer.
+	echo "Using Electron + Cocoon, Wind preload disabled (release)"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=24
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export Render=false
+	;;
+release-kernel)
+	# Atom J4b / N3c release mirror: smallest shippable binary.
+	# No built-in extensions, no Cocoon, no Wind. Pure Mountain.
+	echo "Using Mountain kernel (release - no built-ins, no Cocoon, no Wind)"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=24
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export Skip=true
+	export Spawn=false
+	export Render=false
+	;;
+release-electron-bundled)
+	# Vite/Astro-native bundle of vs/code/electron-browser/workbench/.
+	# Sky reads Pack, wires the workbench module as a
+	# Rollup input, and lets Vite handle CSS extraction + chunk dedup.
+	# Output lands under Sky/Target/Static/Bundled/Electron/. The
+	# existing /Static/Application/ tree is still produced unchanged.
+	echo "Using Electron workbench bundled through Vite/Astro"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=24
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export Pack="electron"
+	export Boot=true
+	;;
+release-browser-bundled)
+	# Vite/Astro-native bundle of vs/code/browser/workbench/.
+	echo "Using Browser workbench bundled through Vite/Astro"
+	export Browser=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=24
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=warn
+	export Pack="browser"
+	export Boot=true
+	;;
+release-sessions-bundled)
+	# Vite/Astro-native bundle of vs/sessions/browser/.
+	echo "Using Sessions workbench bundled through Vite/Astro"
+	export Mountain=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=24
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export Pack="sessions"
+	export Boot=true
+	;;
+release-workbench-bundled)
+	# Vite/Astro-native bundle of the base vs/workbench module.
+	echo "Using base workbench bundled through Vite/Astro"
+	export Mountain=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=24
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export Pack="workbench"
+	export Boot=true
+	;;
+release-bundled-all)
+	# Bundle all four workbench entry shapes in one Rollup pass.
+	# First build is heavy (each variant pulls a ~97-module graph);
+	# the four single-variant profiles exist precisely so each can be
+	# benchmarked in isolation.
+	echo "Bundling all four workbenches through Vite/Astro"
+	export Electron=true
+	export Bundle=true
+	export Clean=true
+	export Compile=true
+	export Compiler=esbuild
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=24
+	export NODE_OPTIONS="--max-old-space-size=16384"
+	export RUST_LOG=info
+	export Pack="electron browser sessions workbench"
+	export Boot=true
+	;;
+web-browser)
+	echo "Using Browser workbench (web-only)"
+	export Browser=true
+	export Bundle=false
+	export Clean=true
+	export Compile=true
+	export Debug=false
+	export Level=silent
+	export Dependency=Microsoft/VSCode
+	export NODE_ENV=production
+	export NODE_VERSION=24
+	export NODE_OPTIONS="--max-old-space-size=8192"
+	export RUST_LOG=warn
 
-		export Compiler="${Compiler:-esbuild}"
-		if [ "$Compiler" = "Rest" ]; then
-			echo "Using Rest compiler"
-			export Compiler=Rest
-		else
-			echo "Using esbuild compiler"
-			export Compiler=esbuild
-		fi
-		;;
-	*)
-		echo "Unknown profile: $PROFILE"
-		echo "Available profiles: production, release, release-electron, release-electron-minimal, release-mountain-only, release-cocoon-headless, release-kernel, release-electron-bundled, release-browser-bundled, release-sessions-bundled, release-workbench-bundled, release-bundled-all, web-browser"
-		exit 1
-		;;
+	export Compiler="${Compiler:-esbuild}"
+	if [ "$Compiler" = "Rest" ]; then
+		echo "Using Rest compiler"
+		export Compiler=Rest
+	else
+		echo "Using esbuild compiler"
+		export Compiler=esbuild
+	fi
+	;;
+*)
+	echo "Unknown profile: $PROFILE"
+	echo "Available profiles: production, release, release-electron, release-electron-minimal, release-mountain-only, release-cocoon-headless, release-kernel, release-electron-bundled, release-browser-bundled, release-sessions-bundled, release-workbench-bundled, release-bundled-all, web-browser"
+	exit 1
+	;;
 esac
 
 # Profile-flip Output-cache cleanup - shared helper.
