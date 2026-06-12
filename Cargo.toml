@@ -37,13 +37,13 @@ tauri-plugin-log = { version = "=2.8.0" }
 
 # Additional Tauri plugins pinned to local versions
 tauri-plugin-autostart = { version = "=2.5.1" }
-tauri-plugin-barcode-scanner = { version = "=2.4.4" }
+tauri-plugin-barcode-scanner = { version = "=2.4.5" }
 tauri-plugin-biometric = { version = "=2.3.2" }
 tauri-plugin-cli = { version = "=2.4.1" }
 tauri-plugin-clipboard-manager = { version = "=2.3.2" }
 tauri-plugin-deep-link = { version = "=2.4.9" }
 tauri-plugin-geolocation = { version = "=2.3.2" }
-tauri-plugin-global-shortcut = { version = "=2.3.1" }
+tauri-plugin-global-shortcut = { version = "=2.3.2" }
 tauri-plugin-haptics = { version = "=2.3.2" }
 tauri-plugin-http = { version = "=2.5.9" }
 tauri-plugin-nfc = { version = "=2.3.5" }
@@ -51,7 +51,7 @@ tauri-plugin-notification = { version = "=2.3.3" }
 tauri-plugin-opener = { version = "=2.5.4" }
 tauri-plugin-os = { version = "=2.3.2" }
 tauri-plugin-persisted-scope = { version = "=2.3.7" }
-tauri-plugin-positioner = { version = "=2.3.1" }
+tauri-plugin-positioner = { version = "=2.3.2" }
 tauri-plugin-process = { version = "=2.3.1" }
 tauri-plugin-shell = { version = "=2.3.5" }
 tauri-plugin-single-instance = { version = "=2.4.2" }
@@ -354,7 +354,7 @@ tauri-utils = { version = "=2.9.2", path = "Dependency/Tauri/Dependency/Tauri/cr
 
 # --- PluginsWorkspace/plugins -------------------------------------------
 tauri-plugin-autostart = { version = "=2.5.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/autostart" }
-tauri-plugin-barcode-scanner = { version = "=2.4.4", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/barcode-scanner" }
+tauri-plugin-barcode-scanner = { version = "=2.4.5", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/barcode-scanner" }
 tauri-plugin-biometric = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/biometric" }
 tauri-plugin-cli = { version = "=2.4.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/cli" }
 tauri-plugin-clipboard-manager = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/clipboard-manager" }
@@ -362,7 +362,7 @@ tauri-plugin-deep-link = { version = "=2.4.9", path = "Dependency/Tauri/Dependen
 tauri-plugin-dialog = { version = "=2.7.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/dialog" }
 tauri-plugin-fs = { version = "=2.5.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/fs" }
 tauri-plugin-geolocation = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/geolocation" }
-tauri-plugin-global-shortcut = { version = "=2.3.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/global-shortcut" }
+tauri-plugin-global-shortcut = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/global-shortcut" }
 tauri-plugin-haptics = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/haptics" }
 tauri-plugin-http = { version = "=2.5.9", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/http" }
 tauri-plugin-localhost = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/localhost" }
@@ -372,7 +372,7 @@ tauri-plugin-notification = { version = "=2.3.3", path = "Dependency/Tauri/Depen
 tauri-plugin-opener = { version = "=2.5.4", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/opener" }
 tauri-plugin-os = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/os" }
 tauri-plugin-persisted-scope = { version = "=2.3.7", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/persisted-scope" }
-tauri-plugin-positioner = { version = "=2.3.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/positioner" }
+tauri-plugin-positioner = { version = "=2.3.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/positioner" }
 tauri-plugin-process = { version = "=2.3.1", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/process" }
 tauri-plugin-shell = { version = "=2.3.5", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/shell" }
 tauri-plugin-single-instance = { version = "=2.4.2", path = "Dependency/Tauri/Dependency/PluginsWorkspace/plugins/single-instance" }

@@ -1,0 +1,49 @@
+# Lychee ignore list for Land repository
+# Patterns: URLs containing these will be skipped
+
+# GitHub shields.io badges are dynamic and may fail randomly
+https://img.shields.io/
+
+# editor.land is on grace hold - may not resolve
+https://editor.land
+https://Editor.Land
+https://www.editor.land
+
+# Internal/repo-local URLs that don't resolve
+https://Rust.Documentation.editor.land
+https://Documentation.Editor.Land
+
+# NLnet and NGI0 urls (may be flaky)
+https://NLnet.NL
+https://nlnet.nl
+https://ngi.eu
+
+# GitHub last-commit badges use github.com API which may 429
+https://github.com/CodeEditorLand/
+
+# PlayForm URLs
+https://PlayForm.Cloud
+
+# Generic email or non-http links
+mailto:
+
+# Link text that looks like a URL but isn't
+# e.g. placeholder domains
+example.com
+localhost
+
+# BinaryRest (non-standard GitHub org)
+https://github.com/BinaryRest
+
+# Rust docs domain (grace hold - not resolving)
+https://rust.documentation.editor.land
+
+# npmjs.com private packages return 403
+https://www.npmjs.com/package/@codeeditorland
+
+# npmjs.com rate-limits link checkers
+https://www.npmjs.com/package/effect
+https://www.npmjs.com/package/astro
+https://www.npmjs.com/package/@tauri-apps/api
+
+# Variation selectors and Unicode in URLs
