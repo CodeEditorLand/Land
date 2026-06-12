@@ -1,8 +1,7 @@
 # Land Project Architecture
 
 A high-level overview of the architecture and the core workflows that drive the
-application. Our system is
-composed of three primary components:
+application. Our system is composed of three primary components:
 
 - **`Common` 👨🏻‍🏭 (Rust Crate):** The abstract core library. It defines the
   architectural "language" of the application through traits, data structures

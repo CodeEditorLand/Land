@@ -1,9 +1,9 @@
 # Editor Core: Workbench Adaptation
 
-How **Land** adapts the VS Code workbench to run inside
-a `Tauri` WebView. It covers the `Wind` service layer architecture, workbench
-variant system, command dispatch, and the VS Code API coverage split across
-`Mountain`, `Cocoon`, and `Sky`/`Wind`.
+How **Land** adapts the VS Code workbench to run inside a `Tauri` WebView. It
+covers the `Wind` service layer architecture, workbench variant system, command
+dispatch, and the VS Code API coverage split across `Mountain`, `Cocoon`, and
+`Sky`/`Wind`.
 
 ---
 

@@ -26,12 +26,12 @@ SKIPPED=()
 SUCCESS=()
 
 # ── Sanity checks ─────────────────────────────────────────────────────────────
-if ! command -v gh &>/dev/null; then
+if ! command -v gh &> /dev/null; then
 	echo "ERROR: gh CLI not found. Install: https://cli.github.com/" >&2
 	exit 1
 fi
 
-if ! gh auth status &>/dev/null; then
+if ! gh auth status &> /dev/null; then
 	echo "ERROR: Not authenticated. Run: gh auth login" >&2
 	exit 1
 fi
@@ -191,25 +191,25 @@ while IFS= read -r gitmodules_file; do
 		if [[ "${line}" =~ ^url[[:space:]]*=[[:space:]]*ssh://git@github\.com/CodeEditorLand/(.+)\.git$ ]]; then
 			repo="${BASH_REMATCH[1]}"
 			case " ${SEEN} " in
-			*" ${repo} "*) ;;
-			*)
-				SEEN="${SEEN} ${repo}"
-				UNIQUE_REPOS+=("${repo}")
-				;;
+				*" ${repo} "*) ;;
+				*)
+					SEEN="${SEEN} ${repo}"
+					UNIQUE_REPOS+=("${repo}")
+					;;
 			esac
 		fi
 	done < <(grep -E '^\s*url\s*=\s*ssh://git@github\.com/CodeEditorLand/' \
-		"${gitmodules_file}" 2>/dev/null || true)
+		"${gitmodules_file}" 2> /dev/null || true)
 done < <(find "${DEPENDENCY_ROOT}" -name ".gitmodules" -type f | sort)
 
 # ── Merge REPOS_EXTRA (deduped) ───────────────────────────────────────────────
 for repo in "${REPOS_EXTRA[@]}"; do
 	case " ${SEEN} " in
-	*" ${repo} "*) ;;
-	*)
-		SEEN="${SEEN} ${repo}"
-		UNIQUE_REPOS+=("${repo}")
-		;;
+		*" ${repo} "*) ;;
+		*)
+			SEEN="${SEEN} ${repo}"
+			UNIQUE_REPOS+=("${repo}")
+			;;
 	esac
 done
 
@@ -236,13 +236,13 @@ transfer_repo() {
 	local REPO="$1"
 	local FULL="${SOURCE_ORG}/${REPO}"
 
-	if ! gh repo view "${FULL}" &>/dev/null 2>&1; then
+	if ! gh repo view "${FULL}" &> /dev/null 2>&1; then
 		printf "  [SKIP]  %-60s not found / no access\n" "${REPO}"
 		SKIPPED+=("${REPO}")
 		return
 	fi
 
-	if gh repo view "${DEST_ORG}/${REPO}" &>/dev/null 2>&1; then
+	if gh repo view "${DEST_ORG}/${REPO}" &> /dev/null 2>&1; then
 		printf "  [SKIP]  %-60s already in %s\n" "${REPO}" "${DEST_ORG}"
 		SKIPPED+=("${REPO}")
 		return
@@ -259,7 +259,7 @@ transfer_repo() {
 		--method POST \
 		"repos/${FULL}/transfer" \
 		-f "new_owner=${DEST_ORG}" \
-		--silent 2>/dev/null; then
+		--silent 2> /dev/null; then
 		echo "OK"
 		SUCCESS+=("${REPO}")
 	else

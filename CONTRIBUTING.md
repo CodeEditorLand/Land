@@ -137,10 +137,9 @@ respectful environment for everyone!
 ## Building & Running
 
 To build Land from source, follow the comprehensive guide in
-[`Documentation/GitHub/Building.md`](Documentation/GitHub/Building.md).
-All prerequisites, the two-step build process, environment
-configuration, and troubleshooting.
+[`Documentation/GitHub/Building.md`](Documentation/GitHub/Building.md). All
+prerequisites, the two-step build process, environment configuration, and
+troubleshooting.
 
-For a quick summary, see the main
-[`README.md`](README.md) -
-Project overview and quick start
+For a quick summary, see the main [`README.md`](README.md) - Project overview
+and quick start

@@ -1,9 +1,9 @@
 # Rust Infrastructure
 
-Every `Rust` component in the **Land** system: the
-abstract common library, the native backend application, the task scheduler, and
-all supporting `Rust` services. These components form the native foundation that
-the entire editor is built upon.
+Every `Rust` component in the **Land** system: the abstract common library, the
+native backend application, the task scheduler, and all supporting `Rust`
+services. These components form the native foundation that the entire editor is
+built upon.
 
 ---
 

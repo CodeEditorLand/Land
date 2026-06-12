@@ -25,9 +25,7 @@
  *
  */
 import { promises as Filesystem } from "node:fs";
-
 import { dirname, join, relative, resolve } from "node:path";
-
 import { fileURLToPath } from "node:url";
 
 // Resolve the Land repo root from this script's own location -
@@ -36,7 +34,6 @@ import { fileURLToPath } from "node:url";
 const RepoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 interface Handler {
-
 	WireName: string;
 
 	FunctionName: string;
@@ -45,7 +42,6 @@ interface Handler {
 }
 
 interface Channel {
-
 	Name: string;
 
 	EmittedFrom: Array<string>;
@@ -58,7 +54,6 @@ async function Walk(
 
 	Predicate: (Path: string) => boolean,
 ): Promise<Array<string>> {
-
 	const Out: Array<string> = [];
 
 	const Stack: Array<string> = [Root];
@@ -85,7 +80,6 @@ async function Walk(
 					Entry.name === "node_modules" ||
 					Entry.name === ".git"
 				)
-
 					continue;
 
 				Stack.push(Full);
@@ -99,11 +93,8 @@ async function Walk(
 }
 
 function HandlerToWireName(FunctionName: string): string {
-
 	const Stripped = FunctionName.startsWith("handle_")
-
 		? FunctionName.slice("handle_".length)
-
 		: FunctionName;
 
 	const Segments = Stripped.split("_");
@@ -126,7 +117,6 @@ function HandlerToWireName(FunctionName: string): string {
 }
 
 async function ScanHandlers(): Promise<Array<Handler>> {
-
 	const HandlerDir = join(
 		RepoRoot,
 
@@ -184,7 +174,6 @@ async function ScanSkyChannels(): Promise<Array<Channel>> {
 			const Name = Match[1];
 
 			if (!Map.has(Name))
-
 				Map.set(Name, {
 					Name,
 					EmittedFrom: [],
@@ -202,7 +191,6 @@ async function ScanSkyChannels(): Promise<Array<Channel>> {
 			const Name = Match[1];
 
 			if (!Map.has(Name))
-
 				Map.set(Name, {
 					Name,
 					EmittedFrom: [],
