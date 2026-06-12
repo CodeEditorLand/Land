@@ -94,12 +94,12 @@ echo "  Excluded:  Dependency/*, Element/* (elements themselves)"
 echo "=================================================================="
 echo ""
 
-if ! command -v gh &>/dev/null; then
+if ! command -v gh &> /dev/null; then
 	echo "ERROR: gh CLI not found. Install: https://cli.github.com/" >&2
 	exit 1
 fi
 
-if ! gh auth status &>/dev/null; then
+if ! gh auth status &> /dev/null; then
 	echo "ERROR: Not authenticated. Run: gh auth login" >&2
 	exit 1
 fi
@@ -108,13 +108,13 @@ transfer_repo() {
 	local REPO="$1"
 	local FULL="${SOURCE_ORG}/${REPO}"
 
-	if ! gh repo view "$FULL" &>/dev/null 2>&1; then
+	if ! gh repo view "$FULL" &> /dev/null 2>&1; then
 		printf "  [SKIP]  %-55s not found / no access\n" "$REPO"
 		SKIPPED+=("$REPO")
 		return
 	fi
 
-	if gh repo view "${DEST_ORG}/${REPO}" &>/dev/null 2>&1; then
+	if gh repo view "${DEST_ORG}/${REPO}" &> /dev/null 2>&1; then
 		printf "  [SKIP]  %-55s already in %s\n" "$REPO" "$DEST_ORG"
 		SKIPPED+=("$REPO")
 		return
@@ -132,7 +132,7 @@ transfer_repo() {
 			--method POST \
 			"repos/${FULL}/transfer" \
 			-f "new_owner=${DEST_ORG}" \
-			--silent 2>/dev/null
+			--silent 2> /dev/null
 	then
 		echo "OK"
 		SUCCESS+=("$REPO")
