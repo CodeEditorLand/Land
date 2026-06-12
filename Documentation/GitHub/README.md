@@ -174,21 +174,21 @@ Some Elements contain additional documentation beyond `DeepDive.md` and
 
 ## 🟠 Low-Level Shim | 🔵 Coverage / Telemetry
 
-> ℹ️ New experimental feature (2026-06-13). Two-tier interception system at
-> the JavaScript engine level (orange) and application service level (blue).
+> ℹ️ New experimental feature (2026-06-13). Two-tier interception system at the
+> JavaScript engine level (orange) and application service level (blue).
 
-| 🟠 Low-Level Shim (`#FF6B35`) | 🔵 Coverage Shim (`#2563EB`) |
-|------------------------------|------------------------------|
-| `TierShim=Own\|Preempt` | `TierShim=Proxy\|Replace` |
-| Engine prototype monkey-patches | ServiceCollection + IPC routing |
-| Covers 100% of Emitter events | Covers 15 of 22 domains (growing) |
-| 6 hook layers (ErrorHandler→Timing) | 3 intercept strategies (IPC/DI/Audit) |
-| <2% prod overhead (sampled) | <1% overhead (passthrough) |
-| `Land/…/Shim/Intercept/*.ts` | `Land/…/Wind/Source/Shim/*.ts` |
+| 🟠 Low-Level Shim (`#FF6B35`)                                  | 🔵 Coverage Shim (`#2563EB`)                       |
+| -------------------------------------------------------------- | -------------------------------------------------- |
+| `TierShim=Own\|Preempt`                                        | `TierShim=Proxy\|Replace`                          |
+| Engine prototype monkey-patches                                | ServiceCollection + IPC routing                    |
+| Covers 100% of Emitter events                                  | Covers 15 of 22 domains (growing)                  |
+| 6 hook layers (ErrorHandler→Timing)                            | 3 intercept strategies (IPC/DI/Audit)              |
+| <2% prod overhead (sampled)                                    | <1% overhead (passthrough)                         |
+| `Land/…/Shim/Intercept/*.ts`                                   | `Land/…/Wind/Source/Shim/*.ts`                     |
 | [Docs: Low-Level Shim](https://editor.land/doc/low-level-shim) | [Docs: Coverage](https://editor.land/doc/coverage) |
 
-> ⚠️ **EXPERIMENTAL** — Gated behind `TierShim` env var (default: `None`).
-> See [EnvironmentVariables.md](EnvironmentVariables.md) and
+> ⚠️ **EXPERIMENTAL** - Gated behind `TierShim` env var (default: `None`). See
+> [EnvironmentVariables.md](EnvironmentVariables.md) and
 > `.hermes/microsoft/04-Atomic-Task-List.md` (40 tasks, 9 phases).
 
 ---

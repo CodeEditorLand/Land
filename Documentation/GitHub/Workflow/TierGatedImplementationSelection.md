@@ -86,24 +86,24 @@ sequenceDiagram
         via `cargo:rustc-env` for every binary so dispatch arms can `env!()`
         them without a `std::env::var` call hot-path):
 
-        | Variable               | Default    | Routes                               |
-        | ---------------------- | ---------- | ------------------------------------ |
-        | `TierIPC`              | `Mountain` | `Mountain` / `NodeDeferred` / `Node` |
-        | `TierTerminal`         | `Mountain` | `Mountain` / `Node`                  |
-        | `TierSCM`              | `Mountain` | `Mountain` / `Node`                  |
-        | `TierDebug`            | `Mountain` | `Mountain` / `Node`                  |
-        | `TierLanguageFeatures` | `Mountain` | `Mountain` / `Node`                  |
-        | `TierSearch`           | `Mountain` | `Mountain` / `Node`                  |
-        | `TierOutputChannel`    | `Mountain` | `Mountain` / `Node`                  |
-        | `TierNativeHost`       | `Mountain` | `Mountain` / `Node`                  |
-        | `TierTreeView`         | `Mountain` | `Mountain` / `Node`                  |
-        | `TierStorage`          | `Mountain` | `Mountain` / `Node`                  |
-        | `TierModel`            | `Mountain` | `Mountain` / `Node`                  |
-        | `TierTasks`            | `Node`     | `Mountain` / `Node`                  |
-        | `TierAuth`             | `Node`     | `Mountain` / `Node`                  |
-        | `TierEncryption`       | `Mountain` | `Mountain` / `Node`                  |
-        | `TierExtensionHost`    | `Process`  | `Process` / `WebWorker` / `Disabled` |
-        | `TierWebSocket`        | `Disabled` | `Disabled` / `Mountain` / `Mist`     |
+        | Variable               | Default    | Routes                                           |
+        | ---------------------- | ---------- | ------------------------------------------------ |
+        | `TierIPC`              | `Mountain` | `Mountain` / `NodeDeferred` / `Node`             |
+        | `TierTerminal`         | `Mountain` | `Mountain` / `Node`                              |
+        | `TierSCM`              | `Mountain` | `Mountain` / `Node`                              |
+        | `TierDebug`            | `Mountain` | `Mountain` / `Node`                              |
+        | `TierLanguageFeatures` | `Mountain` | `Mountain` / `Node`                              |
+        | `TierSearch`           | `Mountain` | `Mountain` / `Node`                              |
+        | `TierOutputChannel`    | `Mountain` | `Mountain` / `Node`                              |
+        | `TierNativeHost`       | `Mountain` | `Mountain` / `Node`                              |
+        | `TierTreeView`         | `Mountain` | `Mountain` / `Node`                              |
+        | `TierStorage`          | `Mountain` | `Mountain` / `Node`                              |
+        | `TierModel`            | `Mountain` | `Mountain` / `Node`                              |
+        | `TierTasks`            | `Node`     | `Mountain` / `Node`                              |
+        | `TierAuth`             | `Node`     | `Mountain` / `Node`                              |
+        | `TierEncryption`       | `Mountain` | `Mountain` / `Node`                              |
+        | `TierExtensionHost`    | `Process`  | `Process` / `WebWorker` / `Disabled`             |
+        | `TierWebSocket`        | `Disabled` | `Disabled` / `Mountain` / `Mist`                 |
         | `TierShim`             | `None`     | `None` / `Proxy` / `Replace` / `Own` / `Preempt` |
 
         **Notable entries:**

@@ -385,34 +385,34 @@ sequenceDiagram
 
 ## Shim Interception Layer
 
-Land includes a two-tier VS Code engine interception system for deep event routing
-and performance tracing.
+Land includes a two-tier VS Code engine interception system for deep event
+routing and performance tracing.
 
 ### Tiers
 
-| Tier | Color | What |
-|------|-------|------|
-| `TierShim=None` | — | Disabled (default, zero overhead) |
-| `TierShim=Proxy` | 🔵 | Audit-only: observe service resolution |
-| `TierShim=Replace` | 🔵 | Replace individual services with Land shims |
-| `TierShim=Own` | 🟠 | Engine-level prototype hooks active |
-| `TierShim=Preempt` | 🟠 | Full container ownership |
+| Tier               | Color | What                                        |
+| ------------------ | ----- | ------------------------------------------- |
+| `TierShim=None`    | -     | Disabled (default, zero overhead)           |
+| `TierShim=Proxy`   | 🔵    | Audit-only: observe service resolution      |
+| `TierShim=Replace` | 🔵    | Replace individual services with Land shims |
+| `TierShim=Own`     | 🟠    | Engine-level prototype hooks active         |
+| `TierShim=Preempt` | 🟠    | Full container ownership                    |
 
 ### Architecture
 
-| Layer | Tier | Scope | Location |
-|-------|------|-------|----------|
-| L1 Error Handler | 🟠 | All errors | Output/Shim/Intercept/ErrorHandlerProxy.ts |
-| L2 Event Emitter | 🟠 | All events (474 services) | Output/Shim/Intercept/EmitterFireProxy.ts |
-| L3 Cancellation | 🟠 | All aborts | Output/Shim/Intercept/CancellationProxy.ts |
-| L4 Disposable | 🟠 | All resources | Output/Shim/Intercept/DisposableProxy.ts |
-| L5 Async Scheduler | 🟠 | All async scheduling | Wind/Shim/AsyncProxy.ts |
-| L8 Timing | 🟠 | Microsecond tracing | Output/Shim/Intercept/TimingProxy.ts |
-| IPC Routing | 🔵 | 15/22 domains | Wind/Shim/SwallowMap.ts |
-| DI Container | 🔵 | 35 services | Output/Shim/Init.ts |
-| Node.js Modules | 🔵 | fs/child_process | Cocoon/Shim/NodeModuleInterceptor.ts |
-| Network | 🔵 | fetch/XHR | Wind/Shim/NetworkProxy.ts |
-| DOM Events | 🔵 | EventTarget | Wind/Shim/EventInterceptor.ts |
+| Layer              | Tier | Scope                     | Location                                   |
+| ------------------ | ---- | ------------------------- | ------------------------------------------ |
+| L1 Error Handler   | 🟠   | All errors                | Output/Shim/Intercept/ErrorHandlerProxy.ts |
+| L2 Event Emitter   | 🟠   | All events (474 services) | Output/Shim/Intercept/EmitterFireProxy.ts  |
+| L3 Cancellation    | 🟠   | All aborts                | Output/Shim/Intercept/CancellationProxy.ts |
+| L4 Disposable      | 🟠   | All resources             | Output/Shim/Intercept/DisposableProxy.ts   |
+| L5 Async Scheduler | 🟠   | All async scheduling      | Wind/Shim/AsyncProxy.ts                    |
+| L8 Timing          | 🟠   | Microsecond tracing       | Output/Shim/Intercept/TimingProxy.ts       |
+| IPC Routing        | 🔵   | 15/22 domains             | Wind/Shim/SwallowMap.ts                    |
+| DI Container       | 🔵   | 35 services               | Output/Shim/Init.ts                        |
+| Node.js Modules    | 🔵   | fs/child_process          | Cocoon/Shim/NodeModuleInterceptor.ts       |
+| Network            | 🔵   | fetch/XHR                 | Wind/Shim/NetworkProxy.ts                  |
+| DOM Events         | 🔵   | EventTarget               | Wind/Shim/EventInterceptor.ts              |
 
 ### Rust Side
 

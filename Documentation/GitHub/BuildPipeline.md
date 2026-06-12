@@ -455,7 +455,7 @@ through two parallel compiler paths:
     - `require()` interceptor patches
     - Source map generation
     - Polyfill injection (see [Polyfills](Polyfills.md))
-    - `InjectShimHook` — shim interception layer injection
+    - `InjectShimHook` - shim interception layer injection
 3. **Output:** `Output/Target/@codeeditorland/output/`
 
 ### Optional Path (Rest/OXC)
