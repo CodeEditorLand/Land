@@ -17,7 +17,7 @@ set -e
 ScriptDir="$(cd "$(dirname "$0")" && pwd)"
 LandRoot="$(cd "$ScriptDir/../.." && pwd)"
 
-# Defaults mirror .env.Land.Sample so standalone invocations still work.
+# Defaults mirror .env.Land so standalone invocations still work.
 ProductVersion="${ProductVersion:-1.118.0}"
 ProductCommit="${ProductCommit:-dev}"
 ProductQuality="${ProductQuality:-development}"
@@ -28,10 +28,16 @@ ProductDataFolderName="${ProductDataFolderName:-.fiddee}"
 ProductUrlProtocol="${ProductUrlProtocol:-fiddee}"
 ProductServerApplicationName="${ProductServerApplicationName:-fiddee-server}"
 ProductEmbedderIdentifier="${ProductEmbedderIdentifier:-fiddee-desktop}"
+# ProductFlavor — 10-char build flavor code (≤10 chars after fiddee-).
+# Default encodes all tiers as Mountain with Tasks/Auth=Node, WS=Disabled.
+# Set ProductFlavorLong=true to use human-readable flavor names instead.
+ProductFlavor="${ProductFlavor:-IWTNMMMMMM}"
+ProductFlavorLong="${ProductFlavorLong:-false}"
 
 export ProductVersion ProductCommit ProductQuality ProductNameShort \
 	ProductNameLong ProductApplicationName ProductDataFolderName \
-	ProductUrlProtocol ProductServerApplicationName ProductEmbedderIdentifier
+	ProductUrlProtocol ProductServerApplicationName ProductEmbedderIdentifier \
+	ProductFlavor ProductFlavorLong
 
 Target="$LandRoot/Element/Sky/Public/product.json"
 export Target
@@ -48,28 +54,34 @@ const fs = require("node:fs");
 const Target = process.env.Target;
 let Existing = {};
 try {
-	Existing = JSON.parse(fs.readFileSync(Target, "utf8"));
-} catch {
-	// Missing or malformed - overlay becomes the whole file.
-}
-const Overlay = {
-	nameShort: process.env.ProductNameShort,
-	nameLong: process.env.ProductNameLong,
-	applicationName: process.env.ProductApplicationName,
-	dataFolderName: process.env.ProductDataFolderName,
-	version: process.env.ProductVersion,
-	commit: process.env.ProductCommit,
-	date: new Date().toISOString(),
-	quality: process.env.ProductQuality,
-	urlProtocol: process.env.ProductUrlProtocol,
-	embedderIdentifier: process.env.ProductEmbedderIdentifier,
-	serverApplicationName: process.env.ProductServerApplicationName,
-};
-// Drop any undefined fields so they do not wipe existing values on merge.
-for (const Key of Object.keys(Overlay)) {
-	if (Overlay[Key] === undefined) delete Overlay[Key];
-}
-const Merged = { ...Existing, ...Overlay };
-fs.writeFileSync(Target, JSON.stringify(Merged, null, "	") + "\n");
-console.log("[ResolveProductConfig] merged " + Target + " version=" + Merged.version + " name=" + Merged.nameShort);
+	Existing = JSON.parse(fs.readFileSync(Target, "utf-8"));
+} catch (_) {}
+
+// Build flavor identifier: fiddee-<10char> or fiddee-<long name>
+const Flavor = process.env.ProductFlavor || "IWTNMMMMMM";
+const UseLong = process.env.ProductFlavorLong === "true";
+
+Existing.nameShort = process.env.ProductNameShort || "FIDDEE";
+Existing.nameLong = process.env.ProductNameLong || "FIDDEE";
+Existing.applicationName = UseLong
+	? `fiddee-${process.env.ProductFlavor || "F8"}`
+	: `fiddee-${Flavor}`;
+Existing.dataFolderName = UseLong
+	? `.fiddee-${process.env.ProductFlavor || "F8"}`
+	: `.fiddee-${Flavor}`;
+Existing.urlProtocol = UseLong
+	? `fiddee-${process.env.ProductFlavor || "F8"}`
+	: `fiddee-${Flavor}`;
+Existing.serverApplicationName = UseLong
+	? `fiddee-${process.env.ProductFlavor || "F8"}-server`
+	: `fiddee-${Flavor}-server`;
+Existing.embedderIdentifier = UseLong
+	? `fiddee-${process.env.ProductFlavor || "F8"}-desktop`
+	: `fiddee-${Flavor}-desktop`;
+Existing.version = process.env.ProductVersion || "1.118.0";
+Existing.commit = process.env.ProductCommit || "dev";
+Existing.quality = process.env.ProductQuality || "development";
+
+fs.writeFileSync(Target, JSON.stringify(Existing, null, "\t") + "\n");
+console.log(`[ResolveProductConfig] ${Target} — flavor=${Flavor}`);
 '
