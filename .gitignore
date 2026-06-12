@@ -52,6 +52,9 @@ Documentation/Rust/CACHEDIR.TAG
 Maintain/Format/__pycache__
 
 .env.Land
+.env.Land.Full
+.env.Land.NodeFirst
+.env.Land.RustOnly
 .env.Land.Bundled
 .env.Land.Diagnostics
 .env.Land.Extensions

@@ -104,6 +104,7 @@ sequenceDiagram
         | `TierEncryption`       | `Mountain` | `Mountain` / `Node`                  |
         | `TierExtensionHost`    | `Process`  | `Process` / `WebWorker` / `Disabled` |
         | `TierWebSocket`        | `Disabled` | `Disabled` / `Mountain` / `Mist`     |
+        | `TierShim`             | `None`     | `None` / `Proxy` / `Replace` / `Own` / `Preempt` |
 
         **Notable entries:**
 

@@ -44,14 +44,14 @@ Status symbols:
 
 ## Coverage summary (2026-06)
 
-| Namespace group  | Coverage |
-| ---------------- | -------- |
-| Overall weighted | ~88%     |
-| TextEditor       | ~95%     |
-| Workspace        | ~96%     |
-| Window + SCM     | ~95%     |
-| LSP / Language   | ~95%     |
-| Debug + Tasks    | ~25%     |
+| Namespace group  | Coverage | 🟠 Low-Level | 🔵 Coverage |
+| ---------------- | -------- | ------------ | ----------- |
+| Overall weighted | ~88%     | ✅           | ✅          |
+| TextEditor       | ~95%     | ✅           | ✅          |
+| Workspace        | ~96%     | ✅           | ✅          |
+| Window + SCM     | ~95%     | ✅           | ✅          |
+| LSP / Language   | ~95%     | ✅           | ✅          |
+| Debug + Tasks    | ~25%     | ✅           | ✅          |
 
 ---
 
