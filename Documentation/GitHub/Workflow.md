@@ -150,3 +150,10 @@ implementation details:
 | **Vine**     | Protocol   | gRPC protocol definitions | [Architecture](https://github.com/CodeEditorLand/Vine/tree/Current/Documentation/GitHub/Architecture.md)     |
 | **Wind**     | TypeScript | Frontend service layer    | [Architecture](https://github.com/CodeEditorLand/Wind/tree/Current/Documentation/GitHub/Architecture.md)     |
 | **Worker**   | TypeScript | Service worker            | [Architecture](https://github.com/CodeEditorLand/Worker/tree/Current/Documentation/GitHub/Architecture.md)   |
+
+---
+
+**Project Maintainers:** Source Open
+([Source/Open@Editor.Land](mailto:Source/Open@Editor.Land)) |
+[GitHub Repository](https://github.com/CodeEditorLand/Land) |
+[Report an Issue](https://github.com/CodeEditorLand/Land/issues)

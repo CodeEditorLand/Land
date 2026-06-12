@@ -902,6 +902,6 @@ No remote connections are accepted.
 ---
 
 **Project Maintainers:** Source Open
-([Source/Open@editor.land](mailto:Source/Open@editor.land)) |
+([Source/Open@Editor.Land](mailto:Source/Open@Editor.Land)) |
 [GitHub Repository](https://github.com/CodeEditorLand/Land) |
 [Report an Issue](https://github.com/CodeEditorLand/Land/issues)

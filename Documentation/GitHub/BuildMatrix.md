@@ -235,3 +235,10 @@ needs to know where it fits:
 | **Vine**     | NetworkMountainPort, NetworkCocoonPort | Port numbers baked into generated gRPC stubs                                                  |
 | **Wind**     | TierConfiguration, TierLogger, TierIPC | Uses tiers for service layer behavior; TierIPC selects IPC routing in TauriMainProcessService |
 | **Worker**   | None directly                          | Fixed service worker implementation                                                           |
+
+---
+
+**Project Maintainers:** Source Open
+([Source/Open@Editor.Land](mailto:Source/Open@Editor.Land)) |
+[GitHub Repository](https://github.com/CodeEditorLand/Land) |
+[Report an Issue](https://github.com/CodeEditorLand/Land/issues)

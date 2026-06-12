@@ -455,3 +455,10 @@ After each namespace migrates:
   wired end-to-end: Sky OSC 633 parser → `localPty:shellExecution{Start,End}` →
   Mountain fan-out → Cocoon `$acceptTerminalShellExecution{Start,End}` +
   `$acceptExecutedTerminalCommand` gRPC → Emitter events in Window namespace.
+
+---
+
+**Project Maintainers:** Source Open
+([Source/Open@Editor.Land](mailto:Source/Open@Editor.Land)) |
+[GitHub Repository](https://github.com/CodeEditorLand/Land) |
+[Report an Issue](https://github.com/CodeEditorLand/Land/issues)

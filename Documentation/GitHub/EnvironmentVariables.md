@@ -678,4 +678,9 @@ Combine tags: `Trace=lifecycle,ipc,extensions,grpc`
 
 ---
 
+**Project Maintainers:** Source Open
+([Source/Open@Editor.Land](mailto:Source/Open@Editor.Land)) |
+[GitHub Repository](https://github.com/CodeEditorLand/Land) |
+[Report an Issue](https://github.com/CodeEditorLand/Land/issues)
+
 _Last updated: May 2026_
