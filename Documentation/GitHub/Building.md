@@ -1,6 +1,6 @@
 # Building Land 🏗️
 
-This document provides comprehensive, step-by-step instructions for building the
+Step-by-step instructions for building the
 **Land** code editor from source. It covers the complete two-step build process,
 prerequisites, environment configuration, and element-specific build notes.
 

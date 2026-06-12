@@ -1,6 +1,6 @@
 # Build Pipeline
 
-This document describes the complete build pipeline for the **Land** code
+The complete build pipeline for the **Land** code
 editor, from environment variable resolution through binary artifact production.
 The pipeline is a multi-stage, multi-language process that coordinates `Rust`,
 `TypeScript`, and static asset compilation across 15+ component workspaces.

@@ -1,6 +1,6 @@
 # Build Matrix & Environment Variables
 
-This document describes every build configuration variant, environment variable,
+Every build configuration variant, environment variable,
 and how they propagate across all Elements in the Land monorepo.
 
 ---

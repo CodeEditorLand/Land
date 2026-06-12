@@ -1,7 +1,7 @@
 # Land Project Architecture
 
-Welcome to the Land project! This document provides a high-level overview of the
-architecture and the core workflows that drive the application. Our system is
+A high-level overview of the architecture and the core workflows that drive the
+application. Our system is
 composed of three primary components:
 
 - **`Common` 👨🏻‍🏭 (Rust Crate):** The abstract core library. It defines the

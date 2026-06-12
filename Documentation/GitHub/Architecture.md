@@ -1,6 +1,6 @@
 # Land System Architecture
 
-This document describes the complete system architecture of the **Land** code
+The complete system architecture of the **Land** code
 editor. It covers the process model, inter-component communication patterns,
 component responsibilities, and the layered design that enables multi-process
 operation on `macOS`, `Windows`, and `Linux`.
