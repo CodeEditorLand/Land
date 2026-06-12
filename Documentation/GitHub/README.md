@@ -185,7 +185,7 @@ Some Elements contain additional documentation beyond `DeepDive.md` and
 | 6 hook layers (ErrorHandler→Timing) | 3 intercept strategies (IPC/DI/Audit) |
 | <2% prod overhead (sampled) | <1% overhead (passthrough) |
 | `Land/…/Shim/Intercept/*.ts` | `Land/…/Wind/Source/Shim/*.ts` |
-| [Docs: Low-Level Shim](https://land.playform.cloud/doc/low-level-shim) | [Docs: Coverage](https://land.playform.cloud/doc/coverage) |
+| [Docs: Low-Level Shim](https://editor.land/doc/low-level-shim) | [Docs: Coverage](https://editor.land/doc/coverage) |
 
 > ⚠️ **EXPERIMENTAL** — Gated behind `TierShim` env var (default: `None`).
 > See [EnvironmentVariables.md](EnvironmentVariables.md) and
