@@ -149,6 +149,32 @@ sequenceDiagram
       `TierEnvironment.sh` runs, so every downstream tool sees the overlay
       values as if they came from `.env.Land` directly.
 
+    - **ProductFlavor encoding**: Each flavor overlay sets `ProductFlavor` to a
+      10-character code that encodes routing decisions in 5 two-char groups:
+
+        | Group | Encodes                                            | Values                                                              |
+        | ----- | -------------------------------------------------- | ------------------------------------------------------------------- |
+        | G1    | IPC mode + WebSocket                               | `IW`=IPC Mtn+WS Dis, `IF`=IPC NodeDef+WS Mist, `IN`=IPC Node+WS Dis |
+        | G2    | Tasks + Auth + Encryption                          | `TN`=Tasks Node+Auth Node+Enc Mtn, `TA`=all Mountain                |
+        | G3    | Terminal + SCM + Debug                             | `MM`=all Mountain, `NN`=all Node                                    |
+        | G4    | Search + Language + Output + TreeView + NativeHost | `MM`=all Mountain                                                   |
+        | G5    | Storage + Model + FileSystem                       | `MM`=all Mountain                                                   |
+
+        **Flavor reference:**
+
+        | Flavor         | Code         | Identity            |
+        | -------------- | ------------ | ------------------- |
+        | Default (full) | `IWTNMMMMMM` | `fiddee-IWTNMMMMMM` |
+        | RustOnly       | `IWTAMMMMMM` | `fiddee-IWTAMMMMMM` |
+        | Node           | `INTNNNNNNN` | `fiddee-INTNNNNNNN` |
+        | Full + Mist WS | `IFTNMMMMMM` | `fiddee-IFTNMMMMMM` |
+
+        Set `ProductFlavorLong=true` to use short human-readable names
+        (`fiddee-F8`, `fiddee-FR`, `fiddee-FN`, `fiddee-FC`) instead of the
+        10-char encoding. The flavor code is appended to every filesystem
+        identity (data folder, URL protocol, binary identifier) so each flavor
+        runs in complete isolation — no shared state, no collisions.
+
 ---
 
 #### **Phase 2: Build-Time Propagation (`Maintain/Debug/Build.sh` → `TierEnvironment.sh`)**

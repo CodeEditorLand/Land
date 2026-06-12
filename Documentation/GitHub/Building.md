@@ -222,7 +222,7 @@ building:
 > [!NOTE]
 >
 > All debug profiles write to `Target/debug/`. The profile name affects what env
-> vars are set and which Sky assets are produced — not the target directory
+> vars are set and which Sky assets are produced - not the target directory
 > name.
 
 ---

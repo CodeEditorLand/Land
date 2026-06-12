@@ -72,10 +72,10 @@ sequenceDiagram
 
 ## Wind Service Layer 🧩
 
-`Wind` provides ~45 `Effect-TS` services (spanning 59 directories under `Effect/`,
-including a `Generated/` layer of upstream VS Code service wrappers) that replace
-the VS Code workbench service implementations. Each service follows a consistent
-module structure:
+`Wind` provides ~45 `Effect-TS` services (spanning 59 directories under
+`Effect/`, including a `Generated/` layer of upstream VS Code service wrappers)
+that replace the VS Code workbench service implementations. Each service follows
+a consistent module structure:
 
 ```
 Wind/Source/Effect/<Service>/
@@ -87,10 +87,11 @@ Wind/Source/Effect/<Service>/
     +-- Live.ts                 - Layer export (Layer.succeed)
 ```
 
-> **Note:** Some directories (e.g., `WorkbenchActivity/`) follow a flatter layout
-> where `Implementation/` contains the bridge shape and live implementation, and
-> `index.ts` replaces `<Service>.ts` as the barrel. The `Generated/` directory
-> holds auto-generated upstream VS Code service wrappers (I<Interface>Upstream.ts).
+> **Note:** Some directories (e.g., `WorkbenchActivity/`) follow a flatter
+> layout where `Implementation/` contains the bridge shape and live
+> implementation, and `index.ts` replaces `<Service>.ts` as the barrel. The
+> `Generated/` directory holds auto-generated upstream VS Code service wrappers
+> (I<Interface>Upstream.ts).
 
 ### Service Catalog
 
@@ -230,29 +231,35 @@ Wind/Source/Effect/Layers/index.ts
 
 ### Layer Composition
 
-Each layer stack uses `Layer.mergeAll` (Tauri) or `Layer.empty.pipe(Layer.provideMerge(...))` (Electron/Test) to compose services. Individual services use `Layer.succeed` to wrap a concrete implementation object:
+Each layer stack uses `Layer.mergeAll` (Tauri) or
+`Layer.empty.pipe(Layer.provideMerge(...))` (Electron/Test) to compose services.
+Individual services use `Layer.succeed` to wrap a concrete implementation
+object:
 
 ```typescript
-// Tauri layer — Layer.mergeAll: flat composition
+// Tauri layer - Layer.mergeAll: flat composition
 export const TauriLiveLayer = Layer.mergeAll(
-    SandboxLive,
-    ConfigurationWithSyncLive,
-    EditorLive,
-    FilesLive,
-    TerminalLive,
-    // ... all ~37 service layers
+	SandboxLive,
+	ConfigurationWithSyncLive,
+	EditorLive,
+	FilesLive,
+	TerminalLive,
+	// ... all ~37 service layers
 );
 
-// Electron layer — .pipe(Layer.provideMerge): chain composition
+// Electron layer - .pipe(Layer.provideMerge): chain composition
 export const ElectronLiveLayer = Layer.empty
-    .pipe(Layer.provideMerge(SandboxLive))
-    .pipe(Layer.provideMerge(IPCElectronLive))
-    .pipe(Layer.provideMerge(TelemetryLive))
-    .pipe(Layer.provideMerge(ConfigurationWithSyncLive))
-    .pipe(Layer.provideMerge(MountainLive));
+	.pipe(Layer.provideMerge(SandboxLive))
+	.pipe(Layer.provideMerge(IPCElectronLive))
+	.pipe(Layer.provideMerge(TelemetryLive))
+	.pipe(Layer.provideMerge(ConfigurationWithSyncLive))
+	.pipe(Layer.provideMerge(MountainLive));
 
 // Individual service pattern:
-export const LiveEditorServiceLayer = Layer.succeed(EditorTag, makeEditorService());
+export const LiveEditorServiceLayer = Layer.succeed(
+	EditorTag,
+	makeEditorService(),
+);
 ```
 
 `Effect-TS`'s compile-time dependency tracking ensures that no service can be
@@ -311,31 +318,31 @@ module-singleton `ManagedRuntime` wrapping `LandWorkbenchLayer`:
 
 **Land** supports multiple workbench variants selected at build time:
 
-| Variant              | Feature Coverage          | Build Profile (shorthand)     | Use Case                                   |
-| -------------------- | ------------------------- | ----------------------------- | ------------------------------------------ |
-| **Browser**          | 70-80%                    | `debug`                       | Quick development, limited native features |
-| **Mountain**         | 80-90%                    | `debug-mountain`              | Daily development, `Tauri` native features |
-| **Electron**         | 95%+                      | `debug-electron`              | Maximum VS Code compatibility              |
-| **Electron+Rest**    | 95%+                      | `debug-electron-rest`         | Same as Electron + `OXC` compiler          |
-| **Electron Minimal** | No built-in extensions    | `debug-electron-minimal`      | Minimal footprint debugging                |
-| **Mountain Only**    | Core services, no Cocoon  | `debug-mountain-only`         | Mountain without extension host            |
-| **Cocoon Headless**  | No Wind preload           | `debug-cocoon-headless`       | Cocoon subprocess only, no workbench UI    |
-| **Kernel**           | Pure Mountain             | `debug-kernel`                | No built-ins, no Cocoon, no Wind           |
-| **Electron Compiled**| Single-binary embedded    | `debug-electron-compiled`     | Single-binary deploy with debug symbols    |
-| **Mountain Compiled**| Single-binary embedded    | `debug-mountain-compiled`     | Single-binary (Mountain variant)           |
-| **Electron Bundled** | Vite/Astro bundled        | `debug-electron-bundled`      | Workbench compiled through Vite/Rollup     |
-| **Browser Bundled**  | Vite/Astro bundled        | `debug-browser-bundled`       | Browser workbench bundled                  |
-| **Sessions**         | Window/Session management | `debug-sessions-bundled`      | Multi-window session support               |
-| **Workbench**        | Base workbench only       | `debug-workbench-bundled`     | Minimal UI for testing                     |
-| **Bundled All**      | All four bundled variants | `debug-bundled-all`           | All workbenches in one Rollup pass         |
+| Variant               | Feature Coverage          | Build Profile (shorthand) | Use Case                                   |
+| --------------------- | ------------------------- | ------------------------- | ------------------------------------------ |
+| **Browser**           | 70-80%                    | `debug`                   | Quick development, limited native features |
+| **Mountain**          | 80-90%                    | `debug-mountain`          | Daily development, `Tauri` native features |
+| **Electron**          | 95%+                      | `debug-electron`          | Maximum VS Code compatibility              |
+| **Electron+Rest**     | 95%+                      | `debug-electron-rest`     | Same as Electron + `OXC` compiler          |
+| **Electron Minimal**  | No built-in extensions    | `debug-electron-minimal`  | Minimal footprint debugging                |
+| **Mountain Only**     | Core services, no Cocoon  | `debug-mountain-only`     | Mountain without extension host            |
+| **Cocoon Headless**   | No Wind preload           | `debug-cocoon-headless`   | Cocoon subprocess only, no workbench UI    |
+| **Kernel**            | Pure Mountain             | `debug-kernel`            | No built-ins, no Cocoon, no Wind           |
+| **Electron Compiled** | Single-binary embedded    | `debug-electron-compiled` | Single-binary deploy with debug symbols    |
+| **Mountain Compiled** | Single-binary embedded    | `debug-mountain-compiled` | Single-binary (Mountain variant)           |
+| **Electron Bundled**  | Vite/Astro bundled        | `debug-electron-bundled`  | Workbench compiled through Vite/Rollup     |
+| **Browser Bundled**   | Vite/Astro bundled        | `debug-browser-bundled`   | Browser workbench bundled                  |
+| **Sessions**          | Window/Session management | `debug-sessions-bundled`  | Multi-window session support               |
+| **Workbench**         | Base workbench only       | `debug-workbench-bundled` | Minimal UI for testing                     |
+| **Bundled All**       | All four bundled variants | `debug-bundled-all`       | All workbenches in one Rollup pass         |
 
 ### Variant Selection Logic
 
-`Sky`'s `index.astro` entry point selects the active workbench at build time
-via environment variable booleans (not `TierWorkbench`):
+`Sky`'s `index.astro` entry point selects the active workbench at build time via
+environment variable booleans (not `TierWorkbench`):
 
 ```typescript
-// From Sky/Source/pages/index.astro — environment detection
+// From Sky/Source/pages/index.astro - environment detection
 const Bundle = process.env["Bundle"] === "true";
 const Mountain = process.env["Mountain"] === "true";
 const Electron = process.env["Electron"] === "true";
@@ -343,11 +350,11 @@ const BrowserProxy = process.env["BrowserProxy"] === "true";
 
 // Determine workbench type
 const WorkbenchType =
-    Electron || Mountain
-        ? "Electron"
-        : BrowserProxy
-            ? "BrowserProxy"
-            : "Browser"; // Default, not null
+	Electron || Mountain
+		? "Electron"
+		: BrowserProxy
+			? "BrowserProxy"
+			: "Browser"; // Default, not null
 ```
 
 `Mountain` maps to the Electron workbench (same workbench shape, different IPC

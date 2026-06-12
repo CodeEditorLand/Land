@@ -28,14 +28,14 @@ The pipeline is a multi-stage, multi-language process that coordinates `Rust`,
 
 The **Land** build has six stages:
 
-1. **VS Code platform compile** — produces the compiled JavaScript platform code
-2. **TypeScript build** — `pnpm prepublishOnly` for Wind, Cocoon, Output, Sky,
+1. **VS Code platform compile** - produces the compiled JavaScript platform code
+2. **TypeScript build** - `pnpm prepublishOnly` for Wind, Cocoon, Output, Sky,
    Worker
-3. **PreBake** — walks extension roots, writes `extensions.manifest.json` (runs
+3. **PreBake** - walks extension roots, writes `extensions.manifest.json` (runs
    via `beforeBundleCommand`)
-4. **Rust build** — `cargo build -p Mountain`
-5. **Tauri bundle** — `pnpm tauri build`
-6. **Re-sign** — `Maintain/Script/SignBundle.sh` strips quarantine bits and
+4. **Rust build** - `cargo build -p Mountain`
+5. **Tauri bundle** - `pnpm tauri build`
+6. **Re-sign** - `Maintain/Script/SignBundle.sh` strips quarantine bits and
    re-applies entitlements
 
 ```mermaid
@@ -108,20 +108,20 @@ export Trace=all Record=1 Disable=false
 
 The build script invokes, in sequence:
 
-1. **TypeScript build** (`pnpm prepublishOnly`) — Output, Cocoon, Worker, Wind,
+1. **TypeScript build** (`pnpm prepublishOnly`) - Output, Cocoon, Worker, Wind,
    Sky
     - Output artifact bundling via `ESBuild` for the VS Code platform code
     - Cocoon compilation via `ESBuild` for the extension host
     - Worker compilation via `ESBuild` for the service worker
     - Wind + Sky compilation via `Vite`/`Astro` for the UI layer
-2. **PreBake** (`Maintain/Build/Manifest/PreBake.ts`) — runs via
+2. **PreBake** (`Maintain/Build/Manifest/PreBake.ts`) - runs via
    `beforeBundleCommand` inside `tauri.conf.json`; walks extension roots and
    writes `extensions.manifest.json`. Fires in **all** build paths (direct
-   `pnpm tauri build`, `Build.sh`, CI) — not only via the wrapper script.
+   `pnpm tauri build`, `Build.sh`, CI) - not only via the wrapper script.
    Consumed by `LoadFromCache.rs` at boot (<50 ms vs ~1200 ms live scan).
 3. **Rust workspace compilation** via `cargo build -p Mountain`
 4. **Tauri bundling** for the final `.app` bundle
-5. **Re-sign** (`Maintain/Script/SignBundle.sh`) — strips macOS quarantine bits
+5. **Re-sign** (`Maintain/Script/SignBundle.sh`) - strips macOS quarantine bits
    with `xattr -cr`, then re-signs with `codesign --force --deep --sign -` plus
    `Entitlements.plist` (hardened runtime + JIT + file-picker TCC). Invoked
    automatically by `Build.sh`:

@@ -257,7 +257,7 @@ the Echo scheduler.
 
 > The full channel enum is defined in `Common/Source/IPC/Channel.rs` (Rust) and
 > mirrored in `Wind/Source/IPC/Channel.ts` (TypeScript). Both must be kept in
-> lockstep — adding a channel to one requires adding it to the other.
+> lockstep - adding a channel to one requires adding it to the other.
 
 ### Events (Push from Mountain)
 
@@ -511,61 +511,61 @@ Used for `Cocoon` -> `Mountain` communication:
 
 Used for `Mountain` -> `Cocoon` communication:
 
-| RPC                         | Direction              | Trigger         | Purpose                                              |
-| --------------------------- | ---------------------- | --------------- | ---------------------------------------------------- |
-| `ProcessMountainRequest`    | `Mountain` -> `Cocoon` | Per API call    | Generic request-response from backend                |
-| `SendMountainNotification`  | `Mountain` -> `Cocoon` | Backend event   | Fire-and-forget notification to sidecar              |
-| `CancelOperation`           | `Mountain` -> `Cocoon` | Backend cancel  | Cancel an in-flight extension operation              |
-| `OpenChannelFromMountain`   | `Mountain` -> `Cocoon` | After handshake | LAND-PATCH B7-S6 P2 bidirectional multiplexed stream |
-| `InitialHandshake`          | `Mountain` -> `Cocoon` | After bootstrap | Handshake readiness signal                           |
-| `InitExtensionHost`         | `Mountain` -> `Cocoon` | After handshake | Send workspace root, extensions, configuration       |
-| `RegisterCommand`           | `Cocoon` -> `Mountain` | Extension boot  | Register an extension-contributed command            |
-| `ExecuteContributedCommand` | `Mountain` -> `Cocoon` | User triggers   | Execute an extension-contributed command             |
-| `UnregisterCommand`         | `Cocoon` -> `Mountain` | Extension unload | Unregister an extension command                      |
-| `RegisterHoverProvider`     | `Cocoon` -> `Mountain` | Extension boot  | Register a hover provider                            |
-| `ProvideHover`              | `Mountain` -> `Cocoon` | User hovers     | Request hover from extension provider                |
-| `RegisterCompletionItemProvider` | `Cocoon` -> `Mountain` | Extension boot  | Register a completion provider                       |
-| `ProvideCompletionItems`    | `Mountain` -> `Cocoon` | User types      | Request completion items                             |
-| `RegisterDefinitionProvider`| `Cocoon` -> `Mountain` | Extension boot  | Register a definition provider                       |
-| `ProvideDefinition`         | `Mountain` -> `Cocoon` | User clicks     | Request definition location                          |
-| `RegisterReferenceProvider` | `Cocoon` -> `Mountain` | Extension boot  | Register a reference provider                        |
-| `ProvideReferences`         | `Mountain` -> `Cocoon` | User triggers   | Request reference locations                          |
-| `RegisterCodeActionsProvider` | `Cocoon` -> `Mountain` | Extension boot  | Register a code actions provider                     |
-| `ProvideCodeActions`        | `Mountain` -> `Cocoon` | User triggers   | Request code actions                                 |
-| `RegisterDocumentHighlightProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a document highlight provider             |
-| `ProvideDocumentHighlights` | `Mountain` -> `Cocoon` | User hovers     | Request document highlights                          |
-| `RegisterDocumentSymbolProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a document symbol provider                |
-| `ProvideDocumentSymbols`    | `Mountain` -> `Cocoon` | Sidebar open    | Request document symbols                             |
-| `RegisterWorkspaceSymbolProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a workspace symbol provider              |
-| `ProvideWorkspaceSymbols`   | `Mountain` -> `Cocoon` | Search types    | Request workspace symbols                            |
-| `RegisterRenameProvider`    | `Cocoon` -> `Mountain` | Extension boot  | Register a rename provider                           |
-| `ProvideRenameEdits`        | `Mountain` -> `Cocoon` | User triggers   | Request rename edits                                 |
-| `RegisterDocumentFormattingProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a document formatting provider           |
-| `ProvideDocumentFormatting` | `Mountain` -> `Cocoon` | User triggers   | Request document formatting                          |
-| `RegisterDocumentRangeFormattingProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a range formatting provider           |
-| `ProvideDocumentRangeFormatting` | `Mountain` -> `Cocoon` | User triggers | Request document range formatting                   |
-| `RegisterOnTypeFormattingProvider` | `Cocoon` -> `Mountain` | Extension boot | Register an on-type formatting provider          |
-| `ProvideOnTypeFormatting`   | `Mountain` -> `Cocoon` | User types      | Request on-type formatting                           |
-| `RegisterSignatureHelpProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a signature help provider                |
-| `ProvideSignatureHelp`      | `Mountain` -> `Cocoon` | User types      | Request signature help                               |
-| `RegisterCodeLensProvider`  | `Cocoon` -> `Mountain` | Extension boot  | Register a code lens provider                        |
-| `ProvideCodeLenses`         | `Mountain` -> `Cocoon` | Code lens shown | Request code lenses                                  |
-| `RegisterFoldingRangeProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a folding range provider                 |
-| `ProvideFoldingRanges`      | `Mountain` -> `Cocoon` | File opened     | Request folding ranges                               |
-| `RegisterSelectionRangeProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a selection range provider              |
-| `ProvideSelectionRanges`    | `Mountain` -> `Cocoon` | User selects    | Request selection ranges                             |
-| `RegisterSemanticTokensProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a semantic tokens provider              |
-| `ProvideSemanticTokensFull` | `Mountain` -> `Cocoon` | File opened     | Request semantic tokens                              |
-| `RegisterInlayHintsProvider` | `Cocoon` -> `Mountain` | Extension boot  | Register an inlay hints provider                     |
-| `ProvideInlayHints`         | `Mountain` -> `Cocoon` | User hovers     | Request inlay hints                                  |
-| `RegisterTypeHierarchyProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a type hierarchy provider               |
-| `ProvideTypeHierarchySupertypes` | `Mountain` -> `Cocoon` | User triggers | Request type hierarchy supertypes                  |
-| `ProvideTypeHierarchySubtypes` | `Mountain` -> `Cocoon` | User triggers  | Request type hierarchy subtypes                      |
-| `RegisterCallHierarchyProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a call hierarchy provider                |
-| `ProvideCallHierarchyIncomingCalls` | `Mountain` -> `Cocoon` | User triggers | Request call hierarchy incoming calls             |
-| `ProvideCallHierarchyOutgoingCalls` | `Mountain` -> `Cocoon` | User triggers | Request call hierarchy outgoing calls             |
-| `RegisterLinkedEditingRangeProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a linked editing range provider         |
-| `ProvideLinkedEditingRanges` | `Mountain` -> `Cocoon` | User edits     | Request linked editing ranges                        |
+| RPC                                       | Direction              | Trigger          | Purpose                                              |
+| ----------------------------------------- | ---------------------- | ---------------- | ---------------------------------------------------- |
+| `ProcessMountainRequest`                  | `Mountain` -> `Cocoon` | Per API call     | Generic request-response from backend                |
+| `SendMountainNotification`                | `Mountain` -> `Cocoon` | Backend event    | Fire-and-forget notification to sidecar              |
+| `CancelOperation`                         | `Mountain` -> `Cocoon` | Backend cancel   | Cancel an in-flight extension operation              |
+| `OpenChannelFromMountain`                 | `Mountain` -> `Cocoon` | After handshake  | LAND-PATCH B7-S6 P2 bidirectional multiplexed stream |
+| `InitialHandshake`                        | `Mountain` -> `Cocoon` | After bootstrap  | Handshake readiness signal                           |
+| `InitExtensionHost`                       | `Mountain` -> `Cocoon` | After handshake  | Send workspace root, extensions, configuration       |
+| `RegisterCommand`                         | `Cocoon` -> `Mountain` | Extension boot   | Register an extension-contributed command            |
+| `ExecuteContributedCommand`               | `Mountain` -> `Cocoon` | User triggers    | Execute an extension-contributed command             |
+| `UnregisterCommand`                       | `Cocoon` -> `Mountain` | Extension unload | Unregister an extension command                      |
+| `RegisterHoverProvider`                   | `Cocoon` -> `Mountain` | Extension boot   | Register a hover provider                            |
+| `ProvideHover`                            | `Mountain` -> `Cocoon` | User hovers      | Request hover from extension provider                |
+| `RegisterCompletionItemProvider`          | `Cocoon` -> `Mountain` | Extension boot   | Register a completion provider                       |
+| `ProvideCompletionItems`                  | `Mountain` -> `Cocoon` | User types       | Request completion items                             |
+| `RegisterDefinitionProvider`              | `Cocoon` -> `Mountain` | Extension boot   | Register a definition provider                       |
+| `ProvideDefinition`                       | `Mountain` -> `Cocoon` | User clicks      | Request definition location                          |
+| `RegisterReferenceProvider`               | `Cocoon` -> `Mountain` | Extension boot   | Register a reference provider                        |
+| `ProvideReferences`                       | `Mountain` -> `Cocoon` | User triggers    | Request reference locations                          |
+| `RegisterCodeActionsProvider`             | `Cocoon` -> `Mountain` | Extension boot   | Register a code actions provider                     |
+| `ProvideCodeActions`                      | `Mountain` -> `Cocoon` | User triggers    | Request code actions                                 |
+| `RegisterDocumentHighlightProvider`       | `Cocoon` -> `Mountain` | Extension boot   | Register a document highlight provider               |
+| `ProvideDocumentHighlights`               | `Mountain` -> `Cocoon` | User hovers      | Request document highlights                          |
+| `RegisterDocumentSymbolProvider`          | `Cocoon` -> `Mountain` | Extension boot   | Register a document symbol provider                  |
+| `ProvideDocumentSymbols`                  | `Mountain` -> `Cocoon` | Sidebar open     | Request document symbols                             |
+| `RegisterWorkspaceSymbolProvider`         | `Cocoon` -> `Mountain` | Extension boot   | Register a workspace symbol provider                 |
+| `ProvideWorkspaceSymbols`                 | `Mountain` -> `Cocoon` | Search types     | Request workspace symbols                            |
+| `RegisterRenameProvider`                  | `Cocoon` -> `Mountain` | Extension boot   | Register a rename provider                           |
+| `ProvideRenameEdits`                      | `Mountain` -> `Cocoon` | User triggers    | Request rename edits                                 |
+| `RegisterDocumentFormattingProvider`      | `Cocoon` -> `Mountain` | Extension boot   | Register a document formatting provider              |
+| `ProvideDocumentFormatting`               | `Mountain` -> `Cocoon` | User triggers    | Request document formatting                          |
+| `RegisterDocumentRangeFormattingProvider` | `Cocoon` -> `Mountain` | Extension boot   | Register a range formatting provider                 |
+| `ProvideDocumentRangeFormatting`          | `Mountain` -> `Cocoon` | User triggers    | Request document range formatting                    |
+| `RegisterOnTypeFormattingProvider`        | `Cocoon` -> `Mountain` | Extension boot   | Register an on-type formatting provider              |
+| `ProvideOnTypeFormatting`                 | `Mountain` -> `Cocoon` | User types       | Request on-type formatting                           |
+| `RegisterSignatureHelpProvider`           | `Cocoon` -> `Mountain` | Extension boot   | Register a signature help provider                   |
+| `ProvideSignatureHelp`                    | `Mountain` -> `Cocoon` | User types       | Request signature help                               |
+| `RegisterCodeLensProvider`                | `Cocoon` -> `Mountain` | Extension boot   | Register a code lens provider                        |
+| `ProvideCodeLenses`                       | `Mountain` -> `Cocoon` | Code lens shown  | Request code lenses                                  |
+| `RegisterFoldingRangeProvider`            | `Cocoon` -> `Mountain` | Extension boot   | Register a folding range provider                    |
+| `ProvideFoldingRanges`                    | `Mountain` -> `Cocoon` | File opened      | Request folding ranges                               |
+| `RegisterSelectionRangeProvider`          | `Cocoon` -> `Mountain` | Extension boot   | Register a selection range provider                  |
+| `ProvideSelectionRanges`                  | `Mountain` -> `Cocoon` | User selects     | Request selection ranges                             |
+| `RegisterSemanticTokensProvider`          | `Cocoon` -> `Mountain` | Extension boot   | Register a semantic tokens provider                  |
+| `ProvideSemanticTokensFull`               | `Mountain` -> `Cocoon` | File opened      | Request semantic tokens                              |
+| `RegisterInlayHintsProvider`              | `Cocoon` -> `Mountain` | Extension boot   | Register an inlay hints provider                     |
+| `ProvideInlayHints`                       | `Mountain` -> `Cocoon` | User hovers      | Request inlay hints                                  |
+| `RegisterTypeHierarchyProvider`           | `Cocoon` -> `Mountain` | Extension boot   | Register a type hierarchy provider                   |
+| `ProvideTypeHierarchySupertypes`          | `Mountain` -> `Cocoon` | User triggers    | Request type hierarchy supertypes                    |
+| `ProvideTypeHierarchySubtypes`            | `Mountain` -> `Cocoon` | User triggers    | Request type hierarchy subtypes                      |
+| `RegisterCallHierarchyProvider`           | `Cocoon` -> `Mountain` | Extension boot   | Register a call hierarchy provider                   |
+| `ProvideCallHierarchyIncomingCalls`       | `Mountain` -> `Cocoon` | User triggers    | Request call hierarchy incoming calls                |
+| `ProvideCallHierarchyOutgoingCalls`       | `Mountain` -> `Cocoon` | User triggers    | Request call hierarchy outgoing calls                |
+| `RegisterLinkedEditingRangeProvider`      | `Cocoon` -> `Mountain` | Extension boot   | Register a linked editing range provider             |
+| `ProvideLinkedEditingRanges`              | `Mountain` -> `Cocoon` | User edits       | Request linked editing ranges                        |
 
 ### Message Formats
 
@@ -808,12 +808,12 @@ Both `gRPC` connections (`Mountain`-`Cocoon`, `Mountain`-`Air`) implement a
 health monitoring protocol. Health is tracked via a per-connection
 `ConnectionMetadata` struct in `Vine/Source/Client/Shared.rs`:
 
-| Parameter                   | Value                                |
-| --------------------------- | ------------------------------------ |
-| Staleness check interval    | 30 seconds (`HEALTH_CHECK_INTERVAL_MS`) |
-| Max retry attempts          | 10 (`MAX_RETRY_ATTEMPTS`)            |
-| Retry base delay            | 200 ms (`RETRY_BASE_DELAY_MS`)       |
-| Connection timeout          | 30 seconds (`CONNECTION_TIMEOUT`)    |
+| Parameter                | Value                                   |
+| ------------------------ | --------------------------------------- |
+| Staleness check interval | 30 seconds (`HEALTH_CHECK_INTERVAL_MS`) |
+| Max retry attempts       | 10 (`MAX_RETRY_ATTEMPTS`)               |
+| Retry base delay         | 200 ms (`RETRY_BASE_DELAY_MS`)          |
+| Connection timeout       | 30 seconds (`CONNECTION_TIMEOUT`)       |
 
 Health is determined by three conditions in
 `Vine/Source/Client/CheckSideCarHealth.rs`: the connection must be marked
@@ -873,17 +873,17 @@ TypeScript types are generated using `protoc-gen-ts` and checked into the
 
 ## Security 🛡️
 
-All `gRPC` connections are restricted to localhost only (`[::1]` / `127.0.0.1`). No remote
-connections are accepted.
+All `gRPC` connections are restricted to localhost only (`[::1]` / `127.0.0.1`).
+No remote connections are accepted.
 
 | Aspect        | Implementation                              |
 | ------------- | ------------------------------------------- |
 | Transport     | TCP loopback only                           |
 | Auth          | None required (localhost-only)              |
 | Encryption    | None (localhost-only, no network exposure)  |
-| Port binding  | `[::1]` only, not `0.0.0.0`                |
+| Port binding  | `[::1]` only, not `0.0.0.0`                 |
 | DNS isolation | All non-localhost traffic blocked by `Mist` |
-| Timeout       | 30-second staleness check               |
+| Timeout       | 30-second staleness check                   |
 | Backpressure  | `gRPC` flow control + bounded channels      |
 
 ---
