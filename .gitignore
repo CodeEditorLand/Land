@@ -57,6 +57,7 @@ Maintain/Format/__pycache__
 .env.Land.Extensions
 .env.Land.Node
 .env.Land.PostHog
+.env.Land.Shim
 
 .env.Land.Production
 .env.Land.Production.Bundled
@@ -64,3 +65,4 @@ Maintain/Format/__pycache__
 .env.Land.Production.Extensions
 .env.Land.Production.Node
 .env.Land.Production.PostHog
+.env.Land.Production.Shim

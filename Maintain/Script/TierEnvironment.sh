@@ -194,6 +194,11 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	SourceOverlayIfPresent ".env.Land.Bundled"
 	SourceProductionOverlayIfActive ".env.Land.Production.Bundled"
 
+	# Shim overlay: experimental deep-hook intercept layer. Sources
+	# TierShim + TierSwallow* vars from .env.Land.Shim.
+	SourceOverlayIfPresent ".env.Land.Shim"
+	SourceProductionOverlayIfActive ".env.Land.Production.Shim"
+
 	# -----------------------------------------------------------------------
 	# Step 2: Re-apply the caller's pre-export snapshot so it wins over
 	# every .env file. This is what makes `export TierIPC=Node` work.
@@ -210,7 +215,7 @@ if [ -n "$TierEnvFile" ] && [ -f "$TierEnvFile" ]; then
 	# allow-list (not a regex sweep) so unrelated PascalCase env vars
 	# the OS / dev environment exports don't pollute the diagnostic
 	# block.
-	LandRuntimeKeys="Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand Pipe Emit Capture Inspect Smoke Trace Record Disable DisableUIFixes Pack Boot LandIsProduction"
+	LandRuntimeKeys="Pick Require Ship Lodge Extend Probe Skip Mute Wire Install Authorize Beam Report Throttle Buffer Batch Cap Replay Ask Brand Pipe Emit Capture Inspect Smoke Trace Record Disable DisableUIFixes Pack Boot LandIsProduction TierShim TierSwallow"
 	LandRuntimeVars=""
 	for Key in $LandRuntimeKeys; do
 		Value=$(printenv "$Key" 2> /dev/null || true)

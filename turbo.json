@@ -21,7 +21,8 @@
 		".env.Land.Production.Extensions",
 		".env.Land.Production.Node",
 		".env.Land.Production.PostHog",
-		".env.Land.Sample"
+		".env.Land.Sample",
+		".env.Land.Shim"
 	],
 	"globalEnv": [
 		"AIR_LOG_DIR",
@@ -252,6 +253,8 @@
 		"TierTerminal",
 		"TierTreeView",
 		"TierWebSocket",
+		"TierShim",
+		"TierSwallow",
 		"Trace",
 		"USER",
 		"USERNAME",
