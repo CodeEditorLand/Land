@@ -176,7 +176,7 @@ Status symbols:
 | ----------------------------- | ------- | ------ | --------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------- |
 | `createSourceControl`         | A+S     | 🟡     | `extHostSCM.ts`                         | `register_scm_provider` + `sky://scm/register` emit | SkyBridge diagnostic subscriber; needs `ISCMService` route (deferred) |
 | `inputBox.value` read/write   | A       | 🟡     | `extHostSCM.ts`                         | round-trip via `ResolveUIRequest`                   | -                                                                     |
-| `$gitExec` (built-in git ext) | **B**   | 🔴     | `git/out/model.js` → `localGit` channel | **NEEDS `git:*` handlers** - planned                | -                                                                     |
+| `$gitExec` (built-in git ext) | **B**   | ✅     | `git/out/model.js` → `localGit` channel | `localGit:exec` via `HandleExec.rs`; `git:clone/pull/checkout/revParse/fetch/revListCount/cancel/isAvailable` in `Git/` handlers | -                                                                     |
 
 ### `vscode.env`
 
@@ -244,7 +244,7 @@ Status symbols:
 
 | Operation                 | Primary | Status | Stock file           | Mountain | Sky |
 | ------------------------- | ------- | ------ | -------------------- | -------- | --- |
-| `createCommentController` | A       | 🔴     | `extHostComments.ts` | -        | -   |
+| `createCommentController` | A       | 🟡     | `extHostComments.ts` | in-process thread store in `Comments/Namespace.ts`; no UI rendering yet | -   |
 
 ---
 
@@ -413,9 +413,10 @@ Priority list (ranked by expected impact):
    Cocoon proxies DAP messages. Unblocks every debug extension.
 3. **Task execution** - Mountain spawns the shell command, streams stdout/stderr
    through the terminal panel, tracks exit code.
-4. **Git subprocess** - **landing this session**. Every `$gitExec` round-trip
-   currently fails because `localGit` channel is routed (`git:*` prefix) but no
-   handlers exist. Fix below.
+4. **Git subprocess** - **landed**. Every `$gitExec` round-trip
+   now routes to Mountain's `localGit:exec` handler (`HandleExec.rs`) or the
+   curated handler for clone/pull/checkout/revParse/fetch. Implemented in
+   Batch 4 of the HANDOFF sequence.
 5. **Ripgrep-backed text search** - swap `globset` walk for `ripgrep` crate's
    `grep_searcher`. 10-30× speed-up on large repos.
 

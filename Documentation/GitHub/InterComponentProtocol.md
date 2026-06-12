@@ -324,38 +324,175 @@ service MountainService {
 
 // Service running on the Cocoon sidecar, listening for requests from Mountain.
 service CocoonService {
-  // Generic request-response: Mountain -> Cocoon.
+  // A generic request-response method for Mountain to call a function on Cocoon.
   rpc ProcessMountainRequest(GenericRequest) returns (GenericResponse);
-  // Fire-and-forget notification: Mountain -> Cocoon.
+
+  // A generic fire-and-forget method for Mountain to send a notification to Cocoon.
   rpc SendMountainNotification(GenericNotification) returns (Empty);
-  // Cancel a long-running operation.
+
+  // A method for Mountain to request that Cocoon cancel a long-running operation.
   rpc CancelOperation(CancelOperationRequest) returns (Empty);
-  // LAND-PATCH B7-S6 P2: bidirectional streaming channel.
+
+  // LAND-PATCH B7-S6 P2: bidirectional streaming channel (mirror of
+  // MountainService::OpenChannelFromCocoon). Mountain opens this
+  // stream once per Cocoon connection; all subsequent traffic
+  // multiplexes over it.
   rpc OpenChannelFromMountain(stream Envelope) returns (stream Envelope);
-  // Initialization handshake and extension host boot sequence.
+
+  // ==================== Initialization ====================
+
+  // Handshake - Called by Cocoon to signal readiness
   rpc InitialHandshake(Empty) returns (Empty);
+
+  // Initialize Extension Host - Mountain sends initialization data to Cocoon
   rpc InitExtensionHost(InitExtensionHostRequest) returns (Empty);
-  // Command lifecycle.
+
+  // ==================== Commands ====================
+
+  // Register Command - Cocoon registers an extension command
   rpc RegisterCommand(RegisterCommandRequest) returns (Empty);
+
+  // Execute Contributed Command - Mountain executes an extension command
   rpc ExecuteContributedCommand(ExecuteCommandRequest) returns (ExecuteCommandResponse);
+
+  // Unregister Command - Unregister a previously registered command
   rpc UnregisterCommand(UnregisterCommandRequest) returns (Empty);
-  // Language feature provider registration and dispatch.
+
+  // ==================== Language Features ====================
+
+  // Register Hover Provider - Register a hover provider
   rpc RegisterHoverProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Hover - Request hover information
   rpc ProvideHover(ProvideHoverRequest) returns (ProvideHoverResponse);
+
+  // Register Completion Item Provider - Register a completion provider
   rpc RegisterCompletionItemProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Completion Items - Request completion items
   rpc ProvideCompletionItems(ProvideCompletionItemsRequest) returns (ProvideCompletionItemsResponse);
+
+  // Register Definition Provider - Register a definition provider
   rpc RegisterDefinitionProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Definition - Request definition location
   rpc ProvideDefinition(ProvideDefinitionRequest) returns (ProvideDefinitionResponse);
+
+  // Register Reference Provider - Register a reference provider
   rpc RegisterReferenceProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide References - Request references
   rpc ProvideReferences(ProvideReferencesRequest) returns (ProvideReferencesResponse);
+
+  // Register Code Actions Provider - Register code actions provider
   rpc RegisterCodeActionsProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Code Actions - Request code actions
   rpc ProvideCodeActions(ProvideCodeActionsRequest) returns (ProvideCodeActionsResponse);
+
+  // ==================== Language Features (Extended) ====================
+
+  // Register Document Highlight Provider
   rpc RegisterDocumentHighlightProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Document Highlights
   rpc ProvideDocumentHighlights(ProvideDocumentHighlightsRequest) returns (ProvideDocumentHighlightsResponse);
+
+  // Register Document Symbol Provider
   rpc RegisterDocumentSymbolProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Document Symbols
   rpc ProvideDocumentSymbols(ProvideDocumentSymbolsRequest) returns (ProvideDocumentSymbolsResponse);
+
+  // Register Workspace Symbol Provider
   rpc RegisterWorkspaceSymbolProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Workspace Symbols
   rpc ProvideWorkspaceSymbols(ProvideWorkspaceSymbolsRequest) returns (ProvideWorkspaceSymbolsResponse);
+
+  // Register Rename Provider
+  rpc RegisterRenameProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Rename Edits
+  rpc ProvideRenameEdits(ProvideRenameEditsRequest) returns (ProvideRenameEditsResponse);
+
+  // Register Document Formatting Provider
+  rpc RegisterDocumentFormattingProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Document Formatting
+  rpc ProvideDocumentFormatting(ProvideDocumentFormattingRequest) returns (ProvideDocumentFormattingResponse);
+
+  // Register Document Range Formatting Provider
+  rpc RegisterDocumentRangeFormattingProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Document Range Formatting
+  rpc ProvideDocumentRangeFormatting(ProvideDocumentRangeFormattingRequest) returns (ProvideDocumentRangeFormattingResponse);
+
+  // Register On Type Formatting Provider
+  rpc RegisterOnTypeFormattingProvider(RegisterOnTypeFormattingProviderRequest) returns (Empty);
+
+  // Provide On Type Formatting
+  rpc ProvideOnTypeFormatting(ProvideOnTypeFormattingRequest) returns (ProvideOnTypeFormattingResponse);
+
+  // Register Signature Help Provider
+  rpc RegisterSignatureHelpProvider(RegisterSignatureHelpProviderRequest) returns (Empty);
+
+  // Provide Signature Help
+  rpc ProvideSignatureHelp(ProvideSignatureHelpRequest) returns (ProvideSignatureHelpResponse);
+
+  // Register Code Lens Provider
+  rpc RegisterCodeLensProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Code Lenses
+  rpc ProvideCodeLenses(ProvideCodeLensesRequest) returns (ProvideCodeLensesResponse);
+
+  // Register Folding Range Provider
+  rpc RegisterFoldingRangeProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Folding Ranges
+  rpc ProvideFoldingRanges(ProvideFoldingRangesRequest) returns (ProvideFoldingRangesResponse);
+
+  // Register Selection Range Provider
+  rpc RegisterSelectionRangeProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Selection Ranges
+  rpc ProvideSelectionRanges(ProvideSelectionRangesRequest) returns (ProvideSelectionRangesResponse);
+
+  // Register Semantic Tokens Provider
+  rpc RegisterSemanticTokensProvider(RegisterSemanticTokensProviderRequest) returns (Empty);
+
+  // Provide Semantic Tokens Full
+  rpc ProvideSemanticTokensFull(ProvideSemanticTokensRequest) returns (ProvideSemanticTokensResponse);
+
+  // Register Inlay Hints Provider
+  rpc RegisterInlayHintsProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Inlay Hints
+  rpc ProvideInlayHints(ProvideInlayHintsRequest) returns (ProvideInlayHintsResponse);
+
+  // Register Type Hierarchy Provider
+  rpc RegisterTypeHierarchyProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Type Hierarchy Supertypes
+  rpc ProvideTypeHierarchySupertypes(ProvideTypeHierarchyRequest) returns (ProvideTypeHierarchyResponse);
+
+  // Provide Type Hierarchy Subtypes
+  rpc ProvideTypeHierarchySubtypes(ProvideTypeHierarchyRequest) returns (ProvideTypeHierarchyResponse);
+
+  // Register Call Hierarchy Provider
+  rpc RegisterCallHierarchyProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Call Hierarchy Incoming Calls
+  rpc ProvideCallHierarchyIncomingCalls(ProvideCallHierarchyRequest) returns (ProvideCallHierarchyResponse);
+
+  // Provide Call Hierarchy Outgoing Calls
+  rpc ProvideCallHierarchyOutgoingCalls(ProvideCallHierarchyRequest) returns (ProvideCallHierarchyResponse);
+
+  // Register Linked Editing Range Provider
+  rpc RegisterLinkedEditingRangeProvider(RegisterProviderRequest) returns (Empty);
+
+  // Provide Linked Editing Ranges
+  rpc ProvideLinkedEditingRanges(ProvideLinkedEditingRangesRequest) returns (ProvideLinkedEditingRangesResponse);
 }
 ```
 
@@ -380,16 +517,55 @@ Used for `Mountain` -> `Cocoon` communication:
 | `SendMountainNotification`  | `Mountain` -> `Cocoon` | Backend event   | Fire-and-forget notification to sidecar              |
 | `CancelOperation`           | `Mountain` -> `Cocoon` | Backend cancel  | Cancel an in-flight extension operation              |
 | `OpenChannelFromMountain`   | `Mountain` -> `Cocoon` | After handshake | LAND-PATCH B7-S6 P2 bidirectional multiplexed stream |
+| `InitialHandshake`          | `Mountain` -> `Cocoon` | After bootstrap | Handshake readiness signal                           |
 | `InitExtensionHost`         | `Mountain` -> `Cocoon` | After handshake | Send workspace root, extensions, configuration       |
+| `RegisterCommand`           | `Cocoon` -> `Mountain` | Extension boot  | Register an extension-contributed command            |
 | `ExecuteContributedCommand` | `Mountain` -> `Cocoon` | User triggers   | Execute an extension-contributed command             |
+| `UnregisterCommand`         | `Cocoon` -> `Mountain` | Extension unload | Unregister an extension command                      |
+| `RegisterHoverProvider`     | `Cocoon` -> `Mountain` | Extension boot  | Register a hover provider                            |
 | `ProvideHover`              | `Mountain` -> `Cocoon` | User hovers     | Request hover from extension provider                |
+| `RegisterCompletionItemProvider` | `Cocoon` -> `Mountain` | Extension boot  | Register a completion provider                       |
 | `ProvideCompletionItems`    | `Mountain` -> `Cocoon` | User types      | Request completion items                             |
+| `RegisterDefinitionProvider`| `Cocoon` -> `Mountain` | Extension boot  | Register a definition provider                       |
 | `ProvideDefinition`         | `Mountain` -> `Cocoon` | User clicks     | Request definition location                          |
+| `RegisterReferenceProvider` | `Cocoon` -> `Mountain` | Extension boot  | Register a reference provider                        |
 | `ProvideReferences`         | `Mountain` -> `Cocoon` | User triggers   | Request reference locations                          |
+| `RegisterCodeActionsProvider` | `Cocoon` -> `Mountain` | Extension boot  | Register a code actions provider                     |
 | `ProvideCodeActions`        | `Mountain` -> `Cocoon` | User triggers   | Request code actions                                 |
+| `RegisterDocumentHighlightProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a document highlight provider             |
 | `ProvideDocumentHighlights` | `Mountain` -> `Cocoon` | User hovers     | Request document highlights                          |
+| `RegisterDocumentSymbolProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a document symbol provider                |
 | `ProvideDocumentSymbols`    | `Mountain` -> `Cocoon` | Sidebar open    | Request document symbols                             |
+| `RegisterWorkspaceSymbolProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a workspace symbol provider              |
 | `ProvideWorkspaceSymbols`   | `Mountain` -> `Cocoon` | Search types    | Request workspace symbols                            |
+| `RegisterRenameProvider`    | `Cocoon` -> `Mountain` | Extension boot  | Register a rename provider                           |
+| `ProvideRenameEdits`        | `Mountain` -> `Cocoon` | User triggers   | Request rename edits                                 |
+| `RegisterDocumentFormattingProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a document formatting provider           |
+| `ProvideDocumentFormatting` | `Mountain` -> `Cocoon` | User triggers   | Request document formatting                          |
+| `RegisterDocumentRangeFormattingProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a range formatting provider           |
+| `ProvideDocumentRangeFormatting` | `Mountain` -> `Cocoon` | User triggers | Request document range formatting                   |
+| `RegisterOnTypeFormattingProvider` | `Cocoon` -> `Mountain` | Extension boot | Register an on-type formatting provider          |
+| `ProvideOnTypeFormatting`   | `Mountain` -> `Cocoon` | User types      | Request on-type formatting                           |
+| `RegisterSignatureHelpProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a signature help provider                |
+| `ProvideSignatureHelp`      | `Mountain` -> `Cocoon` | User types      | Request signature help                               |
+| `RegisterCodeLensProvider`  | `Cocoon` -> `Mountain` | Extension boot  | Register a code lens provider                        |
+| `ProvideCodeLenses`         | `Mountain` -> `Cocoon` | Code lens shown | Request code lenses                                  |
+| `RegisterFoldingRangeProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a folding range provider                 |
+| `ProvideFoldingRanges`      | `Mountain` -> `Cocoon` | File opened     | Request folding ranges                               |
+| `RegisterSelectionRangeProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a selection range provider              |
+| `ProvideSelectionRanges`    | `Mountain` -> `Cocoon` | User selects    | Request selection ranges                             |
+| `RegisterSemanticTokensProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a semantic tokens provider              |
+| `ProvideSemanticTokensFull` | `Mountain` -> `Cocoon` | File opened     | Request semantic tokens                              |
+| `RegisterInlayHintsProvider` | `Cocoon` -> `Mountain` | Extension boot  | Register an inlay hints provider                     |
+| `ProvideInlayHints`         | `Mountain` -> `Cocoon` | User hovers     | Request inlay hints                                  |
+| `RegisterTypeHierarchyProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a type hierarchy provider               |
+| `ProvideTypeHierarchySupertypes` | `Mountain` -> `Cocoon` | User triggers | Request type hierarchy supertypes                  |
+| `ProvideTypeHierarchySubtypes` | `Mountain` -> `Cocoon` | User triggers  | Request type hierarchy subtypes                      |
+| `RegisterCallHierarchyProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a call hierarchy provider                |
+| `ProvideCallHierarchyIncomingCalls` | `Mountain` -> `Cocoon` | User triggers | Request call hierarchy incoming calls             |
+| `ProvideCallHierarchyOutgoingCalls` | `Mountain` -> `Cocoon` | User triggers | Request call hierarchy outgoing calls             |
+| `RegisterLinkedEditingRangeProvider` | `Cocoon` -> `Mountain` | Extension boot | Register a linked editing range provider         |
+| `ProvideLinkedEditingRanges` | `Mountain` -> `Cocoon` | User edits     | Request linked editing ranges                        |
 
 ### Message Formats
 
@@ -573,7 +749,7 @@ sequenceDiagram
     Init->>Init: Run FullAppInitialization
     Init->>Init: Install RequireInterceptor
     Init->>Init: Activate startup extensions
-    Cocoon->>Server: Send Heartbeat every 5 seconds
+    Cocoon->>Server: Send activity ping every 5 seconds
     Server-->>Mountain: Connection established, normal operation
 ```
 
@@ -583,7 +759,7 @@ sequenceDiagram
 Network failure or Cocoon crash
     |
     v
-Mountain detects heartbeat timeout (3 missed heartbeats = 15 seconds)
+Mountain detects stale connection (no activity within 30-second check window)
     |
     +---> Option 1: Restart Cocoon (default, up to 3 attempts)
     |       - Kill existing Cocoon process
@@ -618,7 +794,8 @@ Mountain registers Air services in AppState
 Normal operation:
     - Mountain dispatches background work via PerformAction
     - Air responds with action results
-    - Both sides send Heartbeat every 5 seconds
+    - Both sides maintain activity tracking
+    - Staleness check every 30 seconds
 ```
 
 ---
@@ -628,44 +805,35 @@ Normal operation:
 ### Heartbeat Protocol
 
 Both `gRPC` connections (`Mountain`-`Cocoon`, `Mountain`-`Air`) implement a
-health monitoring protocol:
+health monitoring protocol. Health is tracked via a per-connection
+`ConnectionMetadata` struct in `Vine/Source/Client/Shared.rs`:
 
 | Parameter                   | Value                                |
 | --------------------------- | ------------------------------------ |
-| Heartbeat interval          | 5 seconds                            |
-| Timeout (missed heartbeats) | 3 (15 seconds)                       |
-| Recovery                    | Automatic restart (up to 3 attempts) |
-| Exponential backoff         | 1s, 2s, 4s for consecutive failures  |
+| Staleness check interval    | 30 seconds (`HEALTH_CHECK_INTERVAL_MS`) |
+| Max retry attempts          | 10 (`MAX_RETRY_ATTEMPTS`)            |
+| Retry base delay            | 200 ms (`RETRY_BASE_DELAY_MS`)       |
+| Connection timeout          | 30 seconds (`CONNECTION_TIMEOUT`)    |
 
-### Health Check Messages
-
-```
-message HeartbeatRequest {
-    int64 timestamp = 1;       // Unix millis
-    uint32 sequence_number = 2; // Monotonically increasing
-    string process_id = 3;      // Process identifier
-    ResourceUsage resources = 4; // Optional resource snapshot
-}
-
-message HeartbeatResponse {
-    int64 timestamp = 1;
-    uint32 last_sequence = 2;   // Acknowledge last received
-    bool healthy = 3;
-    string status = 4;          // "ok", "busy", "degraded"
-}
-```
+Health is determined by three conditions in
+`Vine/Source/Client/CheckSideCarHealth.rs`: the connection must be marked
+`IsHealthy`, the `LastActivity` timestamp must not be older than
+`HEALTH_CHECK_INTERVAL_MS` (30 seconds), and the `FailureCount` must not exceed
+`MAX_RETRY_ATTEMPTS` (10). Failed connections are recorded via
+`RecordSideCarFailure` which increments the counter and sets `IsHealthy` to
+`false`; successful activity resets both via `UpdateSideCarActivity`.
 
 ### Diagnostic Logging
 
-All connection state changes are logged via the `@landfix` diagnostic system:
+All connection state changes are logged via the `dev_log!` system at
+`Mountain/Source/IPC/DevLog/`:
 
 ```
-[LandFix:Vine] gRPC server listening on 127.0.0.1:50051
-[LandFix:Vine] Cocoon connected, handshake received
-[LandFix:Vine] Initialize sent to Cocoon (payload: 2.3 MB)
-[LandFix:Vine] Heartbeat OK (seq=142, latency=3ms)
-[LandFix:Vine] Heartbeat TIMEOUT (last: seq=147, 18s ago)
-[LandFix:Vine] Cocoon disconnected, restarting (attempt 1/3)
+[DEV:Vine] gRPC server listening on [::1]:50051
+[DEV:Vine] Cocoon connected, handshake received
+[DEV:Vine] Heartbeat OK (seq=142, latency=3ms)
+[DEV:Vine] Heartbeat TIMEOUT (last: seq=147, 18s ago)
+[DEV:Vine] Cocoon disconnected, restarting (attempt 1/3)
 ```
 
 ---
@@ -705,7 +873,7 @@ TypeScript types are generated using `protoc-gen-ts` and checked into the
 
 ## Security 🛡️
 
-All `gRPC` connections are restricted to localhost only (`127.0.0.1`). No remote
+All `gRPC` connections are restricted to localhost only (`[::1]` / `127.0.0.1`). No remote
 connections are accepted.
 
 | Aspect        | Implementation                              |
@@ -713,9 +881,9 @@ connections are accepted.
 | Transport     | TCP loopback only                           |
 | Auth          | None required (localhost-only)              |
 | Encryption    | None (localhost-only, no network exposure)  |
-| Port binding  | `127.0.0.1` only, not `0.0.0.0`             |
+| Port binding  | `[::1]` only, not `0.0.0.0`                |
 | DNS isolation | All non-localhost traffic blocked by `Mist` |
-| Timeout       | 15-second heartbeat timeout                 |
+| Timeout       | 30-second staleness check               |
 | Backpressure  | `gRPC` flow control + bounded channels      |
 
 ---

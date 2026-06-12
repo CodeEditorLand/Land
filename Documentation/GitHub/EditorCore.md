@@ -72,16 +72,25 @@ sequenceDiagram
 
 ## Wind Service Layer 🧩
 
-`Wind` provides ~36 `Effect-TS` services that replace the VS Code workbench
-service implementations. Each service follows a consistent module structure with
-three files:
+`Wind` provides ~45 `Effect-TS` services (spanning 59 directories under `Effect/`,
+including a `Generated/` layer of upstream VS Code service wrappers) that replace
+the VS Code workbench service implementations. Each service follows a consistent
+module structure:
 
 ```
 Wind/Source/Effect/<Service>/
-    +-- Define.ts    - Service Tag (Effect-TS service identifier)
-    +-- Implement.ts - Tauri-backed implementation
-    +-- Problem.ts   - Typed error types (subclass of Effect-TS Cause)
+    +-- <Service>.ts            - Barrel re-export module
+    +-- Interface/              - Service interface (TypeScript type)
+    +-- Tag/                    - Effect-TS service Tag identifier
+    +-- Type/                   - Effect-TS Cause subtypes (errors)
+    +-- Implementation/         - Concrete implementations (Live, Mock)
+    +-- Live.ts                 - Layer export (Layer.succeed)
 ```
+
+> **Note:** Some directories (e.g., `WorkbenchActivity/`) follow a flatter layout
+> where `Implementation/` contains the bridge shape and live implementation, and
+> `index.ts` replaces `<Service>.ts` as the barrel. The `Generated/` directory
+> holds auto-generated upstream VS Code service wrappers (I<Interface>Upstream.ts).
 
 ### Service Catalog
 
@@ -182,26 +191,27 @@ Layer is a collection of service implementations wired together through
 
 ```mermaid
 graph TB
-    Sky[Sky entry point<br/>index.astro] --> Install[Install::installLayer]
-    Install --> Compose[composeLayer]
+    Sky[Sky entry point<br/>index.astro] --> Preload[Wind Preload Install.ts]
+    Preload --> Layers[Effect/Layers/index.ts]
 
-    Compose --> Tauri[TauriLiveLayer<br/>production]
-    Compose --> Electron[ElectronLiveLayer<br/>Electron variant]
-    Compose --> Test[TestLayer<br/>extension tests]
+    Layers --> Tauri[Tauri/Tauri.ts<br/>TauriLiveLayer]
+    Layers --> Electron[Electron/Electron.ts<br/>ElectronLiveLayer]
+    Layers --> Test[Test/Test.ts<br/>TestLayer]
 
-    Tauri --> Config[ConfigurationLayer]
-    Tauri --> IPC[IPCLayer]
-    Tauri --> Editor[EditorLayer]
-    Tauri --> File[FileServiceLayer]
-    Tauri --> Terminal[TerminalLayer]
-    Tauri --> Clipboard[ClipboardLayer]
-    Tauri --> Dialog[DialogLayer]
-    Tauri --> Window[WindowLayer]
-    Tauri --> Services[... all ~36 services]
+    Tauri --> Config[ConfigurationLive]
+    Tauri --> Sandbox[SandboxLive]
+    Tauri --> IPC[IPCLive]
+    Tauri --> Mountain[MountainLive + MountainSyncLive]
+    Tauri --> Editor[EditorLive]
+    Tauri --> File[FilesLive]
+    Tauri --> Terminal[TerminalLive]
+    Tauri --> Clipboard[ClipboardLive]
+    Tauri --> Dialog[DialogLive (via Mountain IPC)]
+    Tauri --> Window[ActivityBarLive, PanelLive, SidebarLive, StatusBarLive]
+    Tauri --> Services[... 37 service layers via Layer.mergeAll]
 
-    Electron --> ElectronImpl[Electron-specific impls]
-
-    Test --> Mock[Mock implementations]
+    Electron --> ElectronImpl[Layer.empty.pipe(Layer.provideMerge(...))]
+    Test --> Mock[All mock implementations]
 ```
 
 ### Layer Resolution
@@ -209,27 +219,37 @@ graph TB
 The active layer is determined at build time through environment variables:
 
 ```
-Wind/Source/Function/Install/index.ts
+Wind/Source/Effect/Layers/index.ts
     |
-    +---> Reads Tier configuration from import.meta.env
-    +---> Selects TauriLiveLayer | ElectronLiveLayer | TestLayer
-    +---> Converts Layer to Runtime via Effect-TS Layer.toRuntime()
-    +---> Provides Runtime to Sky UI components
+    +---> Re-exports TauriBaseLayer, TauriLiveLayer, TauriDevLayer from ./Tauri.ts
+    +---> Re-exports ElectronBaseLayer, ElectronLiveLayer, ElectronDevLayer from ./Electron.ts
+    +---> Re-exports TestLayer, TestWithTelemetryLayer from ./Test.ts
+    +---> Sky pages import Install() from Wind/Source/Function/Install.ts
+    +---> Install.ts delegates to ./Install/Function/Install.ts
 ```
 
-Each Layer wire uses the `Effect-TS` `Layer.mergeAll` combinator to compose
-services. Individual services use `Layer.succeed` to wrap a concrete
-implementation object:
+### Layer Composition
+
+Each layer stack uses `Layer.mergeAll` (Tauri) or `Layer.empty.pipe(Layer.provideMerge(...))` (Electron/Test) to compose services. Individual services use `Layer.succeed` to wrap a concrete implementation object:
 
 ```typescript
-export const TauriLiveLayer: Layer<...> = Layer.mergeAll(
-    ConfigurationWithSyncLive,
+// Tauri layer — Layer.mergeAll: flat composition
+export const TauriLiveLayer = Layer.mergeAll(
     SandboxLive,
+    ConfigurationWithSyncLive,
     EditorLive,
     FilesLive,
     TerminalLive,
-    // ... all ~36 service layers
+    // ... all ~37 service layers
 );
+
+// Electron layer — .pipe(Layer.provideMerge): chain composition
+export const ElectronLiveLayer = Layer.empty
+    .pipe(Layer.provideMerge(SandboxLive))
+    .pipe(Layer.provideMerge(IPCElectronLive))
+    .pipe(Layer.provideMerge(TelemetryLive))
+    .pipe(Layer.provideMerge(ConfigurationWithSyncLive))
+    .pipe(Layer.provideMerge(MountainLive));
 
 // Individual service pattern:
 export const LiveEditorServiceLayer = Layer.succeed(EditorTag, makeEditorService());
@@ -291,34 +311,51 @@ module-singleton `ManagedRuntime` wrapping `LandWorkbenchLayer`:
 
 **Land** supports multiple workbench variants selected at build time:
 
-| Variant              | Feature Coverage          | Build Profile             | Use Case                                   |
-| -------------------- | ------------------------- | ------------------------- | ------------------------------------------ |
-| **Browser**          | 70-80%                    | `debug`                   | Quick development, limited native features |
-| **Mountain**         | 80-90%                    | `debug-mountain`          | Daily development, `Tauri` native features |
-| **Electron**         | 95%+                      | `debug-electron`          | Maximum VS Code compatibility              |
-| **Electron+Rest**    | 95%+                      | `debug-electron-rest`     | Same as Electron + `OXC` compiler          |
-| **Electron Minimal** | No built-in extensions    | `debug-electron-minimal`  | Minimal footprint debugging                |
-| **Sessions**         | Window/Session management | `debug-sessions-bundled`  | Multi-window session support               |
-| **Workbench**        | Base workbench only       | `debug-workbench-bundled` | Minimal UI for testing                     |
+| Variant              | Feature Coverage          | Build Profile (shorthand)     | Use Case                                   |
+| -------------------- | ------------------------- | ----------------------------- | ------------------------------------------ |
+| **Browser**          | 70-80%                    | `debug`                       | Quick development, limited native features |
+| **Mountain**         | 80-90%                    | `debug-mountain`              | Daily development, `Tauri` native features |
+| **Electron**         | 95%+                      | `debug-electron`              | Maximum VS Code compatibility              |
+| **Electron+Rest**    | 95%+                      | `debug-electron-rest`         | Same as Electron + `OXC` compiler          |
+| **Electron Minimal** | No built-in extensions    | `debug-electron-minimal`      | Minimal footprint debugging                |
+| **Mountain Only**    | Core services, no Cocoon  | `debug-mountain-only`         | Mountain without extension host            |
+| **Cocoon Headless**  | No Wind preload           | `debug-cocoon-headless`       | Cocoon subprocess only, no workbench UI    |
+| **Kernel**           | Pure Mountain             | `debug-kernel`                | No built-ins, no Cocoon, no Wind           |
+| **Electron Compiled**| Single-binary embedded    | `debug-electron-compiled`     | Single-binary deploy with debug symbols    |
+| **Mountain Compiled**| Single-binary embedded    | `debug-mountain-compiled`     | Single-binary (Mountain variant)           |
+| **Electron Bundled** | Vite/Astro bundled        | `debug-electron-bundled`      | Workbench compiled through Vite/Rollup     |
+| **Browser Bundled**  | Vite/Astro bundled        | `debug-browser-bundled`       | Browser workbench bundled                  |
+| **Sessions**         | Window/Session management | `debug-sessions-bundled`      | Multi-window session support               |
+| **Workbench**        | Base workbench only       | `debug-workbench-bundled`     | Minimal UI for testing                     |
+| **Bundled All**      | All four bundled variants | `debug-bundled-all`           | All workbenches in one Rollup pass         |
 
 ### Variant Selection Logic
 
-`Sky`'s `index.astro` entry point selects the active workbench at build time:
+`Sky`'s `index.astro` entry point selects the active workbench at build time
+via environment variable booleans (not `TierWorkbench`):
 
 ```typescript
-// Pseudo-code from Sky's build-time conditional imports
-const workbench: WorkbenchVariant =
-	TierWorkbench === "Electron"
-		? ElectronWorkbench
-		: TierWorkbench === "Mountain"
-			? MountainWorkbench
-			: TierWorkbench === "Browser"
-				? BrowserWorkbench
-				: BaseWorkbench;
+// From Sky/Source/pages/index.astro — environment detection
+const Bundle = process.env["Bundle"] === "true";
+const Mountain = process.env["Mountain"] === "true";
+const Electron = process.env["Electron"] === "true";
+const BrowserProxy = process.env["BrowserProxy"] === "true";
+
+// Determine workbench type
+const WorkbenchType =
+    Electron || Mountain
+        ? "Electron"
+        : BrowserProxy
+            ? "BrowserProxy"
+            : "Browser"; // Default, not null
 ```
 
-Unused variants are tree-shaken by `Vite` and do not enter the production module
-graph.
+`Mountain` maps to the Electron workbench (same workbench shape, different IPC
+backend). `BrowserProxy` uses its own proxy-backed layout. Unused variants are
+tree-shaken by `Vite` and do not enter the production module graph.
+
+For bundled builds, `process.env["Boot"]` and `process.env["Pack"]` gate which
+variants are bundled through Vite/Astro (see `Bundled/<Variant>/Layout.astro`).
 
 ---
 

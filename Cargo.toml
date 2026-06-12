@@ -386,10 +386,10 @@ tauri-plugin-window-state = { version = "=2.4.1", path = "Dependency/Tauri/Depen
 
 # --- Standalone repos ----------------------------------------------------
 wry = { version = "=0.55.1", path = "Dependency/Tauri/Dependency/Wry" }
-tao = { version = "=0.35.2", path = "Dependency/Tauri/Dependency/Tao" }
+tao = { version = "=0.35.3", path = "Dependency/Tauri/Dependency/Tao" }
 tao-macros = { version = "=0.1.3", path = "Dependency/Tauri/Dependency/Tao/tao-macros" }
-muda = { version = "=0.19.1", path = "Dependency/Tauri/Dependency/Muda" }
-tray-icon = { version = "=0.24.0", path = "Dependency/Tauri/Dependency/TrayIcon" }
+muda = { version = "=0.19.2", path = "Dependency/Tauri/Dependency/Muda" }
+tray-icon = { version = "=0.24.1", path = "Dependency/Tauri/Dependency/TrayIcon" }
 window-vibrancy = { version = "=0.7.1", path = "Dependency/Tauri/Dependency/WindowVibrancy" }
 window-shadows = { version = "=0.2.2", path = "Dependency/Tauri/Dependency/WindowShadows" }
 global-hotkey = { version = "=0.8.0", path = "Dependency/Tauri/Dependency/GlobalHotKey" }
