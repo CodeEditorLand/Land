@@ -23,7 +23,7 @@
 
 \set -e
 
-Current=$(cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd)
+Current=$(cd -- "$(dirname -- "$0")" > /dev/null 2>&1 && pwd)
 
 Root="$Current/.."
 
@@ -39,7 +39,7 @@ FormatLineEndings() {
 	\echo "========================================"
 	\echo ""
 
-	if ! \command -v dos2unix >/dev/null 2>&1; then
+	if ! \command -v dos2unix > /dev/null 2>&1; then
 		\echo "Error: dos2unix is not installed."
 		\echo "  macOS:  brew install dos2unix"
 		\echo "  Linux:  apt install dos2unix  /  dnf install dos2unix"
@@ -78,8 +78,8 @@ FormatLineEndings() {
 		-not -path "*/Generated/*" \
 		-not -path "*/.generated/*" \
 		-not -path "*/gen/*" \
-		-not -path "*/bin/*" |
-		\xargs \dos2unix -q
+		-not -path "*/bin/*" \
+		| \xargs \dos2unix -q
 
 	\echo ""
 	\echo "Line ending conversion complete."
@@ -95,7 +95,7 @@ FormatShell() {
 	\echo "========================================"
 	\echo ""
 
-	if ! \command -v shfmt >/dev/null 2>&1; then
+	if ! \command -v shfmt > /dev/null 2>&1; then
 		\echo "Error: shfmt is not installed."
 		\echo "  macOS:  brew install shfmt"
 		\echo "  Linux:  apt install shfmt  /  go install mvdan.cc/sh/v3/cmd/shfmt@latest"
@@ -134,8 +134,8 @@ FormatShell() {
 		-not -path "*/Generated/*" \
 		-not -path "*/.generated/*" \
 		-not -path "*/gen/*" \
-		-not -path "*/bin/*" |
-		\xargs \shfmt -w
+		-not -path "*/bin/*" \
+		| \xargs \shfmt -w
 
 	\echo ""
 	\echo "Shell formatting complete."
@@ -238,8 +238,8 @@ FormatRust() {
 		-not -path "*/Generated/*" \
 		-not -path "*/.generated/*" \
 		-not -path "*/gen/*" \
-		-not -path "*/SideCar/*/NODE/*" |
-		\xargs -I {} \sh -c \
+		-not -path "*/SideCar/*/NODE/*" \
+		| \xargs -I {} \sh -c \
 			'\rustup run nightly rustfmt --config-path rustfmt.toml "$1" 2>/dev/null || \true' \
 			-- {}
 
@@ -253,41 +253,41 @@ FormatRust() {
 #===============================================================================
 
 case "${1:-}" in
-dos2unix)
-	FormatLineEndings
-	;;
-shell)
-	FormatShell
-	;;
-prettier)
-	FormatPrettier
-	;;
-rust)
-	FormatRust
-	;;
-markdown)
-	FormatMarkdown
-	;;
-"")
-	FormatLineEndings
-	FormatShell
-	FormatMarkdown
-	FormatPrettier
-	FormatRust
-	;;
---help | -h)
-	\echo "Usage: $0 [dos2unix|shell|prettier|rust|markdown]"
-	\echo ""
-	\echo "  dos2unix  Normalize line endings (CRLF -> LF) with dos2unix"
-	\echo "  shell     Format shell scripts with shfmt"
-	\echo "  prettier  Format TS/JS/JSON/MD with Prettier + TypeScript.py"
-	\echo "  rust      Format Rust with rustfmt (nightly) + Rust.py"
-	\echo "  markdown  Format Markdown HTML tables with Markdown.py"
-	\echo "  (no arg)  Run all five in order"
-	;;
-*)
-	\echo "Unknown target: $1"
-	\echo "Use --help for usage information"
-	\exit 1
-	;;
+	dos2unix)
+		FormatLineEndings
+		;;
+	shell)
+		FormatShell
+		;;
+	prettier)
+		FormatPrettier
+		;;
+	rust)
+		FormatRust
+		;;
+	markdown)
+		FormatMarkdown
+		;;
+	"")
+		FormatLineEndings
+		FormatShell
+		FormatMarkdown
+		FormatPrettier
+		FormatRust
+		;;
+	--help | -h)
+		\echo "Usage: $0 [dos2unix|shell|prettier|rust|markdown]"
+		\echo ""
+		\echo "  dos2unix  Normalize line endings (CRLF -> LF) with dos2unix"
+		\echo "  shell     Format shell scripts with shfmt"
+		\echo "  prettier  Format TS/JS/JSON/MD with Prettier + TypeScript.py"
+		\echo "  rust      Format Rust with rustfmt (nightly) + Rust.py"
+		\echo "  markdown  Format Markdown HTML tables with Markdown.py"
+		\echo "  (no arg)  Run all five in order"
+		;;
+	*)
+		\echo "Unknown target: $1"
+		\echo "Use --help for usage information"
+		\exit 1
+		;;
 esac
