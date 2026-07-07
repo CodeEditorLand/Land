@@ -1,4 +1,4 @@
-### **Workflow Example #9: User Data Synchronization** 🔄
+### **Workflow Example #9: User Data Synchronization**&#x2001;🔄
 
 > **⚠️ Verification Status:** This workflow describes the user data
 > synchronization architecture. Verify against

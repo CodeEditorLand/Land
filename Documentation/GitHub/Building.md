@@ -1,4 +1,4 @@
-# Building Land 🏗️
+# Building Land&#x2001;🏗️
 
 Step-by-step instructions for building the **Land** code editor from source. It
 covers the complete two-step build process, prerequisites, environment
@@ -6,7 +6,7 @@ configuration, and element-specific build notes.
 
 ---
 
-## Prerequisites 📦
+## Prerequisites&#x2001;📦
 
 Before building, ensure you have the following installed:
 
@@ -52,7 +52,7 @@ source ~/.zshrc # or restart your terminal
 
 ---
 
-## Build Overview 📋
+## Build Overview&#x2001;📋
 
 The Land build is a **two-step linear flow**. Do NOT pull submodules recursively
 
@@ -66,7 +66,7 @@ The Land build is a **two-step linear flow**. Do NOT pull submodules recursively
 
 ---
 
-## Step 1: Compile VS Code Source 📦
+## Step 1: Compile VS Code Source&#x2001;📦
 
 The VS Code source is vendored as a Git submodule in
 `Dependency/Microsoft/Dependency/Editor`. **This step is mandatory - Land cannot
@@ -111,7 +111,7 @@ npm run compile-extensions-build
 
 ---
 
-## Step 2: Build Land Application 🚀
+## Step 2: Build Land Application&#x2001;🚀
 
 Return to the repository root and invoke the build script with the desired
 profile.
@@ -156,7 +156,7 @@ for the full matrix of environment variables and tier configurations.
 
 ---
 
-## Environment Variables 🔧
+## Environment Variables&#x2001;🔧
 
 Land uses a tier-gated system of environment variables to control build and
 runtime behavior. All variables are read from `.env.Land*` files in the
@@ -181,7 +181,7 @@ Common variables:
 
 ---
 
-## Build Artifacts 📁
+## Build Artifacts&#x2001;📁
 
 After a successful build, artifacts are placed in:
 
@@ -198,7 +198,7 @@ Land/
 
 ---
 
-## Running the Application ▶️
+## Running the Application&#x2001;▶️
 
 ```sh
 # From the repository root (after a debug-electron build)
@@ -227,7 +227,7 @@ building:
 
 ---
 
-## Element-Specific Build Instructions 🗺️
+## Element-Specific Build Instructions&#x2001;🗺️
 
 Each Element may have additional build details. Refer to the specific README for
 element-specific workflows:
@@ -245,7 +245,7 @@ element-specific workflows:
 
 ---
 
-## Troubleshooting 🔍
+## Troubleshooting&#x2001;🔍
 
 ### `npm install` stalls or never completes
 
@@ -353,7 +353,7 @@ this automatically at the end of every build.
 
 ---
 
-## Rebuilding & Clean 🧹
+## Rebuilding & Clean&#x2001;🧹
 
 To perform a clean rebuild:
 
@@ -378,7 +378,7 @@ cd Land
 
 ---
 
-## CI/CD & Automation 🤖
+## CI/CD & Automation&#x2001;🤖
 
 The build script is used by CI pipelines. See `Maintain/.GitHub/Workflows/` for
 pre-configured GitHub Actions definitions. All CI builds set environment
@@ -386,7 +386,7 @@ variables via `.env.Land.CI` and use `--profile production-electron-bundled`.
 
 ---
 
-## Further Reading 📖
+## Further Reading&#x2001;📖
 
 - [`Documentation/GitHub/Workflow/`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow)
     - Detailed component interaction workflows

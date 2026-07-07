@@ -1,4 +1,4 @@
-### **Workflow Example #10: Running Extension Tests** 🧪
+### **Workflow Example #10: Running Extension Tests**&#x2001;🧪
 
 > **⚠️ Verification Status:** This workflow describes a conceptual test runner
 > architecture. The actual implementation details should be verified against

@@ -1,4 +1,4 @@
-### **Workflow Example #8: Source Control Management (SCM)** 🔀
+### **Workflow Example #8: Source Control Management (SCM)**&#x2001;🔀
 
 > **⚠️ Verification Status:** This workflow describes SCM provider registration
 > and Git integration. Verify against

@@ -3,20 +3,20 @@
 A high-level overview of the architecture and the core workflows that drive the
 application. Our system is composed of three primary components:
 
-- **`Common` 👨🏻‍🏭 (Rust Crate):** The abstract core library. It defines the
+- **`Common`&#x2001;👨🏻‍🏭 (Rust Crate):** The abstract core library. It defines the
   architectural "language" of the application through traits, data structures
   (DTOs), and a declarative Effect system. It has no knowledge of the final
   implementation.
-- **`Mountain` ⛰️ (Rust Application):** The native backend. It is a Tauri
+- **`Mountain`&#x2001;⛰️ (Rust Application):** The native backend. It is a Tauri
   application that implements the abstract traits from `Common`, manages the
   native OS interactions, runs a gRPC server, and orchestrates the `Cocoon`
   sidecar process.
-- **`Wind` 🍃 & `Sky` 🌌 (TypeScript UI):** The frontend. `Wind` is a
+- **`Wind`&#x2001;🍃 & `Sky`&#x2001;🌌 (TypeScript UI):** The frontend. `Wind` is a
   re-implementation of the VS Code workbench services using `Effect-TS`,
   providing the application logic for the UI. `Sky` is the `Astro`-based UI
   layer that renders the editor interface and bridges `Tauri` events to the
   workbench via `SkyBridge`.
-- **`Cocoon` 🦋 (TypeScript Application):** A Node.js sidecar process managed by
+- **`Cocoon`&#x2001;🦋 (TypeScript Application):** A Node.js sidecar process managed by
   `Mountain`. It is responsible for running extensions in a sandboxed
   environment and providing them with a high-fidelity `vscode` API.
 
@@ -26,9 +26,9 @@ and Commands**.
 
 ---
 
-## Table of Contents 📑
+## Table of Contents&#x2001;📑
 
-### Core Workflows 🔄
+### Core Workflows&#x2001;🔄
 
 1.  [**Application Startup & Handshake**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/ApplicationStartupAndHandshake.md)
     - _Describes the complete end-to-end process of launching `Mountain`,
@@ -89,7 +89,7 @@ and Commands**.
       codebase simultaneously and be selected at build time without duplicating
       call sites._
 
-### Work in Progress (Documentation) 🚧
+### Work in Progress (Documentation)&#x2001;🚧
 
 The following workflows are implemented in the codebase but are pending detailed
 documentation.

@@ -1,4 +1,4 @@
-### **Workflow Example #4: Saving a File with Save Participants** 💾
+### **Workflow Example #4: Saving a File with Save Participants**&#x2001;💾
 
 **Goal:** A user presses `Ctrl+S`. An extension (e.g., a "Prettier" formatter)
 has registered a "Save Participant" to format the document before the save is

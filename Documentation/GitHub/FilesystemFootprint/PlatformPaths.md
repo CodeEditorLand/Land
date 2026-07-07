@@ -1,28 +1,14 @@
 <table>
 	<tr>
-		<td align="left" valign="middle">
-			<h3 align="left">
-				Platform Paths&#x2001;🖥️
-			</h3>
-		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">
-				&#x2001;+&#x2001;
-			</h3>
-		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">
-				<a href="https://editor.land" target="_blank">
-					Land&#x2001;🏞️
-				</a>
-			</h3>
-		</td>
+		<td align="left" valign="middle"><h3 align="left">Platform Paths&#x2001;🖥️</h3></td>
+		<td align="left" valign="middle"><h3 align="left">&#x2001;+&#x2001;</h3></td>
+		<td align="left" valign="middle"><h3 align="left"><a href="https://editor.land" target="_blank">Land&#x2001;🏞️</a></h3></td>
 	</tr>
 </table>
 
 ---
 
-# **Platform Paths** 🖥️
+# **Platform Paths**&#x2001;🖥️
 
 OS-specific resolution for every per-bundle, OS-managed, and temp-directory path
 Land touches.
@@ -31,7 +17,7 @@ Land touches.
 
 ---
 
-## Resolution Rule 📐
+## Resolution Rule&#x2001;📐
 
 All per-bundle paths flow through Tauri's `PathResolver`, which delegates to the
 `dirs` crate. Three helpers do almost all the work:
@@ -179,7 +165,7 @@ platform target lands.
 
 ---
 
-## User-Dotfile Resolution (cross-OS) 🏞️
+## User-Dotfile Resolution (cross-OS)&#x2001;🏞️
 
 The `~/.fiddee/` tree resolves the same way on every OS - see
 [`UserDotfile.md`](UserDotfile.md) for the table. Summary:
@@ -194,7 +180,7 @@ The `~/.fiddee/` tree resolves the same way on every OS - see
 
 ---
 
-## Foreign-Tool Directories Land Creates 🌐
+## Foreign-Tool Directories Land Creates&#x2001;🌐
 
 `Binary/Main/AppLifecycle.rs:393` pre-creates two directories that belong to
 other tools, so VS Code's startup `stat` probes don't log errors. Cross-OS:
@@ -210,7 +196,7 @@ Candidate for tier-gating - see [`Encapsulation.md`](Encapsulation.md) §G.
 
 ---
 
-## In-Tree Build Artefacts 🛠️
+## In-Tree Build Artefacts&#x2001;🛠️
 
 Cross-OS, not part of user-install footprint:
 
@@ -226,7 +212,7 @@ Cross-OS, not part of user-install footprint:
 
 ---
 
-## See Also 📚
+## See Also&#x2001;📚
 
 - [`UserDotfile.md`](UserDotfile.md) - the `~/.fiddee/` tree (cross-OS).
 - [`PerElement.md`](PerElement.md) - which Element writes which path.

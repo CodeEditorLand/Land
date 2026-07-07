@@ -1,4 +1,4 @@
-### **Workflow Example #7: Creating and Interacting with an Integrated Terminal** 🖥️
+### **Workflow Example #7: Creating and Interacting with an Integrated Terminal**&#x2001;🖥️
 
 **Goal:** An extension, or the user via a command, requests a new integrated
 terminal. A native shell process (`bash`, `powershell`, etc.) is spawned, and

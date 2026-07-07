@@ -1,4 +1,4 @@
-### **Workflow Example #3: Invoking a Language Feature (Hover Provider)** 💡
+### **Workflow Example #3: Invoking a Language Feature (Hover Provider)**&#x2001;💡
 
 **Goal:** An extension has registered a "Hover Provider." When the user hovers
 their mouse over a specific word in the editor, the extension's logic is

@@ -19,7 +19,7 @@ responsibilities, and the layered design that enables multi-process operation on
 
 ---
 
-## Process Model 🏗️
+## Process Model&#x2001;🏗️
 
 **Land** operates as a multi-process application with three concurrent
 processes:
@@ -73,7 +73,7 @@ graph TB
     Wind --> Sky
 ```
 
-## Component Map 🗺️
+## Component Map&#x2001;🗺️
 
 ### Rust Components (Native)
 
@@ -101,7 +101,7 @@ graph TB
 
 ---
 
-## IPC Architecture 🔌
+## IPC Architecture&#x2001;🔌
 
 ### Inter-Process Communication Matrix
 
@@ -186,7 +186,7 @@ This is a runtime switch - no rebuild required. Set in `.env.Land` as
 
 ---
 
-## Service Layer Design 🧩
+## Service Layer Design&#x2001;🧩
 
 ### Common Trait Architecture (Rust side)
 
@@ -292,7 +292,7 @@ the track at runtime.
 
 ---
 
-## Tier-Gated Implementation ⚙️
+## Tier-Gated Implementation&#x2001;⚙️
 
 **Land** uses a configuration-driven selection mechanism for capabilities that
 have multiple implementation strategies. Each capability is assigned a tier
@@ -314,7 +314,7 @@ for the full propagation workflow.
 
 ---
 
-## Data Flow Patterns 📊
+## Data Flow Patterns&#x2001;📊
 
 ### Read Request (File Open)
 
@@ -422,7 +422,7 @@ Mountain's `Source/Shim/SwallowMap.rs` provides IPC-level pattern matching.
 
 ---
 
-## Related Documentation 📋
+## Related Documentation&#x2001;📋
 
 - [BuildPipeline](BuildPipeline.md) - Full build pipeline from env files to
   binary artifacts

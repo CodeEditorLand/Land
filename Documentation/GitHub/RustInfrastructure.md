@@ -23,7 +23,7 @@ built upon.
 
 ---
 
-## Component Summary 📋
+## Component Summary&#x2001;📋
 
 | Component  | Crate Type     | Edition | Key Dependencies                                     | Role                                                                                              |
 | ---------- | -------------- | ------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
@@ -58,7 +58,7 @@ graph TB
 
 ---
 
-## Common: Abstract Core Library 📚
+## Common: Abstract Core Library&#x2001;📚
 
 The `Common` crate is the architectural foundation of **Land**'s native backend.
 It is a pure abstract library with no concrete implementations -- it defines
@@ -153,7 +153,7 @@ pub enum CommonError {
 
 ---
 
-## Echo: Work-Stealing Task Scheduler ⚡
+## Echo: Work-Stealing Task Scheduler&#x2001;⚡
 
 `Echo` is a bounded work-stealing task scheduler designed as the core execution
 engine for `Mountain`'s async workloads.
@@ -212,7 +212,7 @@ scheduler.spawn_low(index_workspace(workspace)).await;
 
 ---
 
-## Mountain: Native Backend Application 🏔️
+## Mountain: Native Backend Application&#x2001;🏔️
 
 `Mountain` is the primary `Tauri` application that serves as the native backend.
 It implements all traits from `Common`, hosts the `gRPC` server, manages
@@ -392,7 +392,7 @@ channel-drain patterns: `ExtensionsGetInstalled`, `WaitForClientConnection`,
 
 ---
 
-## Mist: DNS Isolation Server 🌐
+## Mist: DNS Isolation Server&#x2001;🌐
 
 `Mist` runs a local Hickory DNS server authoritative for the `editor.land` zone.
 It provides network isolation for sidecar processes.
@@ -433,7 +433,7 @@ directory.
 
 ---
 
-## Air: Background Daemon 🖥️
+## Air: Background Daemon&#x2001;🖥️
 
 `Air` is the background daemon sidecar for **Land**, providing long-running
 services that would degrade UI performance if run in the main process.
@@ -475,7 +475,7 @@ Mountain shuts down
 
 ---
 
-## Rest: OXC TypeScript Compiler 🚀
+## Rest: OXC TypeScript Compiler&#x2001;🚀
 
 `Rest` is a high-performance `TypeScript` compiler built on the `OXC` (Oxidation
 Compiler) toolchain. It replaces `esbuild`'s `TypeScript` loader with a
@@ -538,7 +538,7 @@ profile:
 
 ---
 
-## SideCar: Vendored Runtime Manager 📦
+## SideCar: Vendored Runtime Manager&#x2001;📦
 
 `SideCar` manages pre-compiled native dependency binaries. Currently handles
 `Node.js` runtime binaries for each target platform.
@@ -581,7 +581,7 @@ Mountain build copies binary to app bundle
 
 ---
 
-## Grove: WASM Extension Host 🧩
+## Grove: WASM Extension Host&#x2001;🧩
 
 `Grove` provides an alternative extension host for running WASM-compiled VS Code
 extensions in a sandboxed environment using `WASMtime`.
@@ -634,7 +634,7 @@ consumed by `Mountain`, `Air`, and any other element that speaks `gRPC`.
 Protocol evolution is centralised here - adding or changing an RPC updates one
 `.proto` file and all consumers rebuild against the new stubs.
 
-## Rust Build Configuration 🔧
+## Rust Build Configuration&#x2001;🔧
 
 ### Workspace Configuration
 
@@ -686,7 +686,7 @@ edition 2021 for WASM compatibility.
 
 ---
 
-## Related Documentation 📋
+## Related Documentation&#x2001;📋
 
 - [Architecture](Architecture.md) - System architecture overview
 - [BuildPipeline](BuildPipeline.md) - Build pipeline

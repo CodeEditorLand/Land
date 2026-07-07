@@ -1,4 +1,4 @@
-### **Workflow Example #6: Creating and Interacting with a Webview Panel** 🖼️
+### **Workflow Example #6: Creating and Interacting with a Webview Panel**&#x2001;🖼️
 
 **Goal:** An extension wants to show a custom user interface, like a welcome
 page or a complex data visualization. It uses the `createWebviewPanel` API to do

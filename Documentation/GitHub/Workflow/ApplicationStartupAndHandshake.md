@@ -1,4 +1,4 @@
-### **Workflow Example #1: Application Startup & Handshake** 🚀
+### **Workflow Example #1: Application Startup & Handshake**&#x2001;🚀
 
 **Goal:** To successfully launch the entire Land application, from the native
 [`Mountain`](https://github.com/CodeEditorLand/Mountain) backend to the

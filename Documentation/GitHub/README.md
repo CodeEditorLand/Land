@@ -75,7 +75,7 @@ Each Land Element has an `Architecture.md` in its own `Documentation/GitHub/`
 directory covering internal module structure, data flow, and implementation
 details.
 
-### Rust Elements 🦀
+### Rust Elements&#x2001;🦀
 
 | Element      | Role                                                           | Key Dependencies     | Doc                                                                                                               |
 | ------------ | -------------------------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -88,7 +88,7 @@ details.
 | **Rest**     | OXC-based TypeScript compiler                                  | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Rest/tree/Current/Documentation/GitHub/Architecture.md)     |
 | **SideCar**  | Vendored Node.js runtime manager                               | Common, Mist         | [`Architecture.md`](https://github.com/CodeEditorLand/SideCar/tree/Current/Documentation/GitHub/Architecture.md)  |
 
-### TypeScript Elements 📜
+### TypeScript Elements&#x2001;📜
 
 | Element    | Role                                         | Framework        | Doc                                                                                                             |
 | ---------- | -------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -98,7 +98,7 @@ details.
 | **Output** | Build artifact management, dual-compiler     | ESBuild          | [`Architecture.md`](https://github.com/CodeEditorLand/Output/tree/Current/Documentation/GitHub/Architecture.md) |
 | **Worker** | Service worker: caching, CSS interceptor     | ESBuild          | [`Architecture.md`](https://github.com/CodeEditorLand/Worker/tree/Current/Documentation/GitHub/Architecture.md) |
 
-### Protocol Layer 🔌
+### Protocol Layer&#x2001;🔌
 
 | Element  | Role                      | Format           | Doc                                                                                                           |
 | -------- | ------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -129,7 +129,7 @@ may contain implementation notes not yet migrated to `Architecture.md`.
 | **Wind**     | [`DeepDive.md`](https://github.com/CodeEditorLand/Wind/tree/Current/Documentation/GitHub/DeepDive.md)     | Effect-TS services, Preload.ts, Tauri integration                        |
 | **Worker**   | [`DeepDive.md`](https://github.com/CodeEditorLand/Worker/tree/Current/Documentation/GitHub/DeepDive.md)   | Caching strategies, CSS interceptor, service worker lifecycle            |
 
-### Element-Specific Supplementary Docs 📎
+### Element-Specific Supplementary Docs&#x2001;📎
 
 Some Elements contain additional documentation beyond `DeepDive.md` and
 `Architecture.md`:

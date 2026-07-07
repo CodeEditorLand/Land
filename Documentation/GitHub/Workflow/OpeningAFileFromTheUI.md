@@ -1,4 +1,4 @@
-### **Workflow Example #2: Opening a File from the UI** 📂
+### **Workflow Example #2: Opening a File from the UI**&#x2001;📂
 
 **Goal:** The user clicks on a file in the File Explorer
 ([`Wind/Sky`](https://github.com/CodeEditorLand/Wind/tree/Current) UI), and the

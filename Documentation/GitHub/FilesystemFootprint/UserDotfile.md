@@ -1,15 +1,7 @@
 <table>
 	<tr>
-		<td align="left" valign="middle">
-			<h3 align="left">
-				User Dotfile&#x2001;🏞️
-			</h3>
-		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">
-				&#x2001;+&#x2001;
-			</h3>
-		</td>
+		<td align="left" valign="middle"><h3 align="left">User Dotfile&#x2001;🏞️</h3></td>
+		<td align="left" valign="middle"><h3 align="left">&#x2001;+&#x2001;</h3></td>
 		<td align="left" valign="middle">
 			<h3 align="left">
 				<a href="https://editor.land" target="_blank">
@@ -21,19 +13,13 @@
 				</a>
 			</h3>
 		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">
-				<a href="https://editor.land" target="_blank">
-					Land&#x2001;🏞️
-				</a>
-			</h3>
-		</td>
+		<td align="left" valign="middle"><h3 align="left"><a href="https://editor.land" target="_blank">Land&#x2001;🏞️</a></h3></td>
 	</tr>
 </table>
 
 ---
 
-# **User Dotfile** 🏞️
+# **User Dotfile**&#x2001;🏞️
 
 The `~/.fiddee/` tree - Land's primary product-owned filesystem domain.
 
@@ -41,7 +27,7 @@ The `~/.fiddee/` tree - Land's primary product-owned filesystem domain.
 
 ---
 
-## At a Glance 🗺️
+## At a Glance&#x2001;🗺️
 
 `~/.fiddee/` is centralised by **one atom**: `FiddeeRoot::Fn` (Rust) +
 `FiddeeRoot()` (TypeScript). Every Land call site resolves sub-paths through
@@ -55,7 +41,7 @@ this atom so future renames touch a single file per Element.
 
 ---
 
-## Cross-OS Resolution 🌐
+## Cross-OS Resolution&#x2001;🌐
 
 The dotfile root resolves to the user's home directory with `.fiddee` appended:
 
@@ -71,7 +57,7 @@ fallback to a relative `.fiddee` keeps callers receiving a valid `PathBuf`.
 
 ---
 
-## Sub-Directory Map 🗂️
+## Sub-Directory Map&#x2001;🗂️
 
 | Path                                           | Producer                                                                               | Purpose                                                                                                                    |
 | :--------------------------------------------- | :------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
@@ -88,7 +74,7 @@ GB** depending on which language servers are installed.
 
 ---
 
-## Storage-Path Override 🎛️
+## Storage-Path Override&#x2001;🎛️
 
 Cocoon respects one env var that re-roots part of the tree:
 
@@ -102,7 +88,7 @@ Cocoon respects one env var that re-roots part of the tree:
 
 ---
 
-## Cocoon-Side Mirror 🪞
+## Cocoon-Side Mirror&#x2001;🪞
 
 `Element/Cocoon/Source/Platform/FiddeeRoot.ts` exists so Node-side code does not
 call back into Rust to resolve the path. The TypeScript implementation mirrors
@@ -123,7 +109,7 @@ Keep them lockstep; the docstring on each file references the other.
 
 ---
 
-## Legacy Fan-Out 🦴
+## Legacy Fan-Out&#x2001;🦴
 
 | Path                  | Status                                             | Producer                                                                   |
 | :-------------------- | :------------------------------------------------- | :------------------------------------------------------------------------- |
@@ -146,7 +132,7 @@ Retirement plan (deferred): one-shot migration that moves `~/.land/extensions/*`
 
 ---
 
-## Lifecycle 📅
+## Lifecycle&#x2001;📅
 
 - **First boot:** `FiddeeRoot::Fn()` is resolved lazily. Sub-paths are created
   on first use (e.g. first extension activation creates the per-extension
@@ -165,7 +151,7 @@ Retirement plan (deferred): one-shot migration that moves `~/.land/extensions/*`
 
 ---
 
-## Open Questions ❓
+## Open Questions&#x2001;❓
 
 - The `.fiddee/extensions/<id>/.storage/` location ties per-extension storage to
   the extension's own directory. Reinstalls or version bumps destroy that
@@ -180,7 +166,7 @@ Retirement plan (deferred): one-shot migration that moves `~/.land/extensions/*`
 
 ---
 
-## See Also 📚
+## See Also&#x2001;📚
 
 - [`PlatformPaths.md`](PlatformPaths.md) - per-OS Library / XDG / AppData paths
   that coexist with `~/.fiddee/`.

@@ -1,28 +1,14 @@
 <table>
 	<tr>
-		<td align="left" valign="middle">
-			<h3 align="left">
-				Cleanup Recipes&#x2001;🧼
-			</h3>
-		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">
-				&#x2001;+&#x2001;
-			</h3>
-		</td>
-		<td align="left" valign="middle">
-			<h3 align="left">
-				<a href="https://editor.land" target="_blank">
-					Land&#x2001;🏞️
-				</a>
-			</h3>
-		</td>
+		<td align="left" valign="middle"><h3 align="left">Cleanup Recipes&#x2001;🧼</h3></td>
+		<td align="left" valign="middle"><h3 align="left">&#x2001;+&#x2001;</h3></td>
+		<td align="left" valign="middle"><h3 align="left"><a href="https://editor.land" target="_blank">Land&#x2001;🏞️</a></h3></td>
 	</tr>
 </table>
 
 ---
 
-# **Cleanup Recipes** 🧼
+# **Cleanup Recipes**&#x2001;🧼
 
 Per-OS commands to wipe every piece of Land / FIDDEE state from a system, plus
 the archive pattern used in production cleanups.
@@ -31,7 +17,7 @@ the archive pattern used in production cleanups.
 
 ---
 
-## Safety Preamble ⚠️
+## Safety Preamble&#x2001;⚠️
 
 Read before running anything below:
 
@@ -229,7 +215,7 @@ What survives this recipe (intentional):
 
 ---
 
-## What This Removes vs Preserves 📊
+## What This Removes vs Preserves&#x2001;📊
 
 Cross-OS summary of what a complete cleanup touches.
 
@@ -249,7 +235,7 @@ Cross-OS summary of what a complete cleanup touches.
 
 ---
 
-## OS Keychain / Credential Store 🔐
+## OS Keychain / Credential Store&#x2001;🔐
 
 `Mountain/Source/Environment/SecretsProvider.rs` writes through the `keyring`
 crate, which delegates to:
@@ -272,7 +258,7 @@ enumerate and clear these.
 
 ---
 
-## Archive Pattern (Production-Validated) 📦
+## Archive Pattern (Production-Validated)&#x2001;📦
 
 The 2026-05-26 cleanup ran the macOS recipe above against an active developer
 workstation. Archive total: 4.5 GB across `Library/*` (~780 MB), `~/.fiddee/`
@@ -316,7 +302,7 @@ ditto "$ARCH/Home/.land" "$HOME/.land"
 
 ---
 
-## Developer: Clear Pre-Baked Extension Manifest 🗂️
+## Developer: Clear Pre-Baked Extension Manifest&#x2001;🗂️
 
 `PreBake.ts` writes `Element/Mountain/Target/<profile>/extensions.manifest.json`
 at bundle time to accelerate boot-time extension scanning (<50 ms vs ~1200 ms
@@ -332,7 +318,7 @@ This is an in-tree developer artefact; it is never written inside the installed
 
 ---
 
-## See Also 📚
+## See Also&#x2001;📚
 
 - [`UserDotfile.md`](UserDotfile.md) - what's inside `~/.fiddee/`.
 - [`PlatformPaths.md`](PlatformPaths.md) - what's inside each per-OS path.

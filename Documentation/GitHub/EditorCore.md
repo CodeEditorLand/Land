@@ -20,7 +20,7 @@ dispatch, and the VS Code API coverage split across `Mountain`, `Cocoon`, and
 
 ---
 
-## Workbench Architecture 🏗️
+## Workbench Architecture&#x2001;🏗️
 
 The VS Code workbench is the core UI framework that renders the editor
 interface. In VS Code's Electron architecture, the workbench runs in the
@@ -70,7 +70,7 @@ sequenceDiagram
 
 ---
 
-## Wind Service Layer 🧩
+## Wind Service Layer&#x2001;🧩
 
 `Wind` provides ~45 `Effect-TS` services (spanning 59 directories under
 `Effect/`, including a `Generated/` layer of upstream VS Code service wrappers)
@@ -182,7 +182,7 @@ Wind/Source/Effect/<Service>/
 
 ---
 
-## Service Composition and Layer Stacks 🧩
+## Service Composition and Layer Stacks&#x2001;🧩
 
 `Wind` services compose into Layer stacks using `Effect-TS`'s Layer system. Each
 Layer is a collection of service implementations wired together through
@@ -314,7 +314,7 @@ module-singleton `ManagedRuntime` wrapping `LandWorkbenchLayer`:
 
 ---
 
-## Workbench Variants 🚀
+## Workbench Variants&#x2001;🚀
 
 **Land** supports multiple workbench variants selected at build time:
 
@@ -366,7 +366,7 @@ variants are bundled through Vite/Astro (see `Bundled/<Variant>/Layout.astro`).
 
 ---
 
-## Command Dispatch System 🎮
+## Command Dispatch System&#x2001;🎮
 
 **Land** implements the VS Code command system across all three layers:
 
@@ -421,7 +421,7 @@ sequenceDiagram
 
 ---
 
-## Editor Service Architecture ✏️
+## Editor Service Architecture&#x2001;✏️
 
 The editor service in `Wind` integrates the VS Code CodeEditor widget (based on
 Monaco) with `Tauri`'s WebView and `Mountain`'s native capabilities:
@@ -465,7 +465,7 @@ Dirty state propagates to:
 
 ---
 
-## VS Code API Coverage Strategy 🔬
+## VS Code API Coverage Strategy&#x2001;🔬
 
 **Land** uses a dual-track strategy for VS Code API coverage:
 
@@ -503,7 +503,7 @@ The authoritative coverage matrix is at
 
 ---
 
-## Related Documentation 📋
+## Related Documentation&#x2001;📋
 
 - [Architecture](Architecture.md) - System architecture overview
 - [BuildPipeline](BuildPipeline.md) - Build pipeline

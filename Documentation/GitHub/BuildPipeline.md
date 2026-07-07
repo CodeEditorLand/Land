@@ -24,7 +24,7 @@ static asset compilation across 15+ component workspaces.
 
 ---
 
-## Pipeline Overview 📋
+## Pipeline Overview&#x2001;📋
 
 The **Land** build has six stages:
 
@@ -131,7 +131,7 @@ The build script invokes, in sequence:
 
 ---
 
-## Environment Variable System ⚙️
+## Environment Variable System&#x2001;⚙️
 
 **Land** uses a multi-file `.env` system with 18 files across 6 domains:
 
@@ -181,7 +181,7 @@ Each build profile loads a specific combination of env files:
 
 ---
 
-## Profile System 📋
+## Profile System&#x2001;📋
 
 ### Available Build Profiles
 
@@ -217,7 +217,7 @@ The build script supports additional runtime flags:
 
 ---
 
-## Env Propagation to Each Element 📡
+## Env Propagation to Each Element&#x2001;📡
 
 Each Element reads the resolved environment variables through its own build
 system path:
@@ -322,7 +322,7 @@ A mismatch indicates one build tool read a different env file.
 
 ---
 
-## Rust Build Process 🔧
+## Rust Build Process&#x2001;🔧
 
 ### Workspace Structure
 
@@ -372,7 +372,7 @@ features, keeping the baseline compilation lean.
 
 ---
 
-## TypeScript Build Process 📦
+## TypeScript Build Process&#x2001;📦
 
 ### ESBuild Compilation (Cocoon, Output, Worker)
 
@@ -394,7 +394,7 @@ features, keeping the baseline compilation lean.
 
 ---
 
-## Artifact Layout 📁
+## Artifact Layout&#x2001;📁
 
 After a successful build, artifacts are placed in per-Element target
 directories:
@@ -442,7 +442,7 @@ Notable artifacts:
 
 ---
 
-## Output Transform Pipeline 🔧
+## Output Transform Pipeline&#x2001;🔧
 
 The `Output` element manages the compilation of VS Code platform source code
 through two parallel compiler paths:
@@ -470,7 +470,7 @@ through two parallel compiler paths:
 
 ---
 
-## Worker Build Process 🗂️
+## Worker Build Process&#x2001;🗂️
 
 The `Worker` element compiles independently through `ESBuild` with no runtime
 dependencies:
@@ -490,7 +490,7 @@ and `Cache` APIs.
 
 ---
 
-## SideCar Binary Management 📦
+## SideCar Binary Management&#x2001;📦
 
 The `SideCar` element manages vendored `Node.js` runtime binaries:
 
@@ -515,7 +515,7 @@ Target triples supported:
 
 ---
 
-## Related Documentation 📋
+## Related Documentation&#x2001;📋
 
 - [Architecture](Architecture.md) - System architecture overview
 - [EditorCore](EditorCore.md) - Editor workbench adaptation
