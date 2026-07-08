@@ -1,7 +1,7 @@
 <table>
 	<tr>
 		<td align="left" valign="middle"><h3 align="left">User Dotfile&#x2001;🏞️</h3></td>
-		<td align="left" valign="middle"><h3 align="left">&#x2001;+&#x2001;</h3></td>
+		<td align="left" valign="middle"><h3 align="left"> + </h3></td>
 		<td align="left" valign="middle">
 			<h3 align="left">
 				<a href="https://editor.land" target="_blank">

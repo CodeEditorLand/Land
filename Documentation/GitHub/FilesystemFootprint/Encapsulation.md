@@ -1,7 +1,7 @@
 <table>
 	<tr>
 		<td align="left" valign="middle"><h3 align="left">Encapsulation Directions&#x2001;🚧</h3></td>
-		<td align="left" valign="middle"><h3 align="left">&#x2001;+&#x2001;</h3></td>
+		<td align="left" valign="middle"><h3 align="left"> + </h3></td>
 		<td align="left" valign="middle"><h3 align="left"><a href="https://editor.land" target="_blank">Land&#x2001;🏞️</a></h3></td>
 	</tr>
 </table>

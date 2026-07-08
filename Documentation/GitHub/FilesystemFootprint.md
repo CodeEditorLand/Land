@@ -1,7 +1,7 @@
 <table>
 	<tr>
 		<td align="left" valign="middle"><h3 align="left">Filesystem Footprint&#x2001;📂</h3></td>
-		<td align="left" valign="middle"><h3 align="left">&#x2001;+&#x2001;</h3></td>
+		<td align="left" valign="middle"><h3 align="left"> + </h3></td>
 		<td align="left" valign="middle">
 			<h3 align="left">
 				<a href="https://editor.land" target="_blank">
@@ -14,7 +14,7 @@
 			</h3>
 		</td>
 		<td align="left" valign="middle"><h3 align="left"><a href="https://editor.land" target="_blank">Land&#x2001;🏞️</a></h3></td>
-		<td align="left" valign="middle"><h3 align="left">&#x2001;+&#x2001;</h3></td>
+		<td align="left" valign="middle"><h3 align="left"> + </h3></td>
 		<td align="left" valign="middle"><h3 align="left">FIDDEE&#x2001;🎻</h3></td>
 	</tr>
 </table>
@@ -30,11 +30,11 @@ producing code, with cross-platform resolution and cleanup recipes.
 	<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/macOS-supported-black">
 	<source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/macOS-supported-white">
 	<img src="https://img.shields.io/badge/macOS-supported-black" alt="macOS">
-</picture>&#x2001;<picture>
+</picture> <picture>
 	<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Linux-partial-black">
 	<source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/Linux-partial-white">
 	<img src="https://img.shields.io/badge/Linux-partial-black" alt="Linux">
-</picture>&#x2001;<picture>
+</picture> <picture>
 	<source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Windows-pending-black">
 	<source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/Windows-pending-white">
 	<img src="https://img.shields.io/badge/Windows-pending-black" alt="Windows">

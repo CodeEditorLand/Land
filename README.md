@@ -9,7 +9,7 @@
 				</picture>
 			</h3>
 		</td>
-		<td colspan="3" valign="top"><h3 align="center">Land</h3></td>
+		<td colspan="3" valign="top"><h3 align="center">Land&#x2001;🏞️</h3></td>
 	</tr>
 	<tr>
 		<td valign="top" colspan="1">
@@ -47,7 +47,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Common" target="_blank"><b>Common&#x2001;🧑🏻‍🏭&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Common" target="_blank"><b>Common&#x2001;🧑🏻‍🏭 + Land&#x2001;🏞️</b></a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Echo" target="_blank">
@@ -84,7 +84,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Echo" target="_blank"><b>Echo&#x2001;📣&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Echo" target="_blank"><b>Echo&#x2001;📣 + Land&#x2001;🏞️</b></a>
 		</td>
 	</tr>
 	<tr>
@@ -123,7 +123,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Vine" target="_blank"><b>Vine&#x2001;🌿&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Vine" target="_blank"><b>Vine&#x2001;🌿 + Land&#x2001;🏞️</b></a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Mountain" target="_blank">
@@ -160,7 +160,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Mountain" target="_blank"><b>Mountain&#x2001;⛰️&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Mountain" target="_blank"><b>Mountain&#x2001;⛰️ + Land&#x2001;🏞️</b></a>
 		</td>
 	</tr>
 	<tr>
@@ -199,7 +199,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Rest" target="_blank"><b>Rest&#x2001;⛱️&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Rest" target="_blank"><b>Rest&#x2001;⛱️ + Land&#x2001;🏞️</b></a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Output" target="_blank">
@@ -236,7 +236,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Output" target="_blank"><b>Output&#x2001;⚫&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Output" target="_blank"><b>Output&#x2001;⚫ + Land&#x2001;🏞️</b></a>
 		</td>
 	</tr>
 	<tr>
@@ -275,7 +275,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Cocoon" target="_blank"><b>Cocoon&#x2001;🦋&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Cocoon" target="_blank"><b>Cocoon&#x2001;🦋 + Land&#x2001;🏞️</b></a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Wind" target="_blank">
@@ -312,7 +312,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Wind" target="_blank"><b>Wind&#x2001;🍃&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Wind" target="_blank"><b>Wind&#x2001;🍃 + Land&#x2001;🏞️</b></a>
 		</td>
 	</tr>
 	<tr>
@@ -351,7 +351,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Worker" target="_blank"><b>Worker&#x2001;🍩&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Worker" target="_blank"><b>Worker&#x2001;🍩 + Land&#x2001;🏞️</b></a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Sky" target="_blank">
@@ -388,7 +388,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Sky" target="_blank"><b>Sky&#x2001;🌌&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Sky" target="_blank"><b>Sky&#x2001;🌌 + Land&#x2001;🏞️</b></a>
 		</td>
 	</tr>
 	<tr>
@@ -427,7 +427,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Mist" target="_blank"><b>Mist&#x2001;🌫️&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Mist" target="_blank"><b>Mist&#x2001;🌫️ + Land&#x2001;🏞️</b></a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Maintain" target="_blank">
@@ -464,7 +464,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Maintain" target="_blank"><b>Maintain&#x2001;💪🏻&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Maintain" target="_blank"><b>Maintain&#x2001;💪🏻 + Land&#x2001;🏞️</b></a>
 		</td>
 	</tr>
 	<tr>
@@ -503,7 +503,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Grove" target="_blank"><b>Grove&#x2001;🌳&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Grove" target="_blank"><b>Grove&#x2001;🌳 + Land&#x2001;🏞️</b></a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Land" target="_blank">
@@ -579,7 +579,7 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Editor" target="_blank"><b>Editor&#x2001;💻&#x2001;+&#x2001;Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Editor" target="_blank"><b>Editor&#x2001;💻 + Land&#x2001;🏞️</b></a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Element" target="_blank">
@@ -987,7 +987,7 @@ for a history of changes.
 
 ## Funding & Acknowledgements&#x2001;🙏🏻
 
-**Land**&#x2001;🏞️&#x2001;is proud to be an open-source endeavor. Our journey is
+**Land**&#x2001;🏞️ is proud to be an open-source endeavor. Our journey is
 significantly supported by the organizations and projects that believe in the
 future of open-source software.
 
