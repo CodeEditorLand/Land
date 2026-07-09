@@ -1,6 +1,6 @@
 <table>
 	<tr>
-		<td align="left" valign="middle"><h3 align="left">Per-Element Write Sites&#x2001;✍️</h3></td>
+		<td align="left" valign="middle"><h3 align="left">Per-Element Write Sites&#x2001;✍🏻</h3></td>
 		<td align="left" valign="middle"><h3 align="left"> + </h3></td>
 		<td align="left" valign="middle"><h3 align="left"><a href="https://editor.land" target="_blank">Land&#x2001;🏞️</a></h3></td>
 	</tr>
@@ -8,7 +8,7 @@
 
 ---
 
-# **Per-Element Write Sites**&#x2001;✍️
+# **Per-Element Write Sites**&#x2001;✍🏻
 
 Every Element grouped by which filesystem location it touches. Reverse map of
 [`UserDotfile.md`](UserDotfile.md) and [`PlatformPaths.md`](PlatformPaths.md):
@@ -136,7 +136,7 @@ Build-time only. Same shape as Wind - reads env, no runtime writes.
 
 ---
 
-## Air&#x2001;💨
+## Air&#x2001;🪁
 
 Background daemon. **Uses a different filesystem root than Mountain** -
 `<config_dir>/FIDDEE/` (uppercase) and `<data_local_dir>/FIDDEE/`, not
@@ -164,7 +164,7 @@ ships as an external tool with its own naming convention.
 
 ---
 
-## SideCar&#x2001;🛟
+## SideCar&#x2001;🚃
 
 | Producer                               | Writes                                                 | Trigger                  |
 | :------------------------------------- | :----------------------------------------------------- | :----------------------- |

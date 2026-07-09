@@ -237,7 +237,7 @@ disk) and Sky's distinctId (Sky-generated, lives in webview localStorage).
 
 ---
 
-## J. FIDDEE Root Reconciliation (Air vs Mountain)&#x2001;🤝
+## J. FIDDEE Root Reconciliation (Air vs Mountain)&#x2001;🫱🏻‍🫲🏿
 
 Mountain owns `~/.fiddee/` (dotfile, lowercase). The `Air` background daemon
 writes to `<config_dir>/FIDDEE/` (uppercase, under the OS config root - i.e.
