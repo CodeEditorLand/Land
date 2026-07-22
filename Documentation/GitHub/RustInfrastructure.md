@@ -418,12 +418,12 @@ processes communicate only over localhost.
 
 `Mist` maintains a configurable allowlist of trusted external domains:
 
-| Domain                         | Purpose                | Status              |
-| ------------------------------ | ---------------------- | ------------------- | ----------- |
-| `marketplace.visualstudio.com` | Extension downloads    | Allowlisted         |
-|                                | `update.editor.land`   | Application updates | Allowlisted |
-| `api.posthog.com`              | Telemetry (if enabled) | Allowlisted         |
-| All others                     | Blocked (NXDOMAIN)     | Default blocked     |
+| Domain | Purpose | Status | | ------------------------------ |
+---------------------- | ------------------- | ----------- | |
+`marketplace.visualstudio.com` | Extension downloads | Allowlisted | | |
+`update.editor.land` | Application updates | Allowlisted | | `api.posthog.com` |
+Telemetry (if enabled) | Allowlisted | | All others | Blocked (NXDOMAIN) |
+Default blocked |
 
 ### DNSSEC
 

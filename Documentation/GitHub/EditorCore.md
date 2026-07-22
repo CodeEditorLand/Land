@@ -207,11 +207,11 @@ graph TB
     Tauri --> File[FilesLive]
     Tauri --> Terminal[TerminalLive]
     Tauri --> Clipboard[ClipboardLive]
-    Tauri --> Dialog[DialogLive (via Mountain IPC)]
+    Tauri --> Dialog["DialogLive (via Mountain IPC)"]
     Tauri --> Window[ActivityBarLive, PanelLive, SidebarLive, StatusBarLive]
     Tauri --> Services[... 37 service layers via Layer.mergeAll]
 
-    Electron --> ElectronImpl[Layer.empty.pipe(Layer.provideMerge(...))]
+    Electron --> ElectronImpl["Layer.empty.pipe(Layer.provideMerge(...))"]
     Test --> Mock[All mock implementations]
 ```
 

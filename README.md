@@ -9,7 +9,11 @@
 				</picture>
 			</h3>
 		</td>
-		<td colspan="3" valign="top"><h3 align="center">Land&#x2001;🏞️</h3></td>
+		<td colspan="3" valign="top">
+			<h3 align="center">
+				Land&#x2001;🏞️
+			</h3>
+		</td>
 	</tr>
 	<tr>
 		<td valign="top" colspan="1">
@@ -47,7 +51,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Common" target="_blank"><b>Common&#x2001;🧑🏻‍🏭</b></a>
+			<a href="https://github.com/CodeEditorLand/Common" target="_blank">
+				<b>
+					Common&#x2001;🧑🏻‍🏭
+				</b>
+			</a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Echo" target="_blank">
@@ -84,7 +92,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Echo" target="_blank"><b>Echo&#x2001;📣</b></a>
+			<a href="https://github.com/CodeEditorLand/Echo" target="_blank">
+				<b>
+					Echo&#x2001;📣
+				</b>
+			</a>
 		</td>
 	</tr>
 	<tr>
@@ -123,7 +135,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Vine" target="_blank"><b>Vine&#x2001;🌿</b></a>
+			<a href="https://github.com/CodeEditorLand/Vine" target="_blank">
+				<b>
+					Vine&#x2001;🌿
+				</b>
+			</a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Mountain" target="_blank">
@@ -160,7 +176,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Mountain" target="_blank"><b>Mountain&#x2001;⛰️</b></a>
+			<a href="https://github.com/CodeEditorLand/Mountain" target="_blank">
+				<b>
+					Mountain&#x2001;⛰️
+				</b>
+			</a>
 		</td>
 	</tr>
 	<tr>
@@ -199,7 +219,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Rest" target="_blank"><b>Rest&#x2001;⛱️</b></a>
+			<a href="https://github.com/CodeEditorLand/Rest" target="_blank">
+				<b>
+					Rest&#x2001;⛱️
+				</b>
+			</a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Output" target="_blank">
@@ -236,7 +260,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Output" target="_blank"><b>Output&#x2001;⚫</b></a>
+			<a href="https://github.com/CodeEditorLand/Output" target="_blank">
+				<b>
+					Output&#x2001;⚫
+				</b>
+			</a>
 		</td>
 	</tr>
 	<tr>
@@ -275,7 +303,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Cocoon" target="_blank"><b>Cocoon&#x2001;🦋</b></a>
+			<a href="https://github.com/CodeEditorLand/Cocoon" target="_blank">
+				<b>
+					Cocoon&#x2001;🦋
+				</b>
+			</a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Wind" target="_blank">
@@ -312,7 +344,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Wind" target="_blank"><b>Wind&#x2001;🍃</b></a>
+			<a href="https://github.com/CodeEditorLand/Wind" target="_blank">
+				<b>
+					Wind&#x2001;🍃
+				</b>
+			</a>
 		</td>
 	</tr>
 	<tr>
@@ -351,7 +387,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Worker" target="_blank"><b>Worker&#x2001;🍩</b></a>
+			<a href="https://github.com/CodeEditorLand/Worker" target="_blank">
+				<b>
+					Worker&#x2001;🍩
+				</b>
+			</a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Sky" target="_blank">
@@ -388,7 +428,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Sky" target="_blank"><b>Sky&#x2001;🌌</b></a>
+			<a href="https://github.com/CodeEditorLand/Sky" target="_blank">
+				<b>
+					Sky&#x2001;🌌
+				</b>
+			</a>
 		</td>
 	</tr>
 	<tr>
@@ -427,7 +471,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Mist" target="_blank"><b>Mist&#x2001;🌫️</b></a>
+			<a href="https://github.com/CodeEditorLand/Mist" target="_blank">
+				<b>
+					Mist&#x2001;🌫️
+				</b>
+			</a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Maintain" target="_blank">
@@ -464,7 +512,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Maintain" target="_blank"><b>Maintain&#x2001;💪🏻</b></a>
+			<a href="https://github.com/CodeEditorLand/Maintain" target="_blank">
+				<b>
+					Maintain&#x2001;💪🏻
+				</b>
+			</a>
 		</td>
 	</tr>
 	<tr>
@@ -503,7 +555,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Grove" target="_blank"><b>Grove&#x2001;🌳</b></a>
+			<a href="https://github.com/CodeEditorLand/Grove" target="_blank">
+				<b>
+					Grove&#x2001;🌳
+				</b>
+			</a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Land" target="_blank">
@@ -540,7 +596,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Land" target="_blank"><b>Land&#x2001;🏞️</b></a>
+			<a href="https://github.com/CodeEditorLand/Land" target="_blank">
+				<b>
+					Land&#x2001;🏞️
+				</b>
+			</a>
 		</td>
 	</tr>
 	<tr>
@@ -579,7 +639,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Editor" target="_blank"><b>Editor&#x2001;💻</b></a>
+			<a href="https://github.com/CodeEditorLand/Editor" target="_blank">
+				<b>
+					Editor&#x2001;💻
+				</b>
+			</a>
 		</td>
 		<td valign="top" colspan="1">
 			<a href="https://GitHub.Com/CodeEditorLand/Element" target="_blank">
@@ -616,7 +680,11 @@
 				</picture>
 			</a>
 			<br />
-			<a href="https://github.com/CodeEditorLand/Element" target="_blank"><b>Element&#x2001;🌱</b></a>
+			<a href="https://github.com/CodeEditorLand/Element" target="_blank">
+				<b>
+					Element&#x2001;🌱
+				</b>
+			</a>
 		</td>
 	</tr>
 </table>
@@ -636,9 +704,23 @@
 				</a>
 			</h3>
 		</td>
-		<td align="left" valign="middle"><h3 align="left"><a href="https://editor.land" target="_blank">Land</a></h3></td>
-		<td align="left" valign="middle"><h3 align="left">🏞️</h3></td>
-		<td align="left" valign="middle"><h3 align="left">+</h3></td>
+		<td align="left" valign="middle">
+			<h3 align="left">
+				<a href="https://editor.land" target="_blank">
+					Land
+				</a>
+			</h3>
+		</td>
+		<td align="left" valign="middle">
+			<h3 align="left">
+				🏞️
+			</h3>
+		</td>
+		<td align="left" valign="middle">
+			<h3 align="left">
+				+
+			</h3>
+		</td>
 		<td align="left" valign="middle" width="190">
 			<h3 align="left">
 				<a href="https://Tauri.App" target="_blank">
@@ -1000,18 +1082,50 @@ This project is funded through
 <table>
 	<thead>
 		<tr>
-			<th align="left"><strong>Land</strong></th>
-			<th align="left"><strong>PlayForm</strong></th>
-			<th align="left"><strong>NLnet</strong></th>
-			<th align="left"><strong>NGI0 Commons Fund</strong></th>
+			<th align="left">
+				<strong>
+					Land
+				</strong>
+			</th>
+			<th align="left">
+				<strong>
+					PlayForm
+				</strong>
+			</th>
+			<th align="left">
+				<strong>
+					NLnet
+				</strong>
+			</th>
+			<th align="left">
+				<strong>
+					NGI0 Commons Fund
+				</strong>
+			</th>
 		</tr>
 	</thead>
 	<tbody>
 		<tr>
-			<td align="left" valign="middle"><a href="https://editor.land"><img width="60" src="https://raw.githubusercontent.com/CodeEditorLand/Asset/refs/heads/Current/Logo/Land.svg" alt="Land" /></a></td>
-			<td align="left" valign="middle"><a href="https://PlayForm.Cloud"><img width="76" src="https://raw.githubusercontent.com/PlayForm/Asset/refs/heads/Current/Logo/PlayForm.svg" alt="PlayForm" /></a></td>
-			<td align="left" valign="middle"><a href="https://NLnet.NL"><img width="240" src="https://NLnet.NL/logo/banner.svg" alt="NLnet" /></a></td>
-			<td align="left" valign="middle"><a href="https://NLnet.NL/commonsfund"><img width="240" src="https://NLnet.NL/image/logos/NGI0CommonsFund_tag_black_mono.svg" alt="NGI0 Commons Fund" /></a></td>
+			<td align="left" valign="middle">
+				<a href="https://editor.land">
+					<img width="60" src="https://raw.githubusercontent.com/CodeEditorLand/Asset/refs/heads/Current/Logo/Land.svg" alt="Land" />
+				</a>
+			</td>
+			<td align="left" valign="middle">
+				<a href="https://PlayForm.Cloud">
+					<img width="76" src="https://raw.githubusercontent.com/PlayForm/Asset/refs/heads/Current/Logo/PlayForm.svg" alt="PlayForm" />
+				</a>
+			</td>
+			<td align="left" valign="middle">
+				<a href="https://NLnet.NL">
+					<img width="240" src="https://NLnet.NL/logo/banner.svg" alt="NLnet" />
+				</a>
+			</td>
+			<td align="left" valign="middle">
+				<a href="https://NLnet.NL/commonsfund">
+					<img width="240" src="https://NLnet.NL/image/logos/NGI0CommonsFund_tag_black_mono.svg" alt="NGI0 Commons Fund" />
+				</a>
+			</td>
 		</tr>
 	</tbody>
 </table>

@@ -28,7 +28,7 @@ sequenceDiagram
     DevFile->>BuildSh: Base tier set
     Flavor->>BuildSh: Optional overlay via --flavor <name>
     BuildSh->>TierSh: Source helpers
-    TierSh->>TierSh: set -a; . .env.Land; set +a<br/>(sweeps every Tier* / Product* / Network*)
+    TierSh->>TierSh: set -a<br/>. .env.Land<br/>set +a<br/>(sweeps every Tier* / Product* / Network*)
     TierSh->>Cargo: Tier* env exported
     TierSh->>ESBuild: CocoonEsbuildDefine = JSON of every Tier* in env
     TierSh->>Vite: Tier* env exported

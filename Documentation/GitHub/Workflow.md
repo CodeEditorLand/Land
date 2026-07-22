@@ -11,13 +11,13 @@ application. Our system is composed of three primary components:
   application that implements the abstract traits from `Common`, manages the
   native OS interactions, runs a gRPC server, and orchestrates the `Cocoon`
   sidecar process.
-- **`Wind`&#x2001;🍃 & `Sky`&#x2001;🌌 (TypeScript UI):** The frontend. `Wind` is a
-  re-implementation of the VS Code workbench services using `Effect-TS`,
+- **`Wind`&#x2001;🍃 & `Sky`&#x2001;🌌 (TypeScript UI):** The frontend. `Wind`
+  is a re-implementation of the VS Code workbench services using `Effect-TS`,
   providing the application logic for the UI. `Sky` is the `Astro`-based UI
   layer that renders the editor interface and bridges `Tauri` events to the
   workbench via `SkyBridge`.
-- **`Cocoon`&#x2001;🦋 (TypeScript Application):** A Node.js sidecar process managed by
-  `Mountain`. It is responsible for running extensions in a sandboxed
+- **`Cocoon`&#x2001;🦋 (TypeScript Application):** A Node.js sidecar process
+  managed by `Mountain`. It is responsible for running extensions in a sandboxed
   environment and providing them with a high-fidelity `vscode` API.
 
 Communication between `Mountain` and `Cocoon` is handled via **gRPC**, while

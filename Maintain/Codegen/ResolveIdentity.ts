@@ -30,8 +30,11 @@
  *   Dependency/Microsoft/Dependency/Editor/product.json.
  */
 import { promises as Filesystem } from "node:fs";
+
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+
 import { dirname, join, resolve } from "node:path";
+
 import { fileURLToPath } from "node:url";
 
 // ---------------------------------------------------------------------------
@@ -91,6 +94,7 @@ const TargetPaths = [
 
 /** Read a JSON file, returning null on failure. */
 async function ReadJson<T>(Path: string): Promise<T | null> {
+
 	try {
 		const Raw = await readFile(Path, "utf8");
 
@@ -102,6 +106,7 @@ async function ReadJson<T>(Path: string): Promise<T | null> {
 
 /** Write a file only if its content differs from what's on disk. */
 async function WriteIfChanged(Path: string, Content: string): Promise<boolean> {
+
 	const Existing = await readFile(Path, "utf8").catch(() => "");
 
 	if (Existing === Content) return false;
@@ -117,6 +122,7 @@ async function WriteIfChanged(Path: string, Content: string): Promise<boolean> {
 // Types mirroring the product.json shape
 // ---------------------------------------------------------------------------
 interface LandProduct {
+
 	nameShort: string;
 
 	nameLong: string;
@@ -164,6 +170,7 @@ interface LandProduct {
 // Main
 // ---------------------------------------------------------------------------
 async function Main(): Promise<void> {
+
 	// 1. Read the authoritative product.json
 	const Product = await ReadJson<LandProduct>(ProductJsonPath);
 

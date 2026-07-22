@@ -49,7 +49,7 @@ stateDiagram-v2
         [*] --> UserClicks
         UserClicks --> PostMessage
         PostMessage --> TauriCommand
-        note right of TauriCommand: mountain://webview/on-message
+        note right of TauriCommand: mountain webview on-message channel
         TauriCommand --> GRPCNotify
         note right of GRPCNotify: $onDidReceiveMessage<br/>to Cocoon
         GRPCNotify --> FireEvent
