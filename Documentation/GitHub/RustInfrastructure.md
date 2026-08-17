@@ -619,7 +619,7 @@ alongside `Cocoon` for WASM-compiled extensions.
 
 ---
 
-## Vine: gRPC Protocol Definitions 📡
+## Vine: gRPC Protocol Definitions&#x2001;📡
 
 `Vine` is the protocol definitions library for all `gRPC` communication in
 **Land**. It owns `Vine.proto` and generates `Rust` stubs (`prost`/`tonic`)

@@ -739,6 +739,47 @@
 
 # **Land**&#x2001;🏞️&#x2001;The Next-Generation Code Editor
 
+**Land** is a high-performance, resource-efficient, cross-platform code editor.
+It keeps the shape of the VS Code workbench and the VS Code extension API, and
+replaces the runtime underneath with **Rust**, **Tauri** and **Effect-TS**.
+
+This repository - [`CodeEditorLand/Land`][Land] - is the umbrella project. It
+carries no editor logic of its own. What it carries is the workspace that binds
+the Elements together: the Cargo and pnpm workspace manifests, the build
+scripts, the architecture documentation, and the submodule pointers that pin
+every Element at a known revision.
+
+## Orientation&#x2001;🧭
+
+Each Element listed in the badge grid above is a separate GitHub repository
+under the `CodeEditorLand` organisation. **Land** checks them out as submodules
+and compiles them into one application.
+
+### What This Repository Contains&#x2001;📦
+
+| Path in `Land`                                                                                        | What lives there                                                          |
+| :---------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------- |
+| [`Element/`](https://github.com/CodeEditorLand/Element/tree/Current)                                  | Every Element, each one its own Git repository                            |
+| [`Dependency/`](https://github.com/CodeEditorLand/Dependency/tree/Current)                            | Vendored upstreams: Microsoft, Tauri, SWC, OXC, Biome and Rolldown         |
+| [`Documentation/`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation)                 | Architecture notes, workflow walkthroughs and module deep dives            |
+| [`Maintain/`](https://github.com/CodeEditorLand/Land/tree/Current/Maintain)                           | Build, debug, release and repository scripts                              |
+| [`Cargo.toml`](https://github.com/CodeEditorLand/Land/tree/Current/Cargo.toml)                        | The Rust workspace that unifies every Rust Element                        |
+| [`pnpm-workspace.yaml`](https://github.com/CodeEditorLand/Land/tree/Current/pnpm-workspace.yaml)      | The pnpm workspace that unifies every TypeScript Element                  |
+
+### Where to Go Next&#x2001;📍
+
+| If you want to                 | Read                                                                                                                              |
+| :----------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| See the whole component map    | The **Core Architecture** table further down this page                                                                            |
+| Follow a request end to end    | [`Documentation/GitHub/Workflow.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow.md)         |
+| Understand the layering        | [`Documentation/GitHub/Architecture.md`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Architecture.md) |
+| Build it locally               | The **Getting Started** section further down this page                                                                            |
+| Read one Element in depth      | That Element's own repository, linked from the Element table                                                                      |
+
+---
+
+## Overview&#x2001;📖
+
 Welcome to **Land**! We are building a high-performance, resource-efficient, and
 cross-platform code editor inspired by the architecture of VS Code, but
 re-imagined with a modern, declarative, and type-safe stack. **Land** is
@@ -775,6 +816,46 @@ testable, and composable way.
   the `Cocoon` extension host is handled via **gRPC**, ensuring a robust,
   performant, and strongly-typed API contract defined in a `.proto` file.
 
+### The Effect System in One Type&#x2001;⚙️
+
+Every privileged operation in the Rust half of the editor is expressed as an
+`ActionEffect`: a closure plus the capability it needs, held as a value until a
+runtime chooses to run it.
+
+**[`Element/Common/Source/Effect/ActionEffect.rs`](https://github.com/CodeEditorLand/Common/tree/Current/Source/Effect/ActionEffect.rs)**
+
+```rs
+pub struct ActionEffect<TCapability, TError, TOutput> {
+	pub Function:
+		Arc<dyn Fn(TCapability) -> Pin<Box<dyn Future<Output = Result<TOutput, TError>> + Send>> + Send + Sync>,
+}
+```
+
+> [!NOTE]
+>
+> The capability parameter is what makes an effect testable - swap the
+> capability and the same effect runs against a fake filesystem.
+
+### The gRPC Contract&#x2001;🔌
+
+`Vine` owns the wire format between `Mountain` and `Cocoon`. The service
+definition is the single source of truth; both the Rust server and the
+TypeScript client are generated from it.
+
+**[`Element/Vine/Proto/Vine.proto`](https://github.com/CodeEditorLand/Vine/tree/Current/Proto/Vine.proto)**
+
+```proto
+service MountainService {
+  rpc ProcessCocoonRequest(GenericRequest) returns (GenericResponse);
+  rpc OpenChannelFromCocoon(stream Envelope) returns (stream Envelope);
+}
+```
+
+> [!NOTE]
+>
+> The unary call remains for single round-trips; the bidirectional stream
+> multiplexes concurrent traffic and routes frames by `correlation_id`.
+
 ---
 
 ## Core Architecture&#x2001;🏗️
@@ -788,6 +869,44 @@ concert to deliver a modern editing experience.
 | **`Mountain` (Rust)**           | **The Native Backend.** A Tauri application that **implements** the traits from `Common`. It manages native OS operations, hosts the gRPC server, manages the `Cocoon` process, and communicates with the `Wind` UI via Tauri events. | Rust, Tauri, Tokio, `tonic` (gRPC)   |
 | **`Cocoon` (TypeScript)**       | **The Extension Host.** A Node.js process that provides a high-fidelity `vscode` API to extensions. It's built entirely with Effect-TS and communicates with `Mountain` via gRPC for all privileged operations.                       | TypeScript, Node.js, Effect-TS, gRPC |
 | **`Wind` & `Sky` (TypeScript)** | **The UI Layer.** `Wind` is the Effect-TS native re-implementation of the VS Code workbench services. `Sky` is the UI component layer that renders the state managed by `Wind`. `Wind` communicates with `Mountain` via Tauri events. | TypeScript, Effect-TS                |
+
+### The Request Dispatcher&#x2001;🚦
+
+Requests arriving from either direction land in `Mountain`'s `Track` module,
+which turns a method name into a typed effect and hands it to the runtime.
+
+**[`Element/Mountain/Source/Track/mod.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Track/mod.rs)**
+
+```rs
+//! Central request dispatcher that routes commands from the Sky frontend and
+//! Cocoon sidecar into strongly-typed ActionEffects executed by the runtime.
+pub mod FrontendCommand;
+pub mod SideCarRequest;
+```
+
+> [!NOTE]
+>
+> One dispatcher serves both callers, which is why a command behaves
+> identically whether the UI or an extension issued it.
+
+### The UI Bridge&#x2001;🌉
+
+On the webview side, `Wind` substitutes its own transport for the Electron IPC
+service VS Code expects, so unmodified workbench code reaches `Mountain`.
+
+**[`Element/Wind/Source/Service/TauriMainProcessService.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Service/TauriMainProcessService.ts)**
+
+```ts
+/**
+ * Drop-in replacement for VS Code's ElectronIPCMainProcessService.
+ * Routes channel.call() through Tauri invoke to Mountain's WindServiceHandlers.
+ */
+```
+
+> [!NOTE]
+>
+> Because the seam is the channel interface, the workbench above it needs no
+> Tauri-specific changes.
 
 ---
 
@@ -871,6 +990,23 @@ aims to provide a highly optimized, secure, and performant environment for
 extensions written in Rust or compiled to WASM, drastically reducing the
 overhead of a Node.js runtime and enabling deeper integration with `Mountain`.
 
+Work has started: the repository already carries a host, a WASM runtime layer,
+a transport layer and its own protocol definition.
+
+**[`Element/Grove/Source/Library.rs`](https://github.com/CodeEditorLand/Grove/tree/Current/Source/Library.rs)**
+
+```rs
+//! Grove provides a secure, sandboxed environment for running VS Code
+//! extensions compiled to WebAssembly or native Rust. It complements the
+//! Node.js-based extension host (Cocoon) by offering a native extension
+//! host with full WASM support via WASMtime.
+```
+
+> [!NOTE]
+>
+> `Grove` complements `Cocoon` rather than replacing it - the Node.js host
+> stays for extensions that need the npm ecosystem.
+
 ---
 
 ## Project Structure Overview (`Land/Element/*`)&#x2001;🗺️
@@ -897,17 +1033,62 @@ development and versioning.
 | <h3>💪🏻</h3> | [`Land/Element/Maintain`][Maintain]                             | **Project Maintenance & CI/CD.** Contains development utilities, `GritQL` queries for automated refactoring, CI/CD pipeline configurations, and other maintenance scripts.                                                                                                           |
 | <h3>🌳</h3> | [`Land/Element/Grove`][Grove]                                   | **(Future Vision) The Native Rust Extension Host.** A planned project to build a high-performance, secure extension host in Rust, capable of running extensions compiled to WASM or statically linked as a Rust library.                                                             |
 
+### Elements Not Yet in the Table Above&#x2001;➕
+
+Three further Elements are checked out as submodules and compiled into the
+application. They are recorded here so the list matches the tree.
+
+| Element                        | Purpose                                                                                                                     |
+| :----------------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
+| [`Land/Element/Air`][Air]&#x2001;🪁     | **The Background Daemon (Rust).** Handles updates, downloads, crypto signing and file indexing off the editor's critical path. |
+| [`Land/Element/Cache`][Cache]&#x2001;📦 | **Process-Wide Caching Primitives (Rust).** An mmap cache for bundled static assets and a canonical-path cache for security gates. |
+| [`Land/Element/SideCar`][SideCar]&#x2001;🚃 | **The Prebuilt Node.js Sidecar (Rust).** Ships the exact `Node.js` binary per target triple so `Cocoon` never depends on a system install. |
+
+**[`Element/Cache/Source/Library.rs`](https://github.com/CodeEditorLand/Cache/tree/Current/Source/Library.rs)**
+
+```rs
+//! - [`AssetMemoryMap`] - file-backed mmap cache for bundled static assets.
+//! - [`PathCanon`] - process-wide canonical-path cache. Collapses repeated
+//!   `dunce::canonicalize` calls used by fs-scope security gates.
+```
+
+> [!NOTE]
+>
+> Both caches are optional; disabling them costs speed, not correctness.
+
+### A Correction to the `Mist` Row&#x2001;📝
+
+The table above describes `Mist` as WebSocket communication logic. That is only
+half of it. `Mist` also serves a private DNS catalog so Land's components can
+find each other on `*.editor.land` without touching the public internet.
+
+**[`Element/Mist/Source/Server.rs`](https://github.com/CodeEditorLand/Mist/tree/Current/Source/Server.rs)**
+
+```rs
+//! Builds and serves the private DNS catalog for CodeEditorLand.
+//! Binds exclusively to loopback (`127.0.0.1`) to prevent LAN exposure.
+```
+
+> [!NOTE]
+>
+> Loopback-only binding is deliberate: the catalog is never reachable from
+> the local network.
+
+[Air]: https://github.com/CodeEditorLand/Air
+[Cache]: https://github.com/CodeEditorLand/Cache
 [Cocoon]: https://github.com/CodeEditorLand/Cocoon
 [Common]: https://github.com/CodeEditorLand/Common
 [Echo]: https://github.com/CodeEditorLand/Echo
 [Editor]: https://github.com/CodeEditorLand/Editor
 [Grove]: https://github.com/CodeEditorLand/Grove
+[Land]: https://github.com/CodeEditorLand/Land
 [Maintain]: https://github.com/CodeEditorLand/Maintain
 [Mist]: https://github.com/CodeEditorLand/Mist
 [Mountain]: https://github.com/CodeEditorLand/Mountain
 [Output]: https://github.com/CodeEditorLand/Output
 [Rest]: https://github.com/CodeEditorLand/Rest
 [Sky]: https://github.com/CodeEditorLand/Sky
+[SideCar]: https://github.com/CodeEditorLand/SideCar
 [Track]: https://github.com/CodeEditorLand/Track
 [Vine]: https://github.com/CodeEditorLand/Vine
 [Wind]: https://github.com/CodeEditorLand/Wind
@@ -915,7 +1096,7 @@ development and versioning.
 
 ---
 
-## System Architecture Diagram
+## System Architecture Diagram&#x2001;📐
 
 This diagram illustrates the build-time and runtime interactions between the
 primary components of the Land application.
@@ -1038,6 +1219,24 @@ graph LR
 Clone each submodule individually on its target branch. Do NOT use
 `git clone --recurse-submodules`.
 
+#### Two Corrections to the Table Above&#x2001;🔍
+
+The submodule wiring on disk differs from the table in two places, both
+recorded here rather than silently rewritten.
+
+| Claim in the table                     | What the tree records                                                                                              |
+| :------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
+| `Rest` points at `CodeEditorLand/Rest` | `Element/.gitmodules` sets its URL to `github.com/BinaryRest/Rest`; the `[Rest]` reference link is unchanged        |
+| Elements are direct submodules of Land | `Land/.gitmodules` registers only `Dependency`, `Element` and `Documentation/Rust`; the Elements nest inside `Element` |
+
+> [!IMPORTANT]
+>
+> `Element` is itself a repository. The remaining Elements - `Air`, `Cache`,
+> `Echo`, `Grove`, `Maintain`, `Mist`, `SideCar`, `Vine` and `Worker` - are
+> registered in
+> [`Element/.gitmodules`](https://github.com/CodeEditorLand/Element/tree/Current/.gitmodules),
+> not in the root manifest.
+
 ### Build Profiles
 
 | Profile                    | Use Case                          |
@@ -1046,6 +1245,23 @@ Clone each submodule individually on its target branch. Do NOT use
 | `debug-electron-unbundled` | Electron debug without bundling   |
 
 Run the build from the Land repository root after completing Step 1.
+
+> [!WARNING]
+>
+> [`Maintain/Debug/Build.sh`](https://github.com/CodeEditorLand/Land/tree/Current/Maintain/Debug/Build.sh)
+> accepts fifteen profile names and `debug-electron-unbundled` is not among
+> them. The unbundled Electron build is spelled `debug-electron`.
+
+**`Terminal`**
+
+```sh
+sh Maintain/Debug/Build.sh --help
+```
+
+> [!NOTE]
+>
+> The script prints the full profile list, from `debug` through
+> `debug-bundled-all`, so the accepted names never have to be guessed.
 
 ---
 

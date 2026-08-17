@@ -4,11 +4,39 @@ All notable changes to Land (Monorepo) are documented here in our voice - what
 we built, why we built it, what shipped. Format adapted from
 [Keep a Changelog](https://keepachangelog.com/).
 
-Land is our top-level monorepo. Under `Element/` we keep every component we ship
-(Mountain, Cocoon, Wind, Sky, Air, Echo, Rest, Output, Worker, Grove, Common,
-Vine, Mist, Maintain, SideCar) as a git submodule. `Dependency/` holds our
-vendored Tauri ecosystem fork plus the VS Code source we lift from. Each Element
-keeps its own CHANGELOG; this file weaves them together.
+## How to read this changelog
+
+Land is our top-level monorepo. Under
+[`Element/`](https://github.com/CodeEditorLand/Land/tree/Current/Element) we
+keep every component we ship (Mountain, Cocoon, Wind, Sky, Air, Echo, Rest,
+Output, Worker, Grove, Common, Vine, Mist, Maintain, SideCar) as a git
+submodule.
+
+[`Dependency/`](https://github.com/CodeEditorLand/Land/tree/Current/Dependency)
+holds our vendored Tauri ecosystem fork plus the VS Code source we lift from.
+Each Element keeps its own CHANGELOG; this file weaves them together.
+
+Releases are listed newest first. Each entry is headed by its version and a
+one-line theme, so scanning the h2 level alone tells you the arc of the
+project.
+
+| Release | Theme                                                       |
+| ------- | ----------------------------------------------------------- |
+| v2.2    | Bundled-Electron Profile: Correctness Pass                   |
+| v2.1    | Workbench Lift, Search End-to-End, SCM/Debug/Custom-Editor   |
+| v2.0    | Editor Launch                                                |
+| v1.3    | Dependency Maintenance                                       |
+| v1.2    | Full-Stack Integration                                       |
+| v1.1    | Architecture Buildout                                        |
+| v1.0    | Integration Phase                                            |
+| v0.2    | Architecture Solidification                                  |
+| v0.1    | Rapid Development                                            |
+| v0.0    | Project Inception                                            |
+
+> [!NOTE]
+>
+> Where an entry names a source file, the link resolves to that Element's own
+> repository on the `Current` branch, not to a path inside this one.
 
 ## [v2.2] - Bundled-Electron Profile: Correctness Pass
 
@@ -48,6 +76,20 @@ inside 600 ms. We worked through them all.
   `@@asyncIterator`) in our channel proxy so each workbench wake stops invoking
   `<channel>:then` and logging `Unknown IPC command`.
 
+The classifier itself lives in
+[`Source/Vine/Server/MountainVinegRPCService.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Vine/Server/MountainVinegRPCService.rs),
+and the allow-list check it guards lives in
+[`Source/Environment/Utility/PathSecurity.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/Utility/PathSecurity.rs).
+
+```rs
+let ErrorCode = if LooksLike404 { -32004 } else { -32000 };
+```
+
+> [!NOTE]
+>
+> That single line is the whole contract - a benign miss is coded `-32004` so
+> Cocoon can classify on the code before it ever reaches the regex.
+
 ### File-watching, file-reading, search
 
 - We taught `FileWatcherProvider` to treat watch-on-absent-path as a deferred
@@ -68,6 +110,21 @@ inside 600 ms. We worked through them all.
   emitted the older `{preview: {text, matches}, ranges}` shape, so the result
   accumulator dropped every match.
 
+The watcher backing implementation is
+[`Source/Environment/FileWatcherProvider.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Environment/FileWatcherProvider.rs);
+the document shim it feeds is in Cocoon's Workspace namespace.
+
+```rs
+//! Native filesystem notifications are delegated to the `notify` crate, which
+//! picks up inotify on Linux, FSEvents on macOS, and ReadDirectoryChangesW
+//! on Windows.
+```
+
+> [!NOTE]
+>
+> The provider's own header comment states the platform backends, which is why
+> an absent path has to be deferred rather than raised.
+
 ### Workbench accessor and sidebar contributions
 
 - We fixed our `ExposeWorkbenchAccessor` Output transform on two axes. Its
@@ -86,6 +143,18 @@ inside 600 ms. We worked through them all.
   extensions on the first call (Mountain's scan hadn't finished yet) and the
   workbench cached that.
 
+The transform is
+[`Source/Plugin/Transform/Expose/Workbench/Accessor.ts`](https://github.com/CodeEditorLand/Output/tree/Current/Source/Plugin/Transform/Expose/Workbench/Accessor.ts).
+
+```ts
+const DesktopMainImportMarker = "import { localize } from '../../nls.js';";
+```
+
+> [!NOTE]
+>
+> This is the marker whose quote style drifted under esbuild, which is what
+> made the whole accessor patch silently no-op.
+
 ### Mountain → Sky event race
 
 - We added a replay handler that drains tree-view registrations, SCM providers,
@@ -96,6 +165,19 @@ inside 600 ms. We worked through them all.
   `Identifier` field to `SourceControlManagementProviderDTO` so SCM replay
   re-emits with the original provider id (`git`, `github`, `hg`, …) instead of a
   hardcoded fallback.
+
+The DTO carrying that field is
+[`Source/SourceControlManagement/DTO/SourceControlManagementProviderDTO.rs`](https://github.com/CodeEditorLand/Common/tree/Current/Source/SourceControlManagement/DTO/SourceControlManagementProviderDTO.rs).
+
+```rs
+#[serde(default)]
+pub Identifier:String,
+```
+
+> [!NOTE]
+>
+> `serde(default)` is what lets the new field land without breaking replay of
+> DTOs serialised before it existed.
 
 ### Terminal - channel-listen bridge
 
@@ -114,6 +196,19 @@ inside 600 ms. We worked through them all.
   `process.kill(ppid, 0)` every 2 s and self-exits with code 130 on `ESRCH`, so
   a force-quit on Mountain doesn't orphan Cocoon and require the next boot's
   port sweep.
+
+The event names the bridge targets are declared in
+[`Source/IPC/SkyEvent.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/IPC/SkyEvent.ts).
+
+```ts
+TerminalData: "sky://terminal/data",
+TerminalExit: "sky://terminal/exit",
+```
+
+> [!NOTE]
+>
+> These are the concrete Tauri event topics the PTY reader publishes to and
+> xterm subscribes from.
 
 ## [v2.1] - Workbench Lift, Search End-to-End, SCM/Debug/Custom-Editor
 
@@ -143,6 +238,22 @@ gaps until search, SCM, debug, and custom editors all worked.
 - **Common.** We grew the `ProviderType` enum to 33 variants covering every
   contribution point we forward, and finished the PascalCase rename so every
   Rust identifier in the workspace matches our project convention.
+
+Those handler trees are
+[`Source/IPC/WindServiceHandlers`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/WindServiceHandlers)
+and
+[`Source/RPC/CocoonService`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/RPC/CocoonService).
+
+```rs
+pub enum ProviderType {
+	Completion = 0,
+	Hover = 1,
+```
+
+> [!NOTE]
+>
+> Each variant is a contribution point Cocoon can forward, which is why the
+> enum grows every time a language feature lands.
 
 ### Search, SCM, debug, custom editor
 
@@ -178,6 +289,20 @@ We took these from "renders empty" to "fully working" inside this sprint window:
   returns a noop disposable, `register…` returns a disposable,
   `is…`/`has…`/`should…` returns `false`, `create…`/`get…`/`make…` returns
   `undefined`.
+
+The deferral logic now lives in
+[`Source/Services/Dual/Track.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Dual/Track.ts),
+and the heuristic Proxy in
+[`Source/Services/Handler/VscodeAPI/Wrap/Namespace/With/Heuristics.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Handler/VscodeAPI/Wrap/Namespace/With/Heuristics.ts).
+
+```ts
+export const IsRustDeferralEnabled = (Method: string): boolean => {
+```
+
+> [!NOTE]
+>
+> Every cross-process shim call passes through this predicate, which is what
+> makes the Rust and Node paths switchable without a rebuild.
 
 ### Reliability fixes we landed in the same window
 
@@ -226,6 +351,18 @@ We took these from "renders empty" to "fully working" inside this sprint window:
   session-id hash, and added `vscode-file://vscode-app` to the CSP `img-src`
   list so VS Code's internal file protocol resolves images.
 
+The channel name for the VSIX reader is registered in
+[`Source/IPC/Channel.rs`](https://github.com/CodeEditorLand/Common/tree/Current/Source/IPC/Channel.rs).
+
+```rs
+ExtensionsGetManifest                         => "extensions:getManifest",
+```
+
+> [!NOTE]
+>
+> That mapping is what lets the preview dialog read a manifest without ever
+> extracting the archive to disk.
+
 ---
 
 ## [v2.0] - Editor Launch
@@ -267,6 +404,19 @@ extension host.
   the inline build-script glue with Rhai-driven configuration so build profiles
   can be tuned without rebuilding the build tool itself.
 
+The service that replaced Electron's IPC is
+[`Source/Service/TauriMainProcessService.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Service/TauriMainProcessService.ts).
+
+```ts
+ * Drop-in replacement for VS Code's ElectronIPCMainProcessService.
+ * Routes channel.call() through Tauri invoke to Mountain's WindServiceHandlers.
+```
+
+> [!NOTE]
+>
+> The module header states the swap exactly: same channel API, Tauri transport
+> underneath.
+
 ## [v1.3] - Dependency Maintenance
 
 We held the platform steady while we planned the next push. We rolled Effect-TS
@@ -278,24 +428,27 @@ stabilisation mode across every component.
 
 We shipped the heaviest single quarter of the project so far. Mountain gained
 556 commits (464 in a single month) and put every core module in place - gRPC
-handlers, WebSocket, terminal, storage, diagnostics, configuration. Cocoon
-landed 647 commits and roughly 229K lines on top of Effect-TS 3.17.x. Wind
-landed 537 commits and ~226K lines wiring its Effect-TS services to Mountain.
-Common added 7,418 lines of Rust DTOs and trait surfaces. Echo's work-stealing
-scheduler reached the API refinement we'd been targeting, with priority lanes
-still on the roadmap for a later cycle.
+handlers, WebSocket, terminal, storage, diagnostics, configuration.
+
+Cocoon landed 647 commits and roughly 229K lines on top of Effect-TS 3.17.x.
+Wind landed 537 commits and ~226K lines wiring its Effect-TS services to
+Mountain. Common added 7,418 lines of Rust DTOs and trait surfaces. Echo's
+work-stealing scheduler reached the API refinement we'd been targeting, with
+priority lanes still on the roadmap for a later cycle.
 
 ## [v1.1] - Architecture Buildout
 
 We brought the extension-host into existence. Cocoon was created from scratch
 (291 commits, ~32,982 lines) as the Effect-TS-driven sidecar that replaces
 Electron's utility-process model. Wind pivoted to Effect-TS at the end of May;
-we ended the quarter with 370 TypeScript files. Sky stood up the Tauri-hosted
-workbench bootstrap and shipped keyboard layouts for 37 locales. The Worker
-element gained service- worker caching plus on-the-fly CSS transpilation. Grove
-and Mist moved from concept into architecture planning, ready to be implemented
-the moment the rest of the stack stabilised. We also publicly announced our
-funding from the NLnet NGI0 Commons Fund this quarter.
+we ended the quarter with 370 TypeScript files.
+
+Sky stood up the Tauri-hosted workbench bootstrap and shipped keyboard layouts
+for 37 locales. The Worker element gained service- worker caching plus
+on-the-fly CSS transpilation. Grove and Mist moved from concept into
+architecture planning, ready to be implemented the moment the rest of the stack
+stabilised. We also publicly announced our funding
+from the NLnet NGI0 Commons Fund this quarter.
 
 ## [v1.0] - Integration Phase
 
@@ -330,13 +483,15 @@ in the same window: 8,467 → ~1,000 lines (a 78 % cut).
 We set up the monorepo. `Element/` and `Dependency/` as git submodules with
 `.gitmodules: ignore = all` so a stray `git add .` doesn't convert submodule
 gitlinks to trees. The `Cargo.toml` workspace covered Common, Echo, Maintain,
-Mountain, Air, Grove, Mist, Rest, SideCar, plus `tauri-plugin-localhost`. The
-`pnpm-workspace.yaml` covered
+Mountain, Air, Grove, Mist, Rest, SideCar, plus `tauri-plugin-localhost`.
+
+The `pnpm-workspace.yaml` covered
 `Dependency/{Biome,Microsoft,OXC, Rolldown,SWC,Tauri,Vercel}/NPM/**`,
 `Element/**`, and `!**/Target/**`. We adopted the `turbo.json` task definitions
 with global env passthrough (`ANDROID_HOME`, `JAEGER_VERSION`, our shared API
 keys, Apple signing identifiers, …), wired GitHub Actions and Dependabot, and
-adopted PascalCase as the project-wide naming convention. We chose Biome as our
-TypeScript formatter and rustfmt-nightly as our Rust formatter. Mountain's Tauri
-scaffold landed in June, Sky's Astro 4 baseline in April, and Common's first
-Workers library shape went up in April too.
+adopted PascalCase as the project-wide naming convention.
+
+We chose Biome as our TypeScript formatter and rustfmt-nightly as our Rust
+formatter. Mountain's Tauri scaffold landed in June, Sky's Astro 4 baseline in
+April, and Common's first Workers library shape went up in April too.

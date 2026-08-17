@@ -5,6 +5,10 @@ process model, inter-component communication patterns, component
 responsibilities, and the layered design that enables multi-process operation on
 `macOS`, `Windows`, and `Linux`.
 
+Each section states its own context and can be read on its own. Mappings are
+given as tables, flows as diagrams, and every subsystem carries a short snippet
+drawn from the real source tree.
+
 ---
 
 ## Table of Contents
@@ -15,7 +19,8 @@ responsibilities, and the layered design that enables multi-process operation on
 4. [Service Layer Design](#service-layer-design)
 5. [Tier-Gated Implementation](#tier-gated-implementation)
 6. [Data Flow Patterns](#data-flow-patterns)
-7. [Related Documentation](#related-documentation)
+7. [Shim Interception Layer](#shim-interception-layer)
+8. [Related Documentation](#related-documentation)
 
 ---
 
@@ -33,12 +38,28 @@ processes:
 A fourth optional process, the background daemon (`Air`), runs as a persistent
 sidecar for updates and indexing.
 
-> **TierIPC note:** The `TierIPC` environment variable controls whether
-> `Wind`/`Output` route IPC through `Mountain` (default), fall back to `Cocoon`
-> on miss (`NodeDeferred`), or bypass `Mountain` entirely (`Node`).
-> Per-subsystem overrides (`TierTerminal`, `TierSCM`, `TierAuth`, etc.) allow
-> independent routing per channel. See
-> [EnvironmentVariables.md](EnvironmentVariables.md).
+### Routing Between Processes
+
+The `TierIPC` environment variable controls whether `Wind`/`Output` route IPC
+through `Mountain` (default), fall back to `Cocoon` on miss (`NodeDeferred`), or
+bypass `Mountain` entirely (`Node`).
+
+Per-subsystem overrides (`TierTerminal`, `TierSCM`, `TierAuth`, etc.) allow
+independent routing per channel. See
+[EnvironmentVariables.md](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/EnvironmentVariables.md).
+
+**`.env.Land`**
+
+```sh
+TierIPC=Mountain
+```
+
+> [!NOTE]
+>
+> **TierIPC note:** The `TierIPC` environment variable is read at runtime, so
+> this default can be changed without a rebuild.
+
+### Process Topology
 
 ```mermaid
 graph TB
@@ -75,6 +96,11 @@ graph TB
 
 ## Component Map&#x2001;🗺️
 
+Every Element is its own repository under the `CodeEditorLand` organisation and
+is vendored into
+[Element/](https://github.com/CodeEditorLand/Land/tree/Current/Element) as a
+submodule.
+
 ### Rust Components (Native)
 
 | Component    | Crate Type       | Role                                                                                                                                                                                                                                                                                                 |
@@ -89,6 +115,55 @@ graph TB
 | **SideCar**  | Library          | Vendored runtime binary management. Packages exact `Node.js` binaries per target triple (`aarch64`/`x86_64` for `macOS`/`Linux`/`Windows`). Provides download, caching, version resolution, and `Git LFS` management. Consumed at `Mountain` build time.                                             |
 | **Vine**     | Protocol Library | gRPC protocol definitions for all inter-process communication. Defines `Vine.proto` - the service contracts used between `Mountain` (port 50051) and `Cocoon` (port 50052), and between `Mountain` and `Air` (port 50053). Generated stubs are consumed by every element that speaks gRPC.           |
 
+#### Common: the trait foundation
+
+**`Common/Source/FileSystem/FileSystemReader.rs`**
+
+```rs
+#[async_trait]
+pub trait FileSystemReader: Environment + Send + Sync {
+	async fn ReadFile(&self, Path:&PathBuf) -> Result<Vec<u8>, CommonError>;
+}
+```
+
+> [!NOTE]
+>
+> `Common` declares the contract only; `Mountain` supplies the `tokio`-backed
+> implementation.
+
+#### Echo: priority scheduling
+
+**`Echo/Source/Task/Priority.rs`**
+
+```rs
+pub enum Priority {
+	High,
+	Normal,
+	Low,
+}
+```
+
+> [!NOTE]
+>
+> Scheduler order follows this enum, so `High` work never queues behind
+> indexing.
+
+#### Vine: the wire contract
+
+**`Vine/Proto/Vine.proto`**
+
+```proto
+service MountainService {
+  rpc ProcessCocoonRequest(GenericRequest) returns (GenericResponse);
+  rpc OpenChannelFromCocoon(stream Envelope) returns (stream Envelope);
+}
+```
+
+> [!NOTE]
+>
+> Both a unary call and a bidirectional stream are declared, which is why the
+> same port carries requests and pushed events.
+
 ### TypeScript Components (Web / Node.js)
 
 | Component  | Framework             | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -98,6 +173,21 @@ graph TB
 | **Sky**    | `Astro` + `Vite`      | UI component layer. Renders the editor interface (editor, sidebar, activity bar, status bar, panels) using `Astro` pages. Loads the VS Code workbench from `@codeeditorland/output` and bridges `Tauri` events through `SkyBridge` (~2900 lines).                                                                                                                                                                                                                                                                                                         |
 | **Output** | `ESBuild`             | Build artifact management. Handles compilation of VS Code platform source via dual-compiler support (`esbuild` primary, `Rest` `OXC` optional). Produces the `@codeeditorland/output` npm package consumed by `Cocoon`, `Sky`, and `Wind`.                                                                                                                                                                                                                                                                                                                |
 | **Worker** | `ESBuild`             | Service worker implementation. Provides asset caching (network-first for navigation, cache-first for static assets), offline support, and dynamic CSS loading. Intercepts JS imports of CSS files and responds with JS modules that trigger `<link>` tag injection.                                                                                                                                                                                                                                                                                       |
+
+#### Sky: the bridge surface
+
+**`Sky/Source/Function/Sky/Bridge.ts`**
+
+```ts
+// Sky/Source/Function/Sky/Bridge.ts        1024 lines
+// Sky/Source/Function/Sky/Bridge/*.ts        27 modules
+```
+
+> [!NOTE]
+>
+> The bridge entry point delegates to per-domain installers such as
+> `InstallScm.ts` and `InstallWebview.ts` rather than holding all wiring in one
+> file.
 
 ---
 
@@ -113,6 +203,18 @@ graph TB
 | `Wind`/`Sky`        | `Mountain`   | `Tauri` Commands      | IPC (in-process) | N/A     |
 | `Mountain`          | `Wind`/`Sky` | `Tauri` Events        | IPC (in-process) | N/A     |
 | `Cocoon` extensions | `Mountain`   | `gRPC` (via `Cocoon`) | TCP (localhost)  | `50051` |
+
+**`.env.Land`**
+
+```sh
+NetworkMountainPort=50051
+NetworkCocoonPort=50052
+```
+
+> [!NOTE]
+>
+> Both ports are overridable, which is how parallel development sessions avoid
+> colliding.
 
 ### Request Flow for UI Operations
 
@@ -164,6 +266,18 @@ sequenceDiagram
       feature requests (hover, completion, definition), webview panel
       communication
 
+**`Wind/Source/IPC/Channel.ts`**
+
+```ts
+const { default: Channels } = await import("./Channel.js");
+IPCService.invoke(Channels.ExtensionsInstall)([VsixPath]);
+```
+
+> [!NOTE]
+>
+> Wire strings live in one registry that mirrors the `Channel` enum in
+> [Common](https://github.com/CodeEditorLand/Common/tree/Current/Source/IPC).
+
 ### TierIPC Routing
 
 `Wind` and `Output` both support three routing modes, selected by the `TierIPC`
@@ -177,12 +291,27 @@ environment variable:
 
 Per-subsystem tier variables (`TierTerminal`, `TierSCM`, `TierDebug`,
 `TierLanguageFeatures`, `TierAuth`, `TierTasks`, etc.) override `TierIPC` for
-individual channel prefixes. For example, `TierTasks=Node` and `TierAuth=Node`
-are the defaults even when the global `TierIPC=Mountain`, because those handlers
-live in Cocoon's extension host.
+individual channel prefixes.
+
+For example, `TierTasks=Node` and `TierAuth=Node` are the defaults even when the
+global `TierIPC=Mountain`, because those handlers live in Cocoon's extension
+host.
 
 This is a runtime switch - no rebuild required. Set in `.env.Land` as
 `TierIPC=NodeDeferred` to enable gradual migration of handlers to `Cocoon`.
+
+**`.env.Land`**
+
+```sh
+TierTerminal=Mountain
+TierTasks=Node
+TierAuth=Node
+```
+
+> [!NOTE]
+>
+> Two subsystems already opt out of the `Mountain` default in the shipped
+> configuration.
 
 ---
 
@@ -206,7 +335,7 @@ Common::Interface
 ```
 
 `Mountain` implements every trait with concrete `Rust` implementations. `Cocoon`
-and `Wind` never implement these traits directly -- they call `Mountain`'s
+and `Wind` never implement these traits directly - they call `Mountain`'s
 implementations through IPC.
 
 ### Wind Effect-TS Service Architecture (UI side)
@@ -276,8 +405,22 @@ Services compose into Layer stacks:
 Extension dependencies are activated in topological order with an `InProgress`
 Set cycle guard to prevent circular-dependency deadlocks.
 
-The `vscode` API shim in `Cocoon/Source/Services/Handler/VscodeAPI/` uses a
-two-track dispatch model:
+**`Cocoon/Source/Bootstrap/Implementation/Cocoon/Main.ts`**
+
+```ts
+"[CocoonMain] Stage failed: " + stage.stageName + "\n",
+```
+
+> [!NOTE]
+>
+> Each stage reports by name, so a startup failure log points at the exact stage
+> that aborted.
+
+### The vscode API Shim: Two-Track Dispatch
+
+The `vscode` API shim in
+[Cocoon/Source/Services/Handler/VscodeAPI/](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Handler/VscodeAPI)
+uses a two-track dispatch model:
 
 - **Track A - Stock Node:** Loads unmodified VS Code `extHost*.ts` sources. The
   `ExtHostContext`/`MainContext` RPC glue is provided by `Cocoon`'s shim
@@ -287,8 +430,20 @@ two-track dispatch model:
   (filesystem, process, terminal, search, git). Faster than bouncing through
   `Node.js`.
 
-The per-call tier router in `Cocoon/Source/Services/Handler/VscodeAPI/` selects
-the track at runtime.
+The per-call tier router in the same `VscodeAPI/` directory selects the track at
+runtime.
+
+**`Vine/Proto/Vine.proto`**
+
+```proto
+rpc RegisterHoverProvider(RegisterProviderRequest) returns (Empty);
+rpc ProvideHover(ProvideHoverRequest) returns (ProvideHoverResponse);
+```
+
+> [!NOTE]
+>
+> Track B language features register once, then serve each request over the same
+> contract.
 
 ---
 
@@ -309,8 +464,21 @@ value in `.env.Land`:
 
 The tier selection propagates through every Element's build system
 simultaneously. See
-[Tier-Gated Implementation Selection](Workflow/TierGatedImplementationSelection.md)
+[Tier-Gated Implementation Selection](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/TierGatedImplementationSelection.md)
 for the full propagation workflow.
+
+**`.env.Land`**
+
+```sh
+TierFileSystem=Layer2
+TierGlob=JavaScript
+TierFileWatcher=Layer4
+```
+
+> [!NOTE]
+>
+> These are the values the repository ships with; each one selects a different
+> concrete implementation at build time.
 
 ---
 
@@ -383,7 +551,7 @@ sequenceDiagram
 
 ---
 
-## Shim Interception Layer
+## Shim Interception Layer&#x2001;🔵
 
 Land includes a two-tier VS Code engine interception system for deep event
 routing and performance tracing.
@@ -398,47 +566,118 @@ routing and performance tracing.
 | `TierShim=Own`     | 🟠    | Engine-level prototype hooks active         |
 | `TierShim=Preempt` | 🟠    | Full container ownership                    |
 
+**`.env.Land`**
+
+```sh
+TierShim=None
+```
+
+> [!NOTE]
+>
+> At the default tier the shim code is compiled out entirely, so it costs
+> nothing at runtime.
+
 ### Architecture
 
-| Layer              | Tier | Scope                     | Location                                   |
-| ------------------ | ---- | ------------------------- | ------------------------------------------ |
-| L1 Error Handler   | 🟠   | All errors                | Output/Shim/Intercept/ErrorHandlerProxy.ts |
-| L2 Event Emitter   | 🟠   | All events (474 services) | Output/Shim/Intercept/EmitterFireProxy.ts  |
-| L3 Cancellation    | 🟠   | All aborts                | Output/Shim/Intercept/CancellationProxy.ts |
-| L4 Disposable      | 🟠   | All resources             | Output/Shim/Intercept/DisposableProxy.ts   |
-| L5 Async Scheduler | 🟠   | All async scheduling      | Wind/Shim/AsyncProxy.ts                    |
-| L8 Timing          | 🟠   | Microsecond tracing       | Output/Shim/Intercept/TimingProxy.ts       |
-| IPC Routing        | 🔵   | 15/22 domains             | Wind/Shim/SwallowMap.ts                    |
-| DI Container       | 🔵   | 35 services               | Output/Shim/Init.ts                        |
-| Node.js Modules    | 🔵   | fs/child_process          | Cocoon/Shim/NodeModuleInterceptor.ts       |
-| Network            | 🔵   | fetch/XHR                 | Wind/Shim/NetworkProxy.ts                  |
-| DOM Events         | 🔵   | EventTarget               | Wind/Shim/EventInterceptor.ts              |
+Each layer names the file that installs it. The paths below are the real
+locations in each Element's repository.
+
+| Layer              | Tier | Scope                     | Location                                                                                                                                                        |
+| ------------------ | ---- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| L1 Error Handler   | 🟠   | All errors                | [Output/Source/Service/CEL/Land/Shim/Intercept/ErrorHandlerProxy.ts](https://github.com/CodeEditorLand/Output/tree/Current/Source/Service/CEL/Land/Shim/Intercept/ErrorHandlerProxy.ts) |
+| L2 Event Emitter   | 🟠   | All events (474 services) | [Output/Source/Service/CEL/Land/Shim/Intercept/EmitterFireProxy.ts](https://github.com/CodeEditorLand/Output/tree/Current/Source/Service/CEL/Land/Shim/Intercept/EmitterFireProxy.ts) |
+| L3 Cancellation    | 🟠   | All aborts                | [Output/Source/Service/CEL/Land/Shim/Intercept/CancellationProxy.ts](https://github.com/CodeEditorLand/Output/tree/Current/Source/Service/CEL/Land/Shim/Intercept/CancellationProxy.ts) |
+| L4 Disposable      | 🟠   | All resources             | [Output/Source/Service/CEL/Land/Shim/Intercept/DisposableProxy.ts](https://github.com/CodeEditorLand/Output/tree/Current/Source/Service/CEL/Land/Shim/Intercept/DisposableProxy.ts) |
+| L5 Async Scheduler | 🟠   | All async scheduling      | [Wind/Source/Shim/AsyncProxy.ts](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Shim/AsyncProxy.ts)                                                  |
+| L8 Timing          | 🟠   | Microsecond tracing       | [Output/Source/Service/CEL/Land/Shim/Intercept/TimingProxy.ts](https://github.com/CodeEditorLand/Output/tree/Current/Source/Service/CEL/Land/Shim/Intercept/TimingProxy.ts) |
+| IPC Routing        | 🔵   | 15/22 domains             | [Wind/Source/Shim/SwallowMap.ts](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Shim/SwallowMap.ts)                                                  |
+| DI Container       | 🔵   | 35 services               | [Output/Source/Service/CEL/Land/Shim/Init.ts](https://github.com/CodeEditorLand/Output/tree/Current/Source/Service/CEL/Land/Shim/Init.ts)                        |
+| Node.js Modules    | 🔵   | fs/child_process          | [Cocoon/Source/Shim/NodeModuleInterceptor.ts](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Shim/NodeModuleInterceptor.ts)                        |
+| Network            | 🔵   | fetch/XHR                 | [Wind/Source/Shim/NetworkProxy.ts](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Shim/NetworkProxy.ts)                                              |
+| DOM Events         | 🔵   | EventTarget               | [Wind/Source/Shim/EventInterceptor.ts](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Shim/EventInterceptor.ts)                                      |
+
+> [!IMPORTANT]
+>
+> Earlier revisions of this document listed these files as `Output/Shim/...`,
+> `Wind/Shim/...` and `Cocoon/Shim/...`; the real trees place them under each
+> Element's `Source/` directory.
 
 ### Rust Side
 
-Mountain's `Source/Shim/SwallowMap.rs` provides IPC-level pattern matching.
-`DispatchMatch.rs` checks the SwallowMap before routing commands.
-`CreateEffectForRequest/Shim.rs` gets first priority in the gRPC domain chain.
+Mountain's
+[Source/Shim/SwallowMap.rs](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Shim/SwallowMap.rs)
+provides IPC-level pattern matching.
+[DispatchMatch.rs](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/WindServiceHandlers/DispatchMatch.rs)
+checks the SwallowMap before routing commands.
+[CreateEffectForRequest/Shim.rs](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Track/Effect/CreateEffectForRequest/Shim.rs)
+gets first priority in the gRPC domain chain.
+
+**`Mountain/Source/Track/Effect/CreateEffectForRequest/Shim.rs`**
+
+```rs
+pub fn Matches(_method:&str) -> bool { Gate::is_enabled() }
+```
+
+> [!NOTE]
+>
+> Returning the gate state unconditionally is what places this module ahead of
+> every other domain in the chain.
+
+**`Mountain/Source/Shim/SwallowMap.rs`**
+
+```rs
+pub enum SwallowAction {
+	Swallow,
+	Passthrough,
+	Mixed,
+	Discard,
+}
+```
+
+> [!NOTE]
+>
+> Rules are checked in insertion order and the first match wins.
 
 ---
 
 ## Related Documentation&#x2001;📋
 
-- [BuildPipeline](BuildPipeline.md) - Full build pipeline from env files to
+- [BuildPipeline](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/BuildPipeline.md) - Full build pipeline from env files to
   binary artifacts
-- [EditorCore](EditorCore.md) - Editor workbench adaptation and `Wind` service
+- [EditorCore](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/EditorCore.md) - Editor workbench adaptation and `Wind` service
   layer
-- [Polyfills](Polyfills.md) - Compatibility shims and initialization layers
-- [RustInfrastructure](RustInfrastructure.md) - `Rust` backend component
+- [Polyfills](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Polyfills.md) - Compatibility shims and initialization layers
+- [RustInfrastructure](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/RustInfrastructure.md) - `Rust` backend component
   internals
-- [InterComponentProtocol](InterComponentProtocol.md) - `gRPC` protocol
+- [InterComponentProtocol](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/InterComponentProtocol.md) - `gRPC` protocol
   specification
-- [Building](Building.md) - Build instructions and prerequisites
-- [BuildMatrix](BuildMatrix.md) - Build variant profile reference
-- [EnvironmentVariables](EnvironmentVariables.md) - Complete env var reference
-- [Workflow/](Workflow/) - Detailed component interaction workflows
-- [VSCode-API-Coverage-Matrix](VSCode-API-Coverage-Matrix.md) - `vscode.*` API
+- [Building](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Building.md) - Build instructions and prerequisites
+- [BuildMatrix](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/BuildMatrix.md) - Build variant profile reference
+- [EnvironmentVariables](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/EnvironmentVariables.md) - Complete env var reference
+- [Workflow/](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow) - Detailed component interaction workflows
+- [VSCode-API-Coverage-Matrix](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/VSCode-API-Coverage-Matrix.md) - `vscode.*` API
   implementation status per namespace
+
+### Sibling Paths Within This Directory
+
+Every document above is linked by its canonical `tree/Current` URL. All of them
+are also siblings of this file inside
+[Documentation/GitHub/](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub),
+so the same targets resolve locally when the repository is checked out:
+
+| Document                   | Local sibling path                                                             |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| BuildPipeline              | [BuildPipeline.md](BuildPipeline.md)                                           |
+| EditorCore                 | [EditorCore.md](EditorCore.md)                                                 |
+| Polyfills                  | [Polyfills.md](Polyfills.md)                                                   |
+| RustInfrastructure         | [RustInfrastructure.md](RustInfrastructure.md)                                 |
+| InterComponentProtocol     | [InterComponentProtocol.md](InterComponentProtocol.md)                         |
+| Building                   | [Building.md](Building.md)                                                     |
+| BuildMatrix                | [BuildMatrix.md](BuildMatrix.md)                                               |
+| EnvironmentVariables       | [EnvironmentVariables.md](EnvironmentVariables.md)                             |
+| Workflow index             | [Workflow/](Workflow/)                                                         |
+| Tier-Gated Selection       | [Workflow/TierGatedImplementationSelection.md](Workflow/TierGatedImplementationSelection.md) |
+| VSCode-API-Coverage-Matrix | [VSCode-API-Coverage-Matrix.md](VSCode-API-Coverage-Matrix.md)                 |
 
 ---
 
@@ -446,3 +685,4 @@ Mountain's `Source/Shim/SwallowMap.rs` provides IPC-level pattern matching.
 ([Source/Open@Editor.Land](mailto:Source/Open@Editor.Land)) |
 [GitHub Repository](https://github.com/CodeEditorLand/Land) |
 [Report an Issue](https://github.com/CodeEditorLand/Land/issues)
+

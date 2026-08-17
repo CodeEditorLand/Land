@@ -1,11 +1,31 @@
-# Code of Conduct
+# Code of Conduct&#x2001;🤝
 
-## Our Pledge
+Welcome to our community! This is the Code of Conduct for the
+[Land](https://github.com/CodeEditorLand/Land/tree/Current) code editor and for
+every Element repository in the Land ecosystem.
 
-Welcome to our community! We are committed to creating a welcoming and inclusive
-environment for all contributors. As members, contributors, and leaders, we
-pledge to make participation in our community a harassment-free experience for
-everyone, regardless of:
+It answers four questions: what we promise one another, what we expect,
+who enforces it, and what follows when someone falls short.
+
+## Contents&#x2001;🧭
+
+1. [Our Pledge](#our-pledge)
+2. [Our Standards](#our-standards)
+3. [Enforcement Responsibilities](#enforcement-responsibilities)
+4. [Scope](#scope)
+5. [Enforcement](#enforcement)
+6. [Enforcement Guidelines](#enforcement-guidelines)
+7. [Related Documents](#related-documents)
+8. [Attribution](#attribution)
+
+---
+
+## Our Pledge&#x2001;🌱
+
+We are committed to creating a welcoming and inclusive environment for all
+contributors. As members, contributors, and leaders, we pledge to make
+participation in our community a harassment-free experience for everyone,
+regardless of:
 
 - Age
 - Body size
@@ -27,7 +47,12 @@ everyone, regardless of:
 We promise to act and interact in ways that contribute to an open, welcoming,
 diverse, inclusive, and healthy community.
 
-## Our Standards
+## Our Standards&#x2001;📐
+
+The Pledge above becomes concrete in the two lists below. The first describes
+the conduct we want; the second describes conduct that has no place here.
+
+### Expected Behavior&#x2001;✅
 
 Examples of behavior that contributes to a positive environment for our
 community include:
@@ -40,6 +65,8 @@ community include:
 - Focusing on what is best not just for us as individuals but for the overall
   community
 
+### Unacceptable Behavior&#x2001;🚫
+
 Examples of unacceptable behavior include:
 
 - The use of sexualized language or imagery, and sexual attention or advances of
@@ -51,38 +78,71 @@ Examples of unacceptable behavior include:
 - Other conduct which could reasonably be considered inappropriate in a
   professional setting
 
-## Enforcement Responsibilities
+## Enforcement Responsibilities&#x2001;🛡️
 
 Community leaders are responsible for clarifying and enforcing our standards of
 acceptable behavior. They will take appropriate and fair corrective action in
 response to any behavior they deem inappropriate, threatening, offensive, or
-harmful. This may include removing, editing, or rejecting comments, commits,
+harmful.
+
+That action may include removing, editing, or rejecting comments, commits,
 code, wiki edits, issues, and other contributions that do not align with this
 Code of Conduct. Community leaders will communicate reasons for moderation
 decisions when appropriate.
 
-## Scope
+## Scope&#x2001;🌐
 
 This Code of Conduct applies within all community spaces, and also applies when
 an individual is officially representing the community in public spaces.
-Examples of representing our community include using an official e-mail address,
-posting via an official social media account, or acting as an appointed
-representative at an online or offline event.
 
-## Enforcement
+Examples of representing our community include:
+
+- Using an official e-mail address
+- Posting via an official social media account
+- Acting as an appointed representative at an online or offline event
+
+## Enforcement&#x2001;📮
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement at
 Community@Editor.Land. All complaints will be reviewed and investigated promptly
-and fairly. All community leaders are obligated to respect the privacy and
-security of the reporter of any incident.
+and fairly.
 
-## Enforcement Guidelines
+All community leaders are obligated to respect the privacy and security of the
+reporter of any incident.
+
+**`Report`**
+
+```text
+To:      Community@Editor.Land
+Subject: Code of Conduct report
+
+What happened, where it happened, when it happened, and who was involved.
+```
+
+> [!NOTE]
+>
+> A report needs only these four facts; anything else you can add is a bonus.
+
+## Enforcement Guidelines&#x2001;⚖️
 
 Community leaders will follow these Community Impact Guidelines in determining
-the consequences for any action they deem in violation of this Code of Conduct:
+the consequences for any action they deem in violation of this Code of Conduct.
 
-### 1. Correction
+**`Ladder`**
+
+```text
+1. Correction     -> private written warning
+2. Warning        -> no interaction for a specified period
+3. Temporary Ban  -> no public or private interaction for a specified period
+4. Permanent Ban  -> no public interaction within the community
+```
+
+> [!NOTE]
+>
+> Each rung answers a heavier community impact than the rung above it.
+
+### 1. Correction&#x2001;✏️
 
 **Community Impact**: Use of inappropriate language or other behavior deemed
 unprofessional or unwelcome in the community.
@@ -91,7 +151,7 @@ unprofessional or unwelcome in the community.
 clarity around the nature of the violation and an explanation of why the
 behavior was inappropriate. A public apology may be requested.
 
-### 2. Warning
+### 2. Warning&#x2001;⚠️
 
 **Community Impact**: A violation through a single incident or series of
 actions.
@@ -103,7 +163,7 @@ includes avoiding interactions in community spaces as well as external channels
 like social media. Violating these terms may lead to a temporary or permanent
 ban.
 
-### 3. Temporary Ban
+### 3. Temporary Ban&#x2001;🕒
 
 **Community Impact**: A serious violation of community standards, including
 sustained inappropriate behavior.
@@ -114,7 +174,7 @@ private interaction with the people involved, including unsolicited interaction
 with those enforcing the Code of Conduct, is allowed during this period.
 Violating these terms may lead to a permanent ban.
 
-### 4. Permanent Ban
+### 4. Permanent Ban&#x2001;⛔
 
 **Community Impact**: Demonstrating a pattern of violation of community
 standards, including sustained inappropriate behavior, harassment of an
@@ -123,7 +183,33 @@ individual, or aggression toward or disparagement of classes of individuals.
 **Consequence**: A permanent ban from any sort of public interaction within the
 community.
 
-## Attribution
+## Related Documents&#x2001;🔗
+
+This Code of Conduct is one of four governance files kept at the root of the
+Land repository.
+
+| Document | Purpose |
+| --- | --- |
+| [`CODE_OF_CONDUCT.md`](https://github.com/CodeEditorLand/Land/tree/Current/CODE_OF_CONDUCT.md) | This document: community standards and their enforcement |
+| [`CONTRIBUTING.md`](https://github.com/CodeEditorLand/Land/tree/Current/CONTRIBUTING.md) | How to propose and submit a change |
+| [`SECURITY.md`](https://github.com/CodeEditorLand/Land/tree/Current/SECURITY.md) | Private reporting of security vulnerabilities |
+| [`LICENSE`](https://github.com/CodeEditorLand/Land/tree/Current/LICENSE) | The terms the project is released under |
+
+**`Governance`**
+
+```text
+CODE_OF_CONDUCT.md   community standards (this document)
+CONTRIBUTING.md      how to open a change
+SECURITY.md          private vulnerability reporting
+LICENSE              CC0 1.0 Universal
+```
+
+> [!NOTE]
+>
+> Conduct concerns go to Community@Editor.Land; security reports go to
+> Security@Editor.Land instead.
+
+## Attribution&#x2001;📜
 
 This Code of Conduct is adapted from the [`Contributor Covenant`][homepage],
 version 2.1, available at

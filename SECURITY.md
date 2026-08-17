@@ -1,4 +1,4 @@
-# Security Policy for Land Ecosystem Elements
+# Security Policy for Land Ecosystem Elements&#x2001;🔐
 
 The Land development team and the community of contributors are deeply committed
 to the security of all software components within the Land Code Editor
@@ -11,7 +11,13 @@ Your vigilance and responsible reporting help us maintain a safe and trustworthy
 environment for all users and developers. Please adhere to this policy to ensure
 that your findings are addressed effectively and efficiently.
 
-## Guiding Principles
+> [!IMPORTANT]
+>
+> Report privately by email to
+> [Security@Editor.Land](mailto:Security@Editor.Land), never through a public
+> issue or pull request.
+
+## Guiding Principles&#x2001;🧭
 
 - **Proactive Security:** We strive to build security into our software from the
   ground up.
@@ -24,24 +30,29 @@ that your findings are addressed effectively and efficiently.
 - **Collaboration:** We believe in working collaboratively with security
   researchers and the community.
 
-## Scope of this Policy
+## Scope of this Policy&#x2001;🎯
 
 This security policy applies to vulnerabilities discovered within:
 
 1.  **The codebase of this specific Land Element repository.** This includes all
     source code, build scripts, and configuration files contained herein.
+
 2.  **Direct dependencies explicitly managed and bundled by this Element.**
+
 3.  **The interaction points and APIs this Element exposes to other Land
     Elements or to the end-user through the Land application.**
 
 Vulnerabilities in third-party libraries that are general dependencies (e.g., a
 widely used open-source library not uniquely modified or configured by this
 Element) should ideally be reported to the maintainers of those libraries first.
+
 However, if such a vulnerability directly and significantly impacts the security
 of this Element or the Land ecosystem through its usage in this Element, please
-report it to us as well. We will assess how to mitigate it within our project
-(e.g., by updating the dependency, applying a workaround, or temporarily
-disabling affected functionality).
+report it to us as well.
+
+We will assess how to mitigate it within our project (e.g., by updating the
+dependency, applying a workaround, or temporarily disabling affected
+functionality).
 
 **Examples of vulnerabilities relevant to Land Elements might include (but are
 not limited to):**
@@ -72,7 +83,78 @@ not limited to):**
 - **Data Integrity Issues:** If an Element allows unauthorized modification of
   critical data or configuration.
 
-## Supported Versions
+### Where These Risks Live in the Tree&#x2001;🗺️
+
+The categories above are not abstract. Each one maps to code you can open, and
+naming that code makes a report easier to route to the right maintainer.
+
+**[`Wind/Source/Preload.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Preload.ts)**
+
+```ts
+const ipcRenderer = {
+	send: (channel: string, ...args: unknown[]) => {
+		emit(channel, args.length === 1 ? args[0] : args);
+	},
+```
+
+> [!NOTE]
+>
+> This is the preload bridge a renderer-side XSS would reach first, so include
+> the channel name in any report against it.
+
+**[`Mountain/Source/FileSystem/FileExplorerViewProvider.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/FileSystem/FileExplorerViewProvider.rs)**
+
+```rs
+impl Struct {
+	/// new.
+	pub fn New(AppicationHandle:AppHandle) -> Self { Self { AppicationHandle } }
+```
+
+> [!NOTE]
+>
+> These are the filesystem handlers meant by "`Mountain`'s FS handlers" above,
+> where path traversal would surface.
+
+**[`Mountain/Source/IPC/Encryption/SecureChannel.rs`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/IPC/Encryption/SecureChannel.rs)**
+
+```rs
+pub struct SecureMessageChannel {
+	encryption_key:LessSafeKey,
+	hmac_key:Vec<u8>,
+}
+```
+
+> [!NOTE]
+>
+> The encrypted IPC channel carries an AES-256-GCM key and an HMAC key, so
+> report key handling and message forgery findings here.
+
+**[`Grove/Source/WASM/Runtime.rs`](https://github.com/CodeEditorLand/Grove/tree/Current/Source/WASM/Runtime.rs)**
+
+```rs
+pub struct WASMConfig {
+	pub memory_limit_mb:u64,
+	pub max_execution_time_ms:u64,
+	pub enable_wasi:bool,
+}
+```
+
+> [!NOTE]
+>
+> These fields bound a WASM module's memory and runtime, and a sandbox escape
+> is a failure of exactly those bounds.
+
+> [!WARNING]
+>
+> Two names in the list above need care when you file. `Track` is not a
+> separate Element: it is
+> [`Mountain/Source/Track`](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Track),
+> so route those reports to `Mountain`. `Grove` is no longer only planned work,
+> because [`Grove/Source/Host`](https://github.com/CodeEditorLand/Grove/tree/Current/Source/Host)
+> and [`Grove/Source/WASM`](https://github.com/CodeEditorLand/Grove/tree/Current/Source/WASM)
+> already exist, so sandbox findings against it are in scope today.
+
+## Supported Versions&#x2001;🗂️
 
 We are committed to providing security updates for the following versions of
 this Land Element:
@@ -89,7 +171,21 @@ Please ensure you are testing against and reporting vulnerabilities for a
 supported version. Reports for unsupported versions might not be prioritized or
 addressed. If unsure, please report against the `Current` branch.
 
-## Reporting a Security Vulnerability
+**[`.github/dependabot.yml`](https://github.com/CodeEditorLand/Land/tree/Current/.github/dependabot.yml)**
+
+```yaml
+    - package-ecosystem: "cargo"
+      directory: "/"
+      schedule:
+          interval: "daily"
+```
+
+> [!NOTE]
+>
+> Dependency advisories reach the `Current` branch through this daily
+> Dependabot schedule, which also covers `npm`, `pip` and `github-actions`.
+
+## Reporting a Security Vulnerability&#x2001;📮
 
 **IMPORTANT: DO NOT report security vulnerabilities through public GitHub
 issues, pull requests, or discussion forums for this repository.**
@@ -104,49 +200,68 @@ central security address:**
 
 Please make sure your email includes:
 
+### What Is Affected&#x2001;🏷️
+
 1.  **Subject Line:** Clearly indicate it's a security vulnerability report and,
     if known, the affected Element. Example:
     `Security Vulnerability Report: [Element Name] - [Brief Vulnerability Type]`
+
 2.  **Element Name:** The specific Land Element repository this vulnerability
     pertains to (e.g., "Wind", "Mountain", "Cocoon").
+
 3.  **Affected Version(s):** The specific version(s) or commit hash(es) of the
     Element where the vulnerability was identified.
+
 4.  **Vulnerability Type:** A classification of the vulnerability (e.g., RCE,
     XSS, Path Traversal, Information Disclosure).
+
+### What Happens and How to Trigger It&#x2001;🧪
+
 5.  **Detailed Description:** A clear, concise, and comprehensive explanation of
     the vulnerability. What is it? How does it work?
+
 6.  **Steps to Reproduce (Proof of Concept):** This is crucial. Provide
     detailed, step-by-step instructions that allow us to reproduce the
     vulnerability reliably.
     - Include any necessary setup, configuration, specific inputs, or code
       snippets.
     - A minimal, self-contained Proof of Concept (PoC) is highly preferred.
+
 7.  **Potential Impact:** Describe the potential consequences if this
     vulnerability is exploited (e.g., "An attacker could read arbitrary files,"
     "This could lead to application crash," "Sensitive user tokens could be
     stolen").
+
 8.  **Environment Details (if relevant):** Operating System, browser version
     (for UI elements), specific configurations of Land or the Element.
+
+### How We Reach You Afterwards&#x2001;✉️
+
 9.  **Your Contact Information:** Your name/alias and an email address for
     follow-up communication. This is essential for us to ask clarifying
     questions.
+
 10. **Disclosure Intentions:** Please state if you have any intentions or
     timelines for public disclosure. We strongly prefer to coordinate disclosure
     once a fix is available.
+
 11. **Credit/Acknowledgement:** Let us know if and how you would like to be
     credited if the vulnerability is confirmed and fixed.
 
 Providing as much detail as possible will help us investigate and respond more
 quickly.
 
-## Our Vulnerability Management Process
+## Our Vulnerability Management Process&#x2001;⚙️
 
 Upon receiving your private vulnerability report at
 [Security@Editor.Land](mailto:Security@Editor.Land), we will follow this
 process:
 
+### Intake and Triage&#x2001;📥
+
 1.  **Acknowledgement (within 3 business days):** We will send an email
     acknowledging receipt of your report.
+
 2.  **Initial Triage & Validation (within 7-10 business days of
     acknowledgement):**
     - Our security team and relevant Element maintainers will review your report
@@ -155,17 +270,25 @@ process:
       potential severity.
     - We may contact you for additional information or clarification during this
       phase.
+
+### Investigation and Fix&#x2001;🔧
+
 3.  **In-Depth Investigation & Remediation Planning:**
     - If the vulnerability is confirmed, we will conduct a more thorough
       investigation to understand its full scope and impact.
     - We will prioritize the vulnerability based on its severity and begin
       planning and developing a fix. The timeline for a fix can vary
       significantly based on complexity.
+
 4.  **Communication & Updates:** We will strive to keep you informed of our
     progress, especially regarding significant milestones like confirmation, fix
     development, and planned release of the fix.
+
 5.  **Fix Development & Testing:** A patch will be developed, reviewed, and
     tested.
+
+### Coordinated Disclosure&#x2001;🤝
+
 6.  **Coordinated Disclosure:** Once a fix is ready and deployed (e.g., merged
     to `Current` or included in an upcoming release), we will coordinate with
     you on the public disclosure of the vulnerability.
@@ -174,14 +297,14 @@ process:
     - We generally request a period of 90 days for remediation before public
       disclosure, but this can be negotiated based on the circumstances.
 
-## Confidentiality
+## Confidentiality&#x2001;🔒
 
 We will treat your report and all communications as confidential. We will not
 share information about the vulnerability with third parties without your
 permission, except as necessary to investigate and remediate the issue (e.g.,
 with core maintainers of an affected upstream dependency).
 
-## Scope Exclusions (What Not to Report Here)
+## Scope Exclusions (What Not to Report Here)&#x2001;🚫
 
 - **Denial of Service (DoS) on Public Infrastructure:** Please do not perform
   DoS testing against any public Land project infrastructure (e.g., websites,
@@ -206,7 +329,7 @@ with core maintainers of an affected upstream dependency).
 When in doubt, please err on the side of reporting to
 [Security@Editor.Land](mailto:Security@Editor.Land).
 
-## Questions & Contact
+## Questions & Contact&#x2001;💬
 
 For any questions regarding this security policy or the vulnerability reporting
 process for any Land Ecosystem Element, please contact us at
