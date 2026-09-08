@@ -60,6 +60,21 @@ jobs:
 
         steps:
             - uses: actions/checkout@v6.0.2
+              with:
+                  fetch-depth: 1
+                  submodules: false
+
+            # The repository records submodules with SSH URLs. GitHub-hosted
+            # runners do not have an SSH key, so fetch them using GITHUB_TOKEN.
+            - name: Checkout submodules
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  set -euo pipefail
+                  git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+                  git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "git@github.com:"
+                  git submodule update --init --recursive
 
             - uses: pnpm/action-setup@v6.0.8
               with:
