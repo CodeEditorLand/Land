@@ -493,11 +493,19 @@ echo ""
 echo "Starting release build..."
 echo ""
 
-./Target/release/Maintain -- pnpm tauri build
+# CI can restrict the bundle formats (for example, `--bundles nsis` on
+# Windows) without duplicating this release orchestration script.
+./Target/release/Maintain -- pnpm tauri build ${TAURI_BUILD_ARGS:-}
 
-# Re-sign the release .app. When a real Apple Developer ID is present
-# `pnpm tauri build` already applies entitlements; re-signing with ad-hoc
-# here is a no-op on notarised builds but ensures CI / unsigned dev machines
-# still produce a working bundle (file pickers, JIT, extension helpers).
-# shellcheck disable=SC1091
-BundleLevel=release sh Maintain/Script/SignBundle.sh
+# Re-signing is a macOS-only operation. Keep the release build portable so the
+# same profile can produce Windows NSIS and Linux artifacts in CI.
+if [ "$(uname -s)" = "Darwin" ]; then
+	# Re-sign the release .app. When a real Apple Developer ID is present
+	# `pnpm tauri build` already applies entitlements; re-signing with ad-hoc
+	# here is a no-op on notarised builds but ensures CI / unsigned dev machines
+	# still produce a working bundle.
+	# shellcheck disable=SC1091
+	BundleLevel=release sh Maintain/Script/SignBundle.sh
+else
+	echo "Skipping macOS bundle re-signing on $(uname -s)."
+fi

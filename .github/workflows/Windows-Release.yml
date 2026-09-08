@@ -1,0 +1,170 @@
+name: Windows Release
+
+# Builds the signed-by-GitHub (unsigned installer) NSIS package and publishes it
+# as a GitHub release. The application version comes from the tag; the immutable
+# GitHub run number is kept separately as the build number.
+
+concurrency:
+    group: Windows-Release-${{ github.ref }}
+    cancel-in-progress: false
+
+on:
+    push:
+        tags:
+            - "v*"
+    workflow_dispatch:
+        inputs:
+            version:
+                description: "Product version (for example, 1.118.0)"
+                required: true
+                type: string
+
+permissions:
+    contents: write
+
+env:
+    CI: true
+    ASTRO_TELEMETRY_DISABLED: 1
+    NEXT_TELEMETRY_DISABLED: 1
+    NODE_OPTIONS: --max-old-space-size=8192
+    RUST_LOG: warn
+
+jobs:
+    release:
+        name: Build Windows NSIS release
+        runs-on: windows-latest
+
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v6
+              with:
+                  fetch-depth: 0
+                  # Submodules use SSH URLs in .gitmodules. They are checked
+                  # out below over HTTPS using the workflow token instead.
+                  submodules: false
+
+            - name: Check out submodules over HTTPS
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  set -euo pipefail
+                  git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+                  git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "git@github.com:"
+                  git submodule update --init --recursive
+
+            - name: Resolve version and build number
+              id: metadata
+              shell: bash
+              env:
+                  INPUT_VERSION: ${{ inputs.version }}
+                  REF_NAME: ${{ github.ref_name }}
+                  RUN_NUMBER: ${{ github.run_number }}
+              run: |
+                  set -euo pipefail
+                  if [[ "${GITHUB_REF_TYPE}" == tag ]]; then
+                      version="${REF_NAME#v}"
+                  else
+                      version="${INPUT_VERSION}"
+                  fi
+
+                  if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+                      echo "Version must be a semantic version, got: $version" >&2
+                      exit 1
+                  fi
+
+                  echo "version=$version" >> "$GITHUB_OUTPUT"
+                  echo "build_number=$RUN_NUMBER" >> "$GITHUB_OUTPUT"
+                  echo "tag=v$version" >> "$GITHUB_OUTPUT"
+                  echo "Building version $version, build $RUN_NUMBER"
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  cache: pnpm
+                  cache-dependency-path: pnpm-lock.yaml
+
+            - name: Set up pnpm
+              uses: pnpm/action-setup@v6
+              with:
+                  version: 11.18.0
+
+            - name: Set up Rust
+              uses: dtolnay/rust-toolchain@stable
+              with:
+                  targets: x86_64-pc-windows-msvc
+
+            - name: Write release product metadata
+              shell: bash
+              env:
+                  PRODUCT_VERSION: ${{ steps.metadata.outputs.version }}
+                  PRODUCT_BUILD_NUMBER: ${{ steps.metadata.outputs.build_number }}
+              run: |
+                  set -euo pipefail
+                  cp .env.Land.Sample .env.Land
+                  # Keep ProductVersion as the single source used by Mountain,
+                  # Sky and the Tauri bundle. Build number is release metadata
+                  # and must not change the Windows four-part app version.
+                  sed -i -E "s/^ProductVersion=.*/ProductVersion=\"${PRODUCT_VERSION}\"/" .env.Land
+                  sed -i -E 's/^ProductQuality=.*/ProductQuality="stable"/' .env.Land
+                  printf '\nProductBuildNumber="%s"\n' "$PRODUCT_BUILD_NUMBER" >> .env.Land
+                  grep -E '^(ProductVersion|ProductBuildNumber|ProductQuality)=' .env.Land
+
+            - name: Install VS Code platform dependencies
+              working-directory: Dependency/Microsoft/Dependency/Editor
+              shell: bash
+              run: |
+                  pnpm install --frozen-lockfile
+                  pnpm run compile
+                  pnpm run compile-extensions-build
+
+            - name: Install Land dependencies
+              shell: bash
+              run: pnpm install --no-frozen-lockfile
+
+            - name: Build release
+              shell: bash
+              env:
+                  # Release/Build.sh passes this to the Tauri CLI. Restricting
+                  # bundles here prevents an unnecessary MSI build.
+                  TAURI_BUILD_ARGS: --bundles nsis
+              run: |
+                  set -euo pipefail
+                  cargo build --release -p Maintain
+                  bash Maintain/Release/Build.sh --profile release
+
+            - name: Collect NSIS installer
+              id: installer
+              shell: pwsh
+              env:
+                  VERSION: ${{ steps.metadata.outputs.version }}
+                  BUILD_NUMBER: ${{ steps.metadata.outputs.build_number }}
+              run: |
+                  $installer = Get-ChildItem -Path . -Filter *.exe -File -Recurse |
+                      Where-Object { $_.FullName -match '[\\/]bundle[\\/]nsis[\\/]' } |
+                      Select-Object -First 1
+                  if ($null -eq $installer) {
+                      Write-Error "No NSIS installer was produced"
+                  }
+                  $asset = "Land-$VERSION-build-$BUILD_NUMBER-x64-setup.exe"
+                  Copy-Item $installer.FullName $asset
+                  "asset=$asset" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+                  Write-Host "Publishing $asset from $($installer.FullName)"
+
+            - name: Publish GitHub release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: v${{ steps.metadata.outputs.version }}
+                  name: Land ${{ steps.metadata.outputs.version }} (build ${{ steps.metadata.outputs.build_number }})
+                  target_commitish: ${{ github.sha }}
+                  generate_release_notes: true
+                  body: |
+                      Windows NSIS release
+
+                      - Version: `${{ steps.metadata.outputs.version }}`
+                      - Build number: `${{ steps.metadata.outputs.build_number }}`
+                      - Commit: `${{ github.sha }}`
+                  files: ${{ steps.installer.outputs.asset }}
+                  fail_on_unmatched_files: true
+                  make_latest: true
