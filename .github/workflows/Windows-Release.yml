@@ -78,17 +78,17 @@ jobs:
                   echo "tag=v$version" >> "$GITHUB_OUTPUT"
                   echo "Building version $version, build $RUN_NUMBER"
 
+            - name: Set up pnpm
+              uses: pnpm/action-setup@v6
+              with:
+                  version: 11.18.0
+
             - name: Set up Node.js
               uses: actions/setup-node@v6
               with:
                   node-version: 24
                   cache: pnpm
                   cache-dependency-path: pnpm-lock.yaml
-
-            - name: Set up pnpm
-              uses: pnpm/action-setup@v6
-              with:
-                  version: 11.18.0
 
             - name: Set up Rust
               uses: dtolnay/rust-toolchain@stable
