@@ -148,7 +148,7 @@ LandCapture "land:build:start" \
 # Idempotent - safe to run on every build, fast (<500 ms).
 LandCapturePhaseBegin "route-manifest"
 # shellcheck disable=SC1091
-sh Maintain/Script/GenerateRouteManifest.sh
+bash Maintain/Script/GenerateRouteManifest.sh
 LandCapturePhaseEnd "route-manifest" "profile" "$PROFILE"
 
 # Product identity fan-out: read Element/Sky/Public/product.json
@@ -157,7 +157,7 @@ LandCapturePhaseEnd "route-manifest" "profile" "$PROFILE"
 # Idempotent - safe to run on every build, fast (<1 s).
 LandCapturePhaseBegin "resolve-identity"
 # shellcheck disable=SC1091
-sh Maintain/Script/ResolveIdentity.sh
+bash Maintain/Script/ResolveIdentity.sh
 LandCapturePhaseEnd "resolve-identity"
 
 # ===========================================================================
@@ -515,4 +515,4 @@ fi
 # Re-sign the debug .app with the correct entitlements so file pickers,
 # Cocoon JIT, and extension helper spawns work when launching from Finder.
 # shellcheck disable=SC1091
-BundleLevel=debug sh Maintain/Script/SignBundle.sh
+BundleLevel=debug bash Maintain/Script/SignBundle.sh
