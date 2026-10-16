@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # pre-commit - keep every submodule gitlink pinned to its remote default-branch tip.
 #
 # Why this exists: on 2026-06-12 an auto-committer "save" recorded a gitlink to
@@ -76,13 +76,13 @@ while IFS= read -r line || [ -n "$line" ]; do
 		url=""
 		;;
 	'path = '*)
-		path="${line#path = }"
-		path="${path%$'\r'}"
-		;;
-	'url = '*)
-		url="${line#url = }"
-		url="${url%$'\r'}"
-		;;
+	      path="${line#path = }"
+	      path="$(printf '%s' "$path" | tr -d '\r')"
+	      ;;
+	    'url = '*)
+	      url="${line#url = }"
+	      url="$(printf '%s' "$url" | tr -d '\r')"
+	      ;;
 	esac
 	if [ -n "$path" ] && [ -n "$url" ]; then
 		bump_gitlink "$path" "$url"
