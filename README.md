@@ -1219,16 +1219,6 @@ graph LR
 Clone each submodule individually on its target branch. Do NOT use
 `git clone --recurse-submodules`.
 
-#### Two Corrections to the Table Above&#x2001;🔍
-
-The submodule wiring on disk differs from the table in two places, both
-recorded here rather than silently rewritten.
-
-| Claim in the table                     | What the tree records                                                                                              |
-| :------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
-| `Rest` points at `CodeEditorLand/Rest` | `Element/.gitmodules` sets its URL to `github.com/BinaryRest/Rest`; the `[Rest]` reference link is unchanged        |
-| Elements are direct submodules of Land | `Land/.gitmodules` registers only `Dependency`, `Element` and `Documentation/Rust`; the Elements nest inside `Element` |
-
 > [!IMPORTANT]
 >
 > `Element` is itself a repository. The remaining Elements - `Air`, `Cache`,
