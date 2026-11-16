@@ -287,7 +287,7 @@ process:
 5.  **Fix Development & Testing:** A patch will be developed, reviewed, and
     tested.
 
-### Coordinated Disclosure&#x2001;🤝
+### Coordinated Disclosure&#x2001;🫱🏻‍🫲🏿
 
 6.  **Coordinated Disclosure:** Once a fix is ready and deployed (e.g., merged
     to `Current` or included in an upcoming release), we will coordinate with

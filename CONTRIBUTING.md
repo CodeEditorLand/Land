@@ -1,4 +1,4 @@
-# Contributing Guidelines&#x2001;🤝
+# Contributing Guidelines&#x2001;🫱🏻‍🫲🏿
 
 Welcome to our community! We are committed to creating a welcoming and inclusive
 environment for all contributors.

@@ -1,4 +1,4 @@
-# Code of Conduct&#x2001;🤝
+# Code of Conduct&#x2001;🫱🏻‍🫲🏿
 
 Welcome to our community! This is the Code of Conduct for the
 [Land](https://github.com/CodeEditorLand/Land/tree/Current) code editor and for
