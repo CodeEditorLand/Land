@@ -228,7 +228,7 @@ The result flows back up the same chain to update the UI.
 
 ## Related Documentation 📖
 
-- [Workflow](Workflow.md) - workflow index and per-Element architecture table
+- [Workflow](../Workflow.md) - workflow index and per-Element architecture table
 - [Application Startup and Handshake](ApplicationStartupAndHandshake.md) - Workflow #1
 - [Invoking a Language Feature (Hover Provider)](InvokingALanguageFeatureHoverProvider.md) - Workflow #3
 - [Saving a File with Save Participants](SavingAFileWithSaveParticipants.md) - Workflow #4

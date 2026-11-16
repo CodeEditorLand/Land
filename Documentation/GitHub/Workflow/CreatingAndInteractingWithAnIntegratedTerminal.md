@@ -255,7 +255,7 @@ Extension subscribers receive these events through:
 
 ## Related Documentation 📖
 
-- [Workflow](Workflow.md) - workflow index and per-Element architecture table
+- [Workflow](../Workflow.md) - workflow index and per-Element architecture table
 - [Application Startup and Handshake](ApplicationStartupAndHandshake.md) - Workflow #1
 - [Opening a File from the UI](OpeningAFileFromTheUI.md) - Workflow #2
 - [Invoking a Language Feature (Hover Provider)](InvokingALanguageFeatureHoverProvider.md) - Workflow #3

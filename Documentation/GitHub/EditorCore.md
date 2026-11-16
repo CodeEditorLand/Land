@@ -146,7 +146,8 @@ Wind/Source/Effect/<Service>/
 > Some directories (e.g., `WorkbenchActivity/`) follow a flatter layout where
 > `Implementation/` contains the bridge shape and live implementation, and
 > `index.ts` replaces `<Service>.ts` as the barrel. The `Generated/` directory
-> holds auto-generated upstream VS Code service wrappers (I<Interface>Upstream.ts).
+> held upstream VS Code service wrappers (I<Interface>Upstream.ts) emitted during
+> source sync.
 
 > [!IMPORTANT]
 >

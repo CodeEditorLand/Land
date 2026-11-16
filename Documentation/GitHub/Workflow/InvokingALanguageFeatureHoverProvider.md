@@ -257,7 +257,7 @@ These providers are used by code completion tools such as Copilot.
 
 ## Related Documentation 📖
 
-- [Workflow](Workflow.md) - workflow index and per-Element architecture table
+- [Workflow](../Workflow.md) - workflow index and per-Element architecture table
 - [Application Startup and Handshake](ApplicationStartupAndHandshake.md) - Workflow #1
 - [Opening a File from the UI](OpeningAFileFromTheUI.md) - Workflow #2
 - [Saving a File with Save Participants](SavingAFileWithSaveParticipants.md) - Workflow #4
