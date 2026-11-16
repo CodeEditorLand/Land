@@ -7,7 +7,7 @@ connection lifecycle management.
 
 ---
 
-## Table of Contents
+**Table of Contents**
 
 1. [Protocol Overview](#protocol-overview)
 2. [Tauri IPC](#tauri-ipc)
@@ -21,7 +21,7 @@ connection lifecycle management.
 
 ---
 
-## Protocol Overview&#x2001;🔌
+## Protocol Overview 🔌
 
 **Land** uses three communication protocols operating at different abstraction
 levels:
@@ -66,7 +66,7 @@ graph BT
 
 ---
 
-## Tauri IPC&#x2001;🎮
+## Tauri IPC 🎮
 
 ### TierIPC Runtime Routing
 
@@ -296,7 +296,7 @@ const unlisten = await listen("configuration-changed", (event) => {
 
 ---
 
-## Vine gRPC Protocol&#x2001;🔌
+## Vine gRPC Protocol 🔌
 
 `Vine` defines the `gRPC` service contracts for `Mountain`-`Cocoon` and
 `Mountain`-`Air` communication. The canonical definition lives at
@@ -637,11 +637,11 @@ message Location { /* ... */ }
 
 All listeners bind to `[::1]` (not `0.0.0.0`). Environment overrides are
 described in
-[`Vine/Source/Library.rs`](../../../Element/Vine/Source/Library.rs).
+[`Vine/Source/Library.rs`](https://github.com/CodeEditorLand/Vine/tree/Current/Source/Library.rs).
 
 ---
 
-## Spine Extension Protocol&#x2001;🔄
+## Spine Extension Protocol 🔄
 
 The `Spine` protocol is the extension host coordination layer built on top of
 `Vine` `gRPC`. It implements an action/response pattern for extension-to-backend
@@ -720,7 +720,7 @@ decides per-call whether to:
 
 ---
 
-## Connection Lifecycle&#x2001;🔄
+## Connection Lifecycle 🔄
 
 ### Mountain-Cocoon Connection
 
@@ -800,7 +800,7 @@ Normal operation:
 
 ---
 
-## Health Monitoring&#x2001;💓
+## Health Monitoring 💓
 
 ### Heartbeat Protocol
 
@@ -838,7 +838,7 @@ All connection state changes are logged via the `dev_log!` system at
 
 ---
 
-## Protocol Buffer Definitions&#x2001;📁
+## Protocol Buffer Definitions 📁
 
 ### Current Location
 
@@ -850,11 +850,11 @@ Protocol definitions currently reside in consuming components:
 | `Grove.proto` | `Element/Grove/Proto/Grove.proto`                        | Grove-specific WASM hosting extensions            |
 | Server impl   | `Element/Mountain/Source/Vine/`                          | Rust `gRPC` server (`tonic`, consumes Vine stubs) |
 | Client impl   | `Element/Cocoon/Source/Services/Mountain/gRPC/Client.ts` | TypeScript `gRPC` client                          |
-| RouteManifest | `Element/Cocoon/Source/Generated/RouteManifest.ts`       | Auto-generated routing tier enumeration           |
+| RouteManifest | `Maintain/Script/GenerateRouteManifest.sh` (build-time) | Emits the routing tier enumeration into `Element/Cocoon/Source/Generated/RouteManifest.ts` |
 
 ### Code Generation
 
-Rust types are generated from `.proto` files using `prost` and `tonic-build` at
+Rust types are compiled from `.proto` files using `prost` and `tonic-build` at
 compile time:
 
 ```rust
@@ -866,12 +866,12 @@ fn main() {
 }
 ```
 
-TypeScript types are generated using `protoc-gen-ts` and checked into the
-`Cocoon` source tree as generated artifacts.
+TypeScript types are emitted using `protoc-gen-ts` and checked into the
+`Cocoon` source tree as compiled artifacts.
 
 ---
 
-## Security&#x2001;🛡️
+## Security 🛡️
 
 All `gRPC` connections are restricted to localhost only (`[::1]` / `127.0.0.1`).
 No remote connections are accepted.
@@ -888,7 +888,7 @@ No remote connections are accepted.
 
 ---
 
-## Related Documentation&#x2001;📋
+## Related Documentation 📋
 
 - [Architecture](Architecture.md) - System architecture
 - [BuildPipeline](BuildPipeline.md) - Build pipeline

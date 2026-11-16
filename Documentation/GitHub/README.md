@@ -6,7 +6,7 @@ Every document in `Documentation/GitHub/` and all per-Element
 
 ---
 
-## Table of Contents
+**Table of Contents**
 
 1. [System Architecture](#system-architecture)
 2. [Build System](#build-system)
@@ -75,7 +75,7 @@ Each Land Element has an `Architecture.md` in its own `Documentation/GitHub/`
 directory covering internal module structure, data flow, and implementation
 details.
 
-### Rust Elements&#x2001;🦀
+### Rust Elements 🦀
 
 | Element      | Role                                                           | Key Dependencies     | Doc                                                                                                               |
 | ------------ | -------------------------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------- |
@@ -88,7 +88,7 @@ details.
 | **Rest**     | OXC-based TypeScript compiler                                  | Common               | [`Architecture.md`](https://github.com/CodeEditorLand/Rest/tree/Current/Documentation/GitHub/Architecture.md)     |
 | **SideCar**  | Vendored Node.js runtime manager                               | Common, Mist         | [`Architecture.md`](https://github.com/CodeEditorLand/SideCar/tree/Current/Documentation/GitHub/Architecture.md)  |
 
-### TypeScript Elements&#x2001;📜
+### TypeScript Elements 📜
 
 | Element    | Role                                         | Framework        | Doc                                                                                                             |
 | ---------- | -------------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -98,7 +98,7 @@ details.
 | **Output** | Build artifact management, dual-compiler     | ESBuild          | [`Architecture.md`](https://github.com/CodeEditorLand/Output/tree/Current/Documentation/GitHub/Architecture.md) |
 | **Worker** | Service worker: caching, CSS interceptor     | ESBuild          | [`Architecture.md`](https://github.com/CodeEditorLand/Worker/tree/Current/Documentation/GitHub/Architecture.md) |
 
-### Protocol Layer&#x2001;🔌
+### Protocol Layer 🔌
 
 | Element  | Role                      | Format           | Doc                                                                                                           |
 | -------- | ------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -129,7 +129,7 @@ may contain implementation notes not yet migrated to `Architecture.md`.
 | **Wind**     | [`DeepDive.md`](https://github.com/CodeEditorLand/Wind/tree/Current/Documentation/GitHub/DeepDive.md)     | Effect-TS services, Preload.ts, Tauri integration                        |
 | **Worker**   | [`DeepDive.md`](https://github.com/CodeEditorLand/Worker/tree/Current/Documentation/GitHub/DeepDive.md)   | Caching strategies, CSS interceptor, service worker lifecycle            |
 
-### Element-Specific Supplementary Docs&#x2001;📎
+### Element-Specific Supplementary Docs 📎
 
 Some Elements contain additional documentation beyond `DeepDive.md` and
 `Architecture.md`:
@@ -146,7 +146,7 @@ Some Elements contain additional documentation beyond `DeepDive.md` and
 
 ## Related Documentation
 
-- [`Documentation/Module/Telemetry/`](../Module/Telemetry/) - Telemetry system
+- [`Documentation/Module/Telemetry/`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Module/Telemetry/) - Telemetry system
   docs (Effect-OTel, Sidecars, Tree-Shaking)
 - `CHANGELOG.md` - Project changelog
 - `CONTRIBUTING.md` - Contribution guidelines
@@ -184,7 +184,7 @@ Some Elements contain additional documentation beyond `DeepDive.md` and
 | Covers 100% of Emitter events                                  | Covers 15 of 22 domains (growing)                  |
 | 6 hook layers (ErrorHandler→Timing)                            | 3 intercept strategies (IPC/DI/Audit)              |
 | <2% prod overhead (sampled)                                    | <1% overhead (passthrough)                         |
-| `Land/…/Shim/Intercept/*.ts`                                   | `Land/…/Wind/Source/Shim/*.ts`                     |
+| `Land/.../Shim/Intercept/*.ts`                                   | `Land/.../Wind/Source/Shim/*.ts`                     |
 | [Docs: Low-Level Shim](https://editor.land/doc/low-level-shim) | [Docs: Coverage](https://editor.land/doc/coverage) |
 
 > ⚠️ **EXPERIMENTAL** - Gated behind `TierShim` env var (default: `None`). See

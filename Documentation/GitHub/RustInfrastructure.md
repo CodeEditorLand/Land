@@ -7,7 +7,7 @@ built upon.
 
 ---
 
-## Table of Contents
+**Table of Contents**
 
 1. [Component Summary](#component-summary)
 2. [Common: Abstract Core Library](#common-abstract-core-library)
@@ -23,7 +23,7 @@ built upon.
 
 ---
 
-## Component Summary&#x2001;📋
+## Component Summary 📋
 
 | Component  | Crate Type     | Edition | Key Dependencies                                     | Role                                                                                              |
 | ---------- | -------------- | ------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
@@ -34,8 +34,8 @@ built upon.
 | `Air`      | Binary         | 2024    | tokio, tonic, reqwest, `Common`, `Mist`              | Background daemon (updates, indexing, crypto)                                                     |
 | `Rest`     | Binary+Library | 2024    | oxc_allocator, oxc_parser, oxc_transformer, `Common` | `OXC`-based `TypeScript` compiler                                                                 |
 | `SideCar`  | Library        | 2024    | tokio, reqwest, zip, `Common`, `Mist`                | Vendored `Node.js` binary manager                                                                 |
-| `Grove`    | Library+Binary | 2021    | `Common`, wasmtime, tonic, clap                      | Wasm sandbox for WASM-compiled extensions                                                         |
-| `Vine`     | Library        | 2024    | tonic-build, prost, prost-types                      | gRPC protocol definitions (`Vine.proto`); generated stubs consumed by `Mountain`, `Cocoon`, `Air` |
+| `Grove`    | Library+Binary | 2024    | `Common`, wasmtime, tonic, clap                      | Wasm sandbox for WASM-compiled extensions                                                         |
+| `Vine`     | Library        | 2024    | tonic-build, prost, prost-types                      | `gRPC` protocol definitions (`Vine.proto`); compiled stubs consumed by `Mountain`, `Cocoon`, `Air` |
 
 ### Dependency Graph
 
@@ -58,7 +58,7 @@ graph TB
 
 ---
 
-## Common: Abstract Core Library&#x2001;📚
+## Common: Abstract Core Library 📚
 
 The `Common` crate is the architectural foundation of **Land**'s native backend.
 It is a pure abstract library with no concrete implementations -- it defines
@@ -153,7 +153,7 @@ pub enum CommonError {
 
 ---
 
-## Echo: Work-Stealing Task Scheduler&#x2001;⚡
+## Echo: Work-Stealing Task Scheduler ⚡
 
 `Echo` is a bounded work-stealing task scheduler designed as the core execution
 engine for `Mountain`'s async workloads.
@@ -212,7 +212,7 @@ scheduler.spawn_low(index_workspace(workspace)).await;
 
 ---
 
-## Mountain: Native Backend Application&#x2001;🏔️
+## Mountain: Native Backend Application 🏔️
 
 `Mountain` is the primary `Tauri` application that serves as the native backend.
 It implements all traits from `Common`, hosts the `gRPC` server, manages
@@ -392,48 +392,60 @@ channel-drain patterns: `ExtensionsGetInstalled`, `WaitForClientConnection`,
 
 ---
 
-## Mist: DNS Isolation Server&#x2001;🌐
+## Mist: DNS Isolation Server 🌐
 
 `Mist` runs a local Hickory DNS server authoritative for the `editor.land` zone.
 It provides network isolation for sidecar processes.
 
 ### DNS Zone Configuration
 
-```
-editor.land.  IN SOA  localhost. hostmaster.editor.land. (
-    2026010100 ; serial
-    3600       ; refresh
-    900        ; retry
-    86400      ; expire
-    60         ; minimum TTL
+`Element/Mist/Source/Zone.rs` builds the records for the `editor.land` zone:
+
+```dns
+editor.land.           IN SOA  ns1.editor.land. hostmaster.editor.land. (
+    2025010100 ; serial
+    86400      ; refresh
+    7200       ; retry
+    604800     ; expire
+    3600       ; minimum TTL
 )
-
-*.editor.land.  IN A  127.0.0.1
+editor.land.           IN NS   ns1.editor.land.
+ns1.editor.land.       IN A    127.0.0.1
+editor.editor.land.    IN A    127.0.0.1
+www.editor.land.       IN A    127.0.0.2
+localhost.editor.land. IN A    127.0.0.3
+sidecar.editor.land.   IN A    127.0.0.4
+cocoon.editor.land.    IN A    127.0.0.5
 ```
 
-All `*.editor.land` subdomains resolve to `127.0.0.1`, ensuring sidecar
-processes communicate only over localhost.
+All records point into the `127.0.0.0/8` loopback block, so sidecar
+processes resolve these names only to the local host. There is no wildcard
+`*.editor.land` record; the five listed subdomains and the apex are
+explicit.
 
 ### Forward Allowlisting
 
-`Mist` maintains a configurable allowlist of trusted external domains:
+`Element/Mist/Source/ForwardSecurity.rs` supplies the default forward
+allowlist. Queries for names inside `editor.land` are answered by the local
+zone; other names pass through this allowlist.
 
-| Domain | Purpose | Status | | ------------------------------ |
----------------------- | ------------------- | ----------- | |
-`marketplace.visualstudio.com` | Extension downloads | Allowlisted | | |
-`update.editor.land` | Application updates | Allowlisted | | `api.posthog.com` |
-Telemetry (if enabled) | Allowlisted | | All others | Blocked (NXDOMAIN) |
-Default blocked |
+| Domain | Purpose | Status |
+| -------- | -------- | -------- |
+| `update.editor.land` | Application updates | Forwarded to upstream |
+| All other domains | Any other purpose | Return `REFUSED` |
+
+The shipped allowlist authorizes one forwarded domain. A query for any other
+external name is refused rather than answered with `NXDOMAIN`.
 
 ### DNSSEC
 
 `Mist` supports DNSSEC with ECDSA P-256 signing for the `editor.land` zone.
-Signing keys are generated on first run and cached in the application data
+Signing keys are produced on first run and cached in the application data
 directory.
 
 ---
 
-## Air: Background Daemon&#x2001;🖥️
+## Air: Background Daemon 🖥️
 
 `Air` is the background daemon sidecar for **Land**, providing long-running
 services that would degrade UI performance if run in the main process.
@@ -475,7 +487,7 @@ Mountain shuts down
 
 ---
 
-## Rest: OXC TypeScript Compiler&#x2001;🚀
+## Rest: OXC TypeScript Compiler 🚀
 
 `Rest` is a high-performance `TypeScript` compiler built on the `OXC` (Oxidation
 Compiler) toolchain. It replaces `esbuild`'s `TypeScript` loader with a
@@ -538,7 +550,7 @@ profile:
 
 ---
 
-## SideCar: Vendored Runtime Manager&#x2001;📦
+## SideCar: Vendored Runtime Manager 📦
 
 `SideCar` manages pre-compiled native dependency binaries. Currently handles
 `Node.js` runtime binaries for each target platform.
@@ -581,7 +593,7 @@ Mountain build copies binary to app bundle
 
 ---
 
-## Grove: WASM Extension Host&#x2001;🧩
+## Grove: WASM Extension Host 🧩
 
 `Grove` provides an alternative extension host for running WASM-compiled VS Code
 extensions in a sandboxed environment using `WASMtime`.
@@ -617,9 +629,7 @@ alongside `Cocoon` for WASM-compiled extensions.
 
 ---
 
----
-
-## Vine: gRPC Protocol Definitions&#x2001;📡
+## Vine: gRPC Protocol Definitions 📡
 
 `Vine` is the protocol definitions library for all `gRPC` communication in
 **Land**. It owns `Vine.proto` and generates `Rust` stubs (`prost`/`tonic`)
@@ -629,64 +639,92 @@ consumed by `Mountain`, `Air`, and any other element that speaks `gRPC`.
 | -------------------------------- | ---------------------------------------------------------- |
 | `Element/Vine/Proto/Vine.proto`  | Core service contracts (ExtensionHost, BackgroundServices) |
 | `Element/Vine/build.rs`          | `prost-build` codegen invocation                           |
-| `Element/Vine/Source/Library.rs` | Re-exports generated types for consumers                   |
+| `Element/Vine/Source/Library.rs` | Re-exports compiled types for consumers                   |
 
 Protocol evolution is centralised here - adding or changing an RPC updates one
 `.proto` file and all consumers rebuild against the new stubs.
 
-## Rust Build Configuration&#x2001;🔧
+## Rust Build Configuration 🔧
 
 ### Workspace Configuration
 
-The `Rust` workspace is defined in `Land/Cargo.toml`:
+The `Rust` workspace is defined in `Cargo.toml`:
 
 ```toml
 [workspace]
-resolver = "2"
+exclude = [
+	"Dependency/Microsoft/Dependency/Editor/cli",
+	"Dependency/Microsoft/Dependency/Editor/build/win32",
+	"Element/Document",
+	"Dependency/Tauri",
+]
 members = [
 	"Element/Common",
 	"Element/Echo",
-	"Element/Mist",
+	"Element/Maintain",
 	"Element/Mountain",
+	"Element/Air",
+	"Element/Cache",
+	"Element/Grove",
+	"Element/Mist",
 	"Element/Rest",
 	"Element/SideCar",
-	"Element/Air",
-	"Element/Grove",
 	"Element/Vine",
 ]
+resolver = "2"
 
 [profile.release]
-lto = "fat"
+opt-level = 3
+lto = true
 codegen-units = 1
 strip = true
+panic = "abort"
+overflow-checks = false
 ```
+
+`Element/Maintain` and `Element/Cache` are workspace members in the source;
+`Element/Document` and the vendored `Dependency/Tauri` tree are excluded.
 
 ### Toolchain
 
-Defined in `Land/rust-toolchain.toml`:
+Defined in `rust-toolchain.toml`:
 
 ```toml
 [toolchain]
-channel = "nightly-2025-01-01"
-components = ["rustfmt", "clippy"]
+channel = "nightly"
+components = [
+	"rustfmt",
+	"clippy",
+	"rust-src",
+	"rust-analyzer",
+	"miri",
+	"llvm-tools",
+	"rust-docs",
+]
 targets = [
 	"aarch64-apple-darwin",
-	"x86_64-apple-darwin",
-	"aarch64-unknown-linux-gnu",
-	"x86_64-unknown-linux-gnu",
-	"aarch64-pc-windows-msvc",
-	"x86_64-pc-windows-msvc",
+	"aarch64-apple-ios",
+	"aarch64-apple-ios-sim",
+	"aarch64-linux-android",
+	"armv7-linux-androideabi",
+	"i686-linux-android",
+	"wasm32-unknown-unknown",
+	"x86_64-apple-ios",
+	"x86_64-linux-android",
 ]
 ```
 
+The `channel` floats on `nightly`; the source carries no dated pin.
+
 ### Rust Edition
 
-All `Rust` crates use edition 2024 (`Rust` nightly) except `Grove` which uses
-edition 2021 for WASM compatibility.
+All `Rust` crates use edition 2024 (`Rust` nightly), matching the
+`[workspace.package]` value in `Cargo.toml`. Individual crates declare the
+same edition in their own manifests.
 
 ---
 
-## Related Documentation&#x2001;📋
+## Related Documentation 📋
 
 - [Architecture](Architecture.md) - System architecture overview
 - [BuildPipeline](BuildPipeline.md) - Build pipeline

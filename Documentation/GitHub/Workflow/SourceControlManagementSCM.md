@@ -1,249 +1,272 @@
-### **Workflow Example #8: Source Control Management (SCM)**&#x2001;🔀
+# Workflow Example #8: Source Control Management (SCM)
 
-> **⚠️ Verification Status:** This workflow describes SCM provider registration
-> and Git integration. Verify against
-> [`Element/Cocoon/Source/Services/Extension.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Extension.ts)
-> for extension activation and Mountain's Git provider implementation.
+**Goal:**
 
-**Goal:** A user opens a project that is a Git repository. The SCM view in the
-side bar populates with a list of changed files. The user can click a file to
-see a diff view.
+- A user opens a project that is a Git repository.
+- The SCM view in the side bar populates with a list of changed files.
+- The user can click a file to see a diff view.
+
+---
+
+## Table of Contents 📑
+
+1. [Verification Status](#verification-status)
+2. [Flow Map](#flow-map)
+3. [Phase 1: Extension Registration and Repository Discovery](#phase-1-extension-registration-and-repository-discovery)
+4. [Phase 2: Populating the SCM View with Changes](#phase-2-populating-the-scm-view-with-changes)
+5. [Phase 3: Rendering the SCM View](#phase-3-rendering-the-scm-view)
+6. [Phase 4: Viewing a Diff](#phase-4-viewing-a-diff)
+7. [SCM Provider State Setters](#scm-provider-state-setters)
+8. [sky://scm/provider/changed](#skyscmproviderchanged)
+9. [sky://scm/register Retry](#skyscmregister-retry)
+10. [Related Documentation](#related-documentation)
+
+---
+
+## Verification Status ⚠️
+
+This workflow describes SCM provider registration and Git integration.
+
+- Verify against
+  [`Element/Cocoon/Source/Services/Extension.ts`](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Extension.ts)
+  for extension activation.
+- Verify against Mountain's Git provider implementation.
+
+---
+
+## Flow Map 🗺️
 
 ```mermaid
-flowchart TB
-    subgraph C1["Phase 1: Registration & Discovery"]
-        GA["Git Extension<br/>activate()"]
-        CSC["vscode.scm.createSourceControl()"]
-        CSP["ScmProvider Service"]
-        M1["$registerScmProvider<br/>gRPC to Mountain"]
-        WF["vscode.workspace.workspaceFolders"]
-        STAT["vscode.workspace.fs.stat<br/>(.git directory)"]
-        M2["tokio::fs::metadata<br/>native call"]
-        CONF[".git exists"]
-    end
+sequenceDiagram
+    participant Ext as Git Extension<br/>(in Cocoon)
+    participant Cocoon as Cocoon
+    participant Mountain as Mountain
+    participant Sky as Sky/Wind UI
+    participant User as User
 
-    subgraph C2["Phase 2: Populate SCM View"]
-        GS["git.status<br/>--porcelain -z"]
-        API["vscode.git API"]
-        M3["$gitExec<br/>gRPC to Mountain"]
-        GP["GitProvider<br/>spawn git process"]
-        STDOUT["stdout: raw output"]
-        PARSE["Parse status<br/>build file list"]
-        SRS["SourceControlResourceState<br/>URI + decorations"]
-        RGS["resourceGroups.Changes<br/>update state"]
-        M4["$updateScmGroup<br/>gRPC notification"]
-        E1["sky://scm/update-group<br/>Tauri event"]
-    end
-
-    subgraph C3["Phase 3: UI Rendering"]
-        SCM["SCM View Component"]
-        LIST["Render file list<br/>e.g., M src/main.ts"]
-    end
-
-    subgraph C4["Phase 4: Diff View"]
-        USR["User clicks file"]
-        CMD["vscode.open<br/>with git: URI"]
-        DEI["DiffEditorInput"]
-        MOD["Modified side<br/>file:// URI<br/>IFileService.read"]
-        ORIG["Original side<br/>git: URI<br/>Content Provider"]
-        M5["$gitExec<br/>git show HEAD:file"]
-        ORG_CONT["Original content<br/>from Mountain"]
-        DIFF["DiffEditor<br/>side-by-side view"]
-    end
-
-    GA --> CSC
-    CSC --> CSP
-    CSP --> M1
- WF --> STAT
-    STAT --> M2
-    M2 --> CONF
-    CONF --> GS
-    GS --> API
-    API --> M3
-    M3 --> GP
-    GP --> STDOUT
-    STDOUT --> PARSE
-    PARSE --> SRS
-    SRS --> RGS
-    RGS --> M4
-    M4 --> E1
-    E1 --> SCM
-    SCM --> LIST
-    LIST --> USR
-    USR --> CMD
-    CMD --> DEI
-    DEI -->|load both sides| MOD
-    DEI -->|load both sides| ORIG
-    MOD -->|standard read| FS["IFileService"]
-    ORIG --> M5
-    M5 --> GP2["GitProvider<br/>git show"]
-    GP2 --> ORG_CONT
-    ORG_CONT --> ORIG
-    FS --> MOD_CONT["Modified content"]
-    MOD_CONT --> DIFF
-    ORG_CONT --> DIFF
-    DIFF -->|"side-by-side"| VIEW["User sees diff"]
-
-    style C1 fill:#e1f5ff
-    style C2 fill:#fff4e1
-    style C3 fill:#ffe1f5
-    style C4 fill:#e1ffe1
+    Ext->>Cocoon: vscode.scm.createSourceControl('git', 'Git')
+    Cocoon->>Mountain: $registerScmProvider gRPC
+    Ext->>Mountain: vscode.workspace.fs.stat(.git)<br/>via FileSystemProvider gRPC
+    Mountain->>Mountain: tokio::fs::metadata<br/>Confirm .git exists
+    Ext->>Mountain: $gitExec git status --porcelain -z
+    Mountain->>Mountain: GitProvider spawns git<br/>Capture stdout
+    Mountain-->>Ext: Raw status output
+    Ext->>Ext: Parse status, build file list<br/>SourceControlResourceState objects
+    Ext->>Mountain: $updateScmGroup gRPC notification
+    Mountain->>Sky: Emit sky://scm/update-group
+    Sky->>User: Render changed file list
+    User->>Sky: Click changed file
+    Sky->>Cocoon: vscode.open with git: URI
+    Cocoon->>Mountain: $gitExec git show HEAD:file
+    Mountain-->>Cocoon: Original content
+    Cocoon-->>Sky: Original content
+    Sky->>Sky: Resolve DiffEditorInput both sides
+    Sky->>User: Render side-by-side diff
 ```
 
 ---
 
-#### **Phase 1: Extension Registration and Repository Discovery**
+## Phase 1: Extension Registration and Repository Discovery 🔍
 
-1.  **Built-in Git Extension Activation (`Cocoon`)**
-    - **Action:** On startup, `Cocoon` activates its built-in Git extension.
-      This extension is responsible for providing all core Git functionality.
-    - The extension's `activate()` function is called.
+`Cocoon` and `Mountain` own this phase.
 
-2.  **`vscode.scm.createSourceControl()` (`Cocoon`)**
-    - **Action:** The Git extension calls
-      `vscode.scm.createSourceControl('git', 'Git')` to register itself as the
-      provider for the Git SCM.
-    - This call is handled by a new **`ScmProvider`** service in `Cocoon`. This
-      service manages the state of all registered SCM providers.
-    - The `ScmProvider` sends a **`$registerScmProvider` gRPC request to
-      `Mountain`**, informing it that a provider for 'git' now exists, managed
-      by `Cocoon`.
+1. **Built-in Git Extension Activation (`Cocoon`).**
+   - **Action:** On startup, `Cocoon` activates its built-in Git extension.
+   - This extension is responsible for providing all core Git functionality.
+   - The extension's `activate()` function is called.
 
-3.  **Repository Detection (`Cocoon` -> `Mountain` -> `Cocoon`)**
-    - **Action:** The Git extension needs to find out if the open workspace is a
-      Git repository.
-    - It uses the `vscode.workspace.workspaceFolders` API to get the root path.
-    - It then needs to check for a `.git` directory. Since it cannot use
-      `require('fs')`, it uses the `vscode.workspace.fs` API:
-      `vscode.workspace.fs.stat(Uri.joinPath(root, '.git'))`.
-    - This `stat` call travels through `Cocoon`'s `FileSystemProvider`, over
-      gRPC to `Mountain`, which performs the native `tokio::fs::metadata` call
-      and returns the result, confirming the directory exists.
+2. **`vscode.scm.createSourceControl()` (`Cocoon`).**
+   - **Action:** The Git extension calls
+     `vscode.scm.createSourceControl('git', 'Git')`.
+   - This registers the extension as the provider for the Git SCM.
+   - A new `ScmProvider` service in `Cocoon` handles the call.
+   - This service manages the state of all registered SCM providers.
+   - The `ScmProvider` sends a `$registerScmProvider` gRPC request to `Mountain`.
+   - The request informs `Mountain` that a provider for 'git' now exists.
+   - `Cocoon` manages that provider.
 
-#### **Phase 2: Populating the SCM View with Changes**
-
-4.  **Running `git status` (`Cocoon` -> `Mountain`)**
-    - **Action:** Now that the Git extension knows it's in a Git repository, it
-      needs to get the status of the files.
-    - It cannot spawn a `git` process directly. Instead, it relies on a custom
-      `vscode.git` API (which would be provided by `Mountain`). This API exposes
-      a function like `git.exec(repoPath, ['status', '--porcelain', '-z'])`.
-    - This API call is translated into a **`$gitExec` gRPC request to
-      `Mountain`**, sending the repository path and command arguments.
-
-5.  **Native Git Execution (`Mountain`)**
-    - **Action:** `Mountain`'s gRPC server receives the `$gitExec` request. It
-      dispatches it to a new **`GitProvider`** implementation on the
-      `MountainEnvironment`.
-    - The `GitProvider`'s handler logic safely spawns a native `git` child
-      process (`std::process::Command`) with the provided arguments in the
-      specified directory.
-    - It captures the `stdout` of the `git status` command.
-    - **It sends the raw output string back to `Cocoon`** as the successful
-      response to the gRPC request.
-
-6.  **Parsing Status and Updating State (`Cocoon`)**
-    - **Action:** The Git extension in `Cocoon` receives the raw output from
-      `git status`.
-    - It parses this output to build a list of changed files (e.g., "M
-      src/main.ts", "A new-file.txt").
-    - For each changed file, it creates a `SourceControlResourceState` object.
-      This object includes the file's `URI` and `decorations` (like the "M" for
-      modified).
-    - **It updates the `SourceControl` object's `resourceGroups`.** For example,
-      it sets the `resourceStates` property of the "Changes" group to the array
-      of new `SourceControlResourceState` objects it just created.
-
-#### **Phase 3: Rendering the SCM View (`Cocoon` -> `Mountain` -> `Wind/Sky`)**
-
-7.  **`SourceControl.resourceStates` Setter (`Cocoon`)**
-    - **Action:** When the extension updates the `resourceStates` property, the
-      `ScmProvider` service in `Cocoon` detects this change.
-    - It serializes the entire list of `SourceControlResourceState` objects into
-      DTOs.
-    - It sends a **`$updateScmGroup` gRPC notification to `Mountain`**,
-      containing the provider ID, the group ID ("Changes"), and the list of
-      resource state DTOs.
-
-8.  **SCM State Update (`Mountain`)**
-    - **Action:** `Mountain` receives the `$updateScmGroup` notification.
-    - The `ScmProvider` handler updates its view of the SCM state in
-      **`AppState.ActiveScmProviders`**.
-    - It then emits a Tauri event to the UI:
-      **`AppHandle.emit("sky://scm/update-group", { ProviderId: 'git', GroupId: 'Changes', Resources: [...] })`**.
-
-9.  **SCM UI Component (`Wind/Sky`)**
-    - **Action:** The SCM View component in `Wind` is listening for the
-      `sky://scm/update-group` event.
-    - It receives the list of resource DTOs.
-    - **It updates its internal React/Vue/etc. state, causing the UI to
-      re-render.** The File Explorer now shows a list of modified files.
-
-#### **Phase 4: Viewing a Diff**
-
-10. **User Clicks a Changed File (`Wind/Sky`)**
-    - **Action:** The user clicks on `src/main.ts` in the SCM view.
-    - The `onClick` handler for this UI element knows it's an SCM resource. It
-      executes a command like `vscode.open`, but with a special URI that
-      includes information about the original file from the `HEAD` revision
-      (e.g., `git:/src/main.ts?{"ref":"HEAD"}`).
-
-11. **Diff Editor Opening (`Wind` -> `Cocoon` -> `Mountain`)**
-    - **Action:** The `vscode.open` command is handled by the `EditorService`.
-    - The `EditorService` recognizes the `git:` scheme as a request for a diff
-      view. It creates a `DiffEditorInput`.
-    - The `DiffEditorInput` needs to resolve its two sides: the original and the
-      modified.
-        - **Modified:** It loads the content from the workspace file
-          `file:///path/to/src/main.ts` using the `IFileService`. This is a
-          standard file read.
-        - **Original:** It needs the content from `HEAD`. It calls a "Content
-          Provider" associated with the `git:` scheme. This request goes to
-          `Cocoon`.
-    - `Cocoon`'s Git extension receives the content request for the `git:` URI.
-      It makes another **`$gitExec` gRPC call to `Mountain`**, this time with
-      `git.exec(repoPath, ['show', 'HEAD:src/main.ts'])`.
-    - `Mountain` runs the command, gets the original content, and sends it back.
-    - `Cocoon` returns the content to `Wind`.
-
-12. **Diff View Rendered (`Wind`)**
-    - **Action:** The `DiffEditorInput` now has both the original and modified
-      content. It resolves successfully.
-    - The `EditorService` opens the `DiffEditor` and passes it the resolved
-      input.
-    - **The user now sees a side-by-side diff of their changes.**
+3. **Repository Detection (`Cocoon`, `Mountain`, and `Cocoon`).**
+   - **Action:** The Git extension needs to find out if the open workspace is a Git repository.
+   - It uses the `vscode.workspace.workspaceFolders` API to get the root path.
+   - It then needs to check for a `.git` directory.
+   - It cannot use `require('fs')`.
+   - It uses the `vscode.workspace.fs` API instead:
+     `vscode.workspace.fs.stat(Uri.joinPath(root, '.git'))`.
+   - This `stat` call travels through `Cocoon`'s `FileSystemProvider`.
+   - It crosses over gRPC to `Mountain`.
+   - `Mountain` performs the native `tokio::fs::metadata` call.
+   - It returns the result, confirming the directory exists.
 
 ---
 
-#### **SCM provider state setters**
+## Phase 2: Populating the SCM View with Changes 📋
 
-Three `SourceControl` setters are wired to Mountain via
-`$scm:updateSourceControl` (a `sendRequest` round-trip, not a fire-and-forget
-notification):
+`Cocoon` and `Mountain` own this phase.
 
-- **`inputBox.value`** setter sends `{ inputBoxValue: V }` to Mountain, which
-  updates the workbench commit input box.
-- **`inputBox.placeholder`** setter sends `{ inputBoxPlaceholder: V }` and maps
-  to `SourceControlUpdateDTO.InputBoxPlaceholder`.
-- **`commitTemplate`** setter sends `{ commitTemplate: V }` and maps to
-  `SourceControlUpdateDTO.InputBoxPlaceholder` on the Mountain side.
-- **`acceptInputCommand`** setter sends `{ acceptInputCommand: V }` and maps to
-  `SourceControlUpdateDTO.AcceptInputCommand`.
+4. **Running `git status` (`Cocoon` and `Mountain`).**
+   - **Action:** The Git extension now knows it is in a Git repository.
+   - It needs to get the status of the files.
+   - It cannot spawn a `git` process directly.
+   - It relies on a custom `vscode.git` API, which would be provided by `Mountain`.
+   - The API exposes a function such as
+     `git.exec(repoPath, ['status', '--porcelain', '-z'])`.
+   - This API call is translated into a `$gitExec` gRPC request to `Mountain`.
+   - The request carries the repository path and the command arguments.
 
-#### **sky://scm/provider/changed**
+5. **Native Git Execution (`Mountain`).**
+   - **Action:** `Mountain`'s gRPC server receives the `$gitExec` request.
+   - It dispatches the request to a new `GitProvider` implementation.
+   - That implementation lives on the `MountainEnvironment`.
+   - The `GitProvider` handler logic safely spawns a native `git` child process.
+   - It uses `std::process::Command` with the provided arguments.
+   - It runs the process in the specified directory.
+   - It captures the `stdout` of the `git status` command.
+   - It sends the raw output string back to `Cocoon`.
+   - This is the successful response to the gRPC request.
 
-When Mountain receives a `$scm:updateSourceControl` call it emits
-`sky://scm/provider/changed` to the Sky renderer with the updated provider
-state. The `InstallScm.ts` bridge handler finds the matching shim by numeric
-handle and applies `InputModel.setValue(newValue)` (or `applyEdits` as a
-fallback) so the workbench commit input reflects the extension-set text. It then
-fires `provider.onDidChange` so the SCM panel re-renders.
+6. **Parsing Status and Updating State (`Cocoon`).**
+   - **Action:** The Git extension in `Cocoon` receives the raw output from `git status`.
+   - It parses this output to build a list of changed files.
+   - Examples are "M src/main.ts" and "A new-file.txt".
+   - For each changed file, it creates a `SourceControlResourceState` object.
+   - The object includes the file's `URI`.
+   - It includes decorations, such as the "M" for modified.
+   - It updates the `SourceControl` object's `resourceGroups`.
+   - For example, it sets the `resourceStates` property of the "Changes" group.
+   - The value is the array of new `SourceControlResourceState` objects.
 
-#### **sky://scm/register retry**
+---
 
-`sky://scm/register` registration in the Sky bridge calls
-`__CEL_SERVICES__.SCM.registerSCMProvider()`. Because `__CEL_SERVICES__.SCM` is
-populated asynchronously by the Output service accessor, there is a potential
-race on startup. The bridge retries registration up to 10 times with 200 ms
-between attempts before falling back to the DOM `CustomEvent` path, ensuring the
-SCM viewlet populates even when the workbench service resolves late.
+## Phase 3: Rendering the SCM View 🖼️
+
+`Cocoon`, `Mountain`, `Wind`, and `Sky` own this phase.
+
+7. **`SourceControl.resourceStates` Setter (`Cocoon`).**
+   - **Action:** The extension updates the `resourceStates` property.
+   - The `ScmProvider` service in `Cocoon` detects this change.
+   - It serializes the entire list of `SourceControlResourceState` objects into DTOs.
+   - It sends a `$updateScmGroup` gRPC notification to `Mountain`.
+   - The notification contains the provider ID.
+   - It contains the group ID, "Changes".
+   - It contains the list of resource state DTOs.
+
+8. **SCM State Update (`Mountain`).**
+   - **Action:** `Mountain` receives the `$updateScmGroup` notification.
+   - The `ScmProvider` handler updates its view of the SCM state.
+   - The state lives in `AppState.ActiveScmProviders`.
+   - It then emits a Tauri event to the UI:
+     `AppHandle.emit("sky://scm/update-group", { ProviderId: 'git', GroupId: 'Changes', Resources: [...] })`.
+
+9. **SCM UI Component (`Wind/Sky`).**
+   - **Action:** The SCM View component in `Wind` listens for the `sky://scm/update-group` event.
+   - It receives the list of resource DTOs.
+   - It updates its internal React, Vue, or other framework state.
+   - This causes the UI to re-render.
+   - The File Explorer now shows a list of modified files.
+
+---
+
+## Phase 4: Viewing a Diff 🔀
+
+`Wind`, `Cocoon`, and `Mountain` own this phase.
+
+10. **User Clicks a Changed File (`Wind/Sky`).**
+    - **Action:** The user clicks `src/main.ts` in the SCM view.
+    - The `onClick` handler for this UI element knows it is an SCM resource.
+    - It executes a command like `vscode.open`.
+    - It uses a special URI that includes information about the original file from the `HEAD` revision.
+    - An example is `git:/src/main.ts?{"ref":"HEAD"}`.
+
+11. **Diff Editor Opening (`Wind`, `Cocoon`, and `Mountain`).**
+    - **Action:** The `EditorService` handles the `vscode.open` command.
+    - The `EditorService` recognizes the `git:` scheme as a request for a diff view.
+    - It creates a `DiffEditorInput`.
+    - The `DiffEditorInput` needs to resolve its two sides: the original and the modified.
+      - **Modified:**
+        - It loads the content from the workspace file `file:///path/to/src/main.ts`.
+        - It uses the `IFileService`.
+        - This is a standard file read.
+      - **Original:**
+        - It needs the content from `HEAD`.
+        - It calls a Content Provider associated with the `git:` scheme.
+        - This request goes to `Cocoon`.
+    - `Cocoon`'s Git extension receives the content request for the `git:` URI.
+    - It makes another `$gitExec` gRPC call to `Mountain`.
+    - The call is `git.exec(repoPath, ['show', 'HEAD:src/main.ts'])`.
+    - `Mountain` runs the command.
+    - It gets the original content and sends it back.
+    - `Cocoon` returns the content to `Wind`.
+
+12. **Diff View Rendered (`Wind`).**
+    - **Action:** The `DiffEditorInput` now has both the original and modified content.
+    - It resolves successfully.
+    - The `EditorService` opens the `DiffEditor`.
+    - It passes the resolved input to the `DiffEditor`.
+    - The user now sees a side-by-side diff of their changes.
+
+---
+
+## SCM Provider State Setters ⚙️
+
+Three `SourceControl` setters are wired to Mountain through `$scm:updateSourceControl`.
+This is a `sendRequest` round-trip, not a fire-and-forget notification.
+
+- **`inputBox.value`:**
+  - The setter sends `{ inputBoxValue: V }` to Mountain.
+  - Mountain updates the workbench commit input box.
+- **`inputBox.placeholder`:**
+  - The setter sends `{ inputBoxPlaceholder: V }`.
+  - It maps to `SourceControlUpdateDTO.InputBoxPlaceholder`.
+- **`commitTemplate`:**
+  - The setter sends `{ commitTemplate: V }`.
+  - It maps to `SourceControlUpdateDTO.InputBoxPlaceholder` on the Mountain side.
+- **`acceptInputCommand`:**
+  - The setter sends `{ acceptInputCommand: V }`.
+  - It maps to `SourceControlUpdateDTO.AcceptInputCommand`.
+
+---
+
+## sky://scm/provider/changed 🔄
+
+- When Mountain receives a `$scm:updateSourceControl` call, it emits `sky://scm/provider/changed` to the Sky renderer.
+- The event carries the updated provider state.
+- The `InstallScm.ts` bridge handler finds the matching shim by numeric handle.
+- It applies `InputModel.setValue(newValue)`, or `applyEdits` as a fallback.
+- The workbench commit input then reflects the extension-set text.
+- It then fires `provider.onDidChange` so the SCM panel re-renders.
+
+---
+
+## sky://scm/register Retry 🔁
+
+- `sky://scm/register` registration in the Sky bridge calls `__CEL_SERVICES__.SCM.registerSCMProvider()`.
+- `__CEL_SERVICES__.SCM` is populated asynchronously by the Output service accessor.
+- This creates a potential race on startup.
+- The bridge retries registration up to 10 times.
+- It waits 200 ms between attempts.
+- It then falls back to the DOM `CustomEvent` path.
+- This ensures the SCM viewlet populates even when the workbench service resolves late.
+
+---
+
+## Related Documentation 📖
+
+- [Workflow](Workflow.md) - workflow index and per-Element architecture table
+- [Application Startup and Handshake](ApplicationStartupAndHandshake.md) - Workflow #1
+- [Opening a File from the UI](OpeningAFileFromTheUI.md) - Workflow #2
+- [Invoking a Language Feature (Hover Provider)](InvokingALanguageFeatureHoverProvider.md) - Workflow #3
+- [Saving a File with Save Participants](SavingAFileWithSaveParticipants.md) - Workflow #4
+- [Executing a Command from the Command Palette](ExecutingACommandFromTheCommandPalette.md) - Workflow #5
+- [Creating and Interacting with a Webview Panel](CreatingAndInteractingWithAWebviewPanel.md) - Workflow #6
+- [Creating and Interacting with an Integrated Terminal](CreatingAndInteractingWithAnIntegratedTerminal.md) - Workflow #7
+- [User Data Synchronization](UserDataSynchronization.md) - Workflow #9
+- [Running Extension Tests](RunningExtensionTests.md) - Workflow #10
+- [Tier-Gated Implementation Selection](TierGatedImplementationSelection.md) - Workflow #11
+- [InterComponentProtocol](../InterComponentProtocol.md) - Tauri IPC, gRPC, and connection lifecycle
+
+---
+
+**Project Maintainers:** Source Open
+([Source/Open@Editor.Land](mailto:Source/Open@Editor.Land)) |
+[GitHub Repository](https://github.com/CodeEditorLand/Land) |
+[Report an Issue](https://github.com/CodeEditorLand/Land/issues)

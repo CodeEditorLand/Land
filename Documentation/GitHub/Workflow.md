@@ -1,154 +1,156 @@
 # Land Project Architecture
 
-A high-level overview of the architecture and the core workflows that drive the
-application. Our system is composed of three primary components:
+A high-level overview of the architecture and the core workflows that drive the application.
 
-- **`Common`&#x2001;🧑🏻‍🏭 (Rust Crate):** The abstract core library. It defines the
-  architectural "language" of the application through traits, data structures
-  (DTOs), and a declarative Effect system. It has no knowledge of the final
-  implementation.
-- **`Mountain`&#x2001;⛰️ (Rust Application):** The native backend. It is a Tauri
-  application that implements the abstract traits from `Common`, manages the
-  native OS interactions, runs a gRPC server, and orchestrates the `Cocoon`
-  sidecar process.
-- **`Wind`&#x2001;🍃 & `Sky`&#x2001;🌌 (TypeScript UI):** The frontend. `Wind`
-  is a re-implementation of the VS Code workbench services using `Effect-TS`,
-  providing the application logic for the UI. `Sky` is the `Astro`-based UI
-  layer that renders the editor interface and bridges `Tauri` events to the
-  workbench via `SkyBridge`.
-- **`Cocoon`&#x2001;🦋 (TypeScript Application):** A Node.js sidecar process
-  managed by `Mountain`. It is responsible for running extensions in a sandboxed
-  environment and providing them with a high-fidelity `vscode` API.
+The system is composed of four primary components:
 
-Communication between `Mountain` and `Cocoon` is handled via **gRPC**, while
-communication between `Mountain` and `Wind/Sky` is handled via **Tauri Events
-and Commands**.
+- **`Common`** (Rust crate):
+  - The abstract core library.
+  - Defines the architectural language of the application.
+  - Defines traits, data structures, and DTOs.
+  - Defines a declarative Effect system.
+  - Has no knowledge of the final implementation.
+- **`Mountain`** (Rust application):
+  - The native backend.
+  - A Tauri application.
+  - Implements the abstract traits from `Common`.
+  - Manages the native OS interactions.
+  - Runs a gRPC server.
+  - Orchestrates the `Cocoon` sidecar process.
+- **`Wind`** and **`Sky`** (TypeScript UI):
+  - `Wind` is a re-implementation of the VS Code workbench services using `Effect-TS`.
+  - `Wind` provides the application logic for the UI.
+  - `Sky` is the Astro-based UI layer.
+  - `Sky` renders the editor interface.
+  - `Sky` bridges Tauri events to the workbench through `SkyBridge`.
+- **`Cocoon`** (TypeScript application):
+  - A Node.js sidecar process managed by `Mountain`.
+  - Runs extensions in a sandboxed environment.
+  - Provides a high-fidelity `vscode` API to extensions.
 
----
+Communication between components:
 
-## Table of Contents&#x2001;📑
-
-### Core Workflows&#x2001;🔄
-
-1.  [**Application Startup & Handshake**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/ApplicationStartupAndHandshake.md)
-    - _Describes the complete end-to-end process of launching `Mountain`,
-      spawning `Cocoon`, and establishing a stable, initialized state for both
-      the UI and the extension host._
-
-2.  [**Opening a File from the UI**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/OpeningAFileFromTheUI.md)
-    - _Details the flow from a user clicking a file in the explorer to the
-      content being read from disk by `Mountain` and rendered in an editor by
-      `Wind`._
-
-3.  [**Invoking a Language Feature (Hover Provider)**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/InvokingALanguageFeatureHoverProvider.md)
-    - _A key example of bi-directional communication, showing how an extension
-      in `Cocoon` registers a feature, `Mountain` orchestrates the request, and
-      the result is displayed in the `Wind` UI._
-
-4.  [**Saving a File with Save Participants**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/SavingAFileWithSaveParticipants.md)
-    - _Explains the advanced process of intercepting a save event, allowing an
-      extension in `Cocoon` to modify a file (e.g., for formatting) before
-      `Mountain` writes it to disk._
-
-5.  [**Executing a Command from the Command Palette**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/ExecutingACommandFromTheCommandPalette.md)
-    - _Illustrates the unified command system, showing how `Mountain`'s command
-      registry can seamlessly dispatch execution to either a native Rust handler
-      or a proxied command in `Cocoon`._
-
-6.  [**Creating and Interacting with a Webview Panel**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/CreatingAndInteractingWithAWebviewPanel.md)
-    - _Details the full lifecycle of extension-contributed UI, from `Cocoon`
-      requesting a panel to `Mountain` managing the native webview window and
-      proxying messages back and forth._
-
-7.  [**Creating and Interacting with an Integrated Terminal**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/CreatingAndInteractingWithAnIntegratedTerminal.md)
-    - _A deep dive into native process management, showing how `Mountain` spawns
-      a PTY process and streams its I/O to both the `Wind` frontend and the
-      `Cocoon` extension host._
-
-8.  [**Source Control Management (SCM)**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/SourceControlManagementSCM.md)
-    - _Outlines how the built-in Git extension in `Cocoon` uses `Mountain` as a
-      service to run native `git` commands and then populates the SCM view in
-      the UI with the results._
-
-9.  [**User Data Synchronization**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/UserDataSynchronization.md)
-    - _Describes the end-to-end process of syncing user settings. It covers user
-      authentication, fetching data from a remote store, performing a three-way
-      merge, applying changes locally, and notifying all parts of the
-      application._
-
-10. [**Running Extension Tests**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/RunningExtensionTests.md)
-    - _Explains the "Extension Development Host" model, where a second, isolated
-      instance of the application is launched to run tests, with the test
-      `Cocoon` instance remote-controlling the main UI._
-
-11. [**Tier-Gated Implementation Selection**](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/Workflow/TierGatedImplementationSelection.md)
-    - _Describes how the `.env.Land` file propagates through Maintain's build
-      script into `Mountain`'s `build.rs`, Cocoon's esbuild define map, and
-      Sky's Vite define map - allowing each capability with more than one viable
-      implementation (gRPC vs native, JS glob vs `globset`, etc.) to live in the
-      codebase simultaneously and be selected at build time without duplicating
-      call sites._
-
-### Work in Progress (Documentation)&#x2001;🚧
-
-The following workflows are implemented in the codebase but are pending detailed
-documentation.
-
-- **Tree View Data Flow**
-    - _Describes how the UI requests children for a tree view node, and how
-      `Mountain` proxies this request to the correct `TreeDataProvider` in
-      `Cocoon`._
-- **Custom Editor Lifecycle**
-    - _Details the process of opening a file in a custom editor, handling edits,
-      saving custom document data, and managing backups and reverts._
-- **Debugging Session Lifecycle**
-    - _Outlines the flow from launching a debug configuration to `Mountain`
-      starting a debug adapter, and how debug events (breakpoints, step, pause)
-      are communicated between the UI, `Mountain`, and `Cocoon`._
-- **Task Execution**
-    - _Explains how tasks defined in `tasks.json` or by extensions are
-      discovered and executed, including how their output is piped to a terminal
-      view._
+- `Mountain` and `Cocoon` communicate through gRPC.
+- `Mountain` and `Wind`/`Sky` communicate through Tauri Events and Commands.
 
 ---
 
-## System Documentation
+## Table of Contents 📑
 
-The following documents provide in-depth system-level documentation
-complementing these workflows. A comprehensive master index is available at
-[`README.md`](README.md).
+1. [Process Model](#process-model)
+2. [Core Workflows](#core-workflows)
+3. [System Documentation](#system-documentation)
+4. [Per-Element Architecture](#per-element-architecture)
+5. [Related Documentation](#related-documentation)
 
-| Document                                            | Topics Covered                                                                              |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| [Architecture](Architecture.md)                     | System architecture, process model, IPC architecture, service layer design                  |
-| [BuildPipeline](BuildPipeline.md)                   | Build stages, env propagation, profile system, artifact layout                              |
-| [EditorCore](EditorCore.md)                         | Workbench adaptation, Wind service layer, command dispatch, workbench variants              |
-| [Polyfills](Polyfills.md)                           | Preload shim, SkyBridge, Cocoon prelude, Output transforms, Worker SW                       |
-| [RustInfrastructure](RustInfrastructure.md)         | Common traits, Echo scheduler, Mountain, Mist DNS, Air daemon, Rest OXC, Vine gRPC protocol |
-| [InterComponentProtocol](InterComponentProtocol.md) | Tauri IPC, Vine gRPC, Spine protocol, connection lifecycle, health monitoring               |
+---
 
-### Per-Element Architecture
+## Process Model 🗺️
 
-Each Element has an `Architecture.md` in its `Documentation/GitHub/` directory
-covering its internal module structure, data flow, and component-specific
-implementation details:
+```mermaid
+graph TB
+    User["User"]
+    UI["Wind / Sky<br/>TypeScript UI"]
+    Mtn["Mountain<br/>Rust native backend"]
+    Coc["Cocoon<br/>TypeScript extension host"]
+    Cmn["Common<br/>Rust abstract core"]
 
-| Element      | Language   | Role                      | Doc                                                                                                          |
-| ------------ | ---------- | ------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **Air**      | Rust       | Background daemon         | [Architecture](https://github.com/CodeEditorLand/Air/tree/Current/Documentation/GitHub/Architecture.md)      |
-| **Cocoon**   | TypeScript | Node.js extension host    | [Architecture](https://github.com/CodeEditorLand/Cocoon/tree/Current/Documentation/GitHub/Architecture.md)   |
-| **Common**   | Rust       | Abstract core library     | [Architecture](https://github.com/CodeEditorLand/Common/tree/Current/Documentation/GitHub/Architecture.md)   |
-| **Echo**     | Rust       | Work-stealing scheduler   | [Architecture](https://github.com/CodeEditorLand/Echo/tree/Current/Documentation/GitHub/Architecture.md)     |
-| **Grove**    | Rust       | WASM extension host       | [Architecture](https://github.com/CodeEditorLand/Grove/tree/Current/Documentation/GitHub/Architecture.md)    |
-| **Mist**     | Rust       | DNS isolation server      | [Architecture](https://github.com/CodeEditorLand/Mist/tree/Current/Documentation/GitHub/Architecture.md)     |
-| **Mountain** | Rust       | Native backend (Tauri)    | [Architecture](https://github.com/CodeEditorLand/Mountain/tree/Current/Documentation/GitHub/Architecture.md) |
-| **Output**   | TypeScript | Build artifact management | [Architecture](https://github.com/CodeEditorLand/Output/tree/Current/Documentation/GitHub/Architecture.md)   |
-| **Rest**     | Rust       | OXC TypeScript compiler   | [Architecture](https://github.com/CodeEditorLand/Rest/tree/Current/Documentation/GitHub/Architecture.md)     |
-| **SideCar**  | Rust       | Vendored runtime manager  | [Architecture](https://github.com/CodeEditorLand/SideCar/tree/Current/Documentation/GitHub/Architecture.md)  |
-| **Sky**      | TypeScript | UI component layer        | [Architecture](https://github.com/CodeEditorLand/Sky/tree/Current/Documentation/GitHub/Architecture.md)      |
-| **Vine**     | Protocol   | gRPC protocol definitions | [Architecture](https://github.com/CodeEditorLand/Vine/tree/Current/Documentation/GitHub/Architecture.md)     |
-| **Wind**     | TypeScript | Frontend service layer    | [Architecture](https://github.com/CodeEditorLand/Wind/tree/Current/Documentation/GitHub/Architecture.md)     |
-| **Worker**   | TypeScript | Service worker            | [Architecture](https://github.com/CodeEditorLand/Worker/tree/Current/Documentation/GitHub/Architecture.md)   |
+    User --> UI
+    UI -->|Tauri events and commands| Mtn
+    Mtn -->|Vine gRPC| Coc
+    Coc -->|Vine gRPC| Mtn
+    Mtn -->|implements traits| Cmn
+```
+
+---
+
+## Core Workflows 🔄
+
+Each workflow below is a step-by-step guide.
+
+| #  | Workflow | Elements | Description |
+| -- | -------- | -------- | ----------- |
+| 1  | [Application Startup and Handshake](Workflow/ApplicationStartupAndHandshake.md) | `Mountain`, `Cocoon`, `Wind`, `Sky` | Describes the complete end-to-end process of launching `Mountain`, spawning `Cocoon`, and establishing a stable, initialized state for both the UI and the extension host. |
+| 2  | [Opening a File from the UI](Workflow/OpeningAFileFromTheUI.md) | `Wind`, `Sky`, `Mountain` | Details the flow from a user clicking a file in the explorer to the content being read from disk by `Mountain` and rendered in an editor by `Wind`. |
+| 3  | [Invoking a Language Feature (Hover Provider)](Workflow/InvokingALanguageFeatureHoverProvider.md) | `Cocoon`, `Mountain`, `Wind`, `Sky` | A key example of bi-directional communication. An extension in `Cocoon` registers a feature, `Mountain` orchestrates the request, and the result is displayed in the `Wind` UI. |
+| 4  | [Saving a File with Save Participants](Workflow/SavingAFileWithSaveParticipants.md) | `Wind`, `Cocoon`, `Mountain` | Explains the advanced process of intercepting a save event. An extension in `Cocoon` may modify a file, for example for formatting, before `Mountain` writes it to disk. |
+| 5  | [Executing a Command from the Command Palette](Workflow/ExecutingACommandFromTheCommandPalette.md) | `Wind`, `Sky`, `Mountain`, `Cocoon` | Illustrates the unified command system. `Mountain`'s command registry dispatches execution to either a native Rust handler or a proxied command in `Cocoon`. |
+| 6  | [Creating and Interacting with a Webview Panel](Workflow/CreatingAndInteractingWithAWebviewPanel.md) | `Cocoon`, `Mountain`, `Wind`, `Sky` | Details the full lifecycle of extension-contributed UI. `Cocoon` requests a panel, `Mountain` manages the native webview window, and messages are proxied back and forth. |
+| 7  | [Creating and Interacting with an Integrated Terminal](Workflow/CreatingAndInteractingWithAnIntegratedTerminal.md) | `Mountain`, `Wind`, `Sky`, `Cocoon` | A deep dive into native process management. `Mountain` spawns a PTY process and streams its I/O to both the `Wind` frontend and the `Cocoon` extension host. |
+| 8  | [Source Control Management (SCM)](Workflow/SourceControlManagementSCM.md) | `Cocoon`, `Mountain`, `Wind`, `Sky` | Outlines how the built-in Git extension in `Cocoon` uses `Mountain` as a service to run native `git` commands and then populates the SCM view in the UI with the results. |
+| 9  | [User Data Synchronization](Workflow/UserDataSynchronization.md) | `Wind`, `Sky`, `Cocoon`, `Mountain` | Describes the end-to-end process of syncing user settings. It covers user authentication, fetching data from a remote store, performing a three-way merge, applying changes locally, and notifying all parts of the application. |
+| 10 | [Running Extension Tests](Workflow/RunningExtensionTests.md) | `Mountain`, `Cocoon` | Explains the Extension Development Host model. A second, isolated instance of the application is launched to run tests, with the test `Cocoon` instance remote-controlling the main UI. |
+| 11 | [Tier-Gated Implementation Selection](Workflow/TierGatedImplementationSelection.md) | `Maintain`, `Mountain`, `Cocoon`, `Wind`, `Sky` | Describes how `.env.Land` propagates through the build script into `Mountain`'s `build.rs`, `Cocoon`'s esbuild define map, and `Sky`'s Vite define map. Each capability with more than one viable implementation, such as gRPC versus native or JavaScript glob versus `globset`, lives in the codebase simultaneously and is selected at build time without duplicating call sites. |
+
+### Work in Progress (Documentation) 🚧
+
+The following workflows are implemented in the codebase but are pending detailed documentation.
+
+- **Tree View Data Flow.**
+  - Describes how the UI requests children for a tree view node.
+  - Describes how `Mountain` proxies this request to the correct `TreeDataProvider` in `Cocoon`.
+- **Custom Editor Lifecycle.**
+  - Details the process of opening a file in a custom editor.
+  - Details handling edits and saving custom document data.
+  - Details managing backups and reverts.
+- **Debugging Session Lifecycle.**
+  - Outlines the flow from launching a debug configuration to `Mountain` starting a debug adapter.
+  - Describes how debug events, such as breakpoints, step, and pause, are communicated between the UI, `Mountain`, and `Cocoon`.
+- **Task Execution.**
+  - Explains how tasks defined in `tasks.json` or by extensions are discovered and executed.
+  - Explains how task output is piped to a terminal view.
+
+---
+
+## System Documentation 📖
+
+The following documents provide in-depth system-level documentation complementing these workflows.
+A comprehensive master index is available at [`README.md`](README.md).
+
+| Document | Topics Covered |
+| -------- | -------------- |
+| [Architecture](Architecture.md) | System architecture, process model, IPC architecture, service layer design |
+| [BuildPipeline](BuildPipeline.md) | Build stages, env propagation, profile system, artifact layout |
+| [EditorCore](EditorCore.md) | Workbench adaptation, `Wind` service layer, command dispatch, workbench variants |
+| [Polyfills](Polyfills.md) | Preload shim, `SkyBridge`, `Cocoon` prelude, `Output` transforms, `Worker` service worker |
+| [RustInfrastructure](RustInfrastructure.md) | `Common` traits, `Echo` scheduler, `Mountain`, `Mist` DNS, `Air` daemon, `Rest` OXC, `Vine` gRPC protocol |
+| [InterComponentProtocol](InterComponentProtocol.md) | Tauri IPC, `Vine` gRPC, `Spine` protocol, connection lifecycle, health monitoring |
+
+---
+
+## Per-Element Architecture 🏗️
+
+Each Element has an `Architecture.md` in its `Documentation/GitHub/` directory.
+The companion document covers internal module structure, data flow, and component-specific implementation details.
+
+- Fifteen Elements have an `Architecture.md` on disk.
+- `Cache` has no `Architecture.md` on disk and is omitted from this table.
+
+| Element | Language | Role | Doc |
+| ------- | -------- | ---- | --- |
+| `Air` | Rust | Background daemon | [Architecture](https://github.com/CodeEditorLand/Air/tree/Current/Documentation/GitHub/Architecture.md) |
+| `Cocoon` | TypeScript | Node.js extension host | [Architecture](https://github.com/CodeEditorLand/Cocoon/tree/Current/Documentation/GitHub/Architecture.md) |
+| `Common` | Rust | Abstract core library | [Architecture](https://github.com/CodeEditorLand/Common/tree/Current/Documentation/GitHub/Architecture.md) |
+| `Echo` | Rust | Work-stealing scheduler | [Architecture](https://github.com/CodeEditorLand/Echo/tree/Current/Documentation/GitHub/Architecture.md) |
+| `Grove` | Rust | WASM extension host | [Architecture](https://github.com/CodeEditorLand/Grove/tree/Current/Documentation/GitHub/Architecture.md) |
+| `Maintain` | Rust | Build system and CI/CD toolkit | [Architecture](https://github.com/CodeEditorLand/Maintain/tree/Current/Documentation/GitHub/Architecture.md) |
+| `Mist` | Rust | DNS isolation server | [Architecture](https://github.com/CodeEditorLand/Mist/tree/Current/Documentation/GitHub/Architecture.md) |
+| `Mountain` | Rust | Native backend (Tauri) | [Architecture](https://github.com/CodeEditorLand/Mountain/tree/Current/Documentation/GitHub/Architecture.md) |
+| `Output` | TypeScript | Build artifact management | [Architecture](https://github.com/CodeEditorLand/Output/tree/Current/Documentation/GitHub/Architecture.md) |
+| `Rest` | Rust | OXC TypeScript compiler | [Architecture](https://github.com/CodeEditorLand/Rest/tree/Current/Documentation/GitHub/Architecture.md) |
+| `SideCar` | Rust | Vendored runtime manager | [Architecture](https://github.com/CodeEditorLand/SideCar/tree/Current/Documentation/GitHub/Architecture.md) |
+| `Sky` | TypeScript | UI component layer | [Architecture](https://github.com/CodeEditorLand/Sky/tree/Current/Documentation/GitHub/Architecture.md) |
+| `Vine` | Protocol | gRPC protocol definitions | [Architecture](https://github.com/CodeEditorLand/Vine/tree/Current/Documentation/GitHub/Architecture.md) |
+| `Wind` | TypeScript | Frontend service layer | [Architecture](https://github.com/CodeEditorLand/Wind/tree/Current/Documentation/GitHub/Architecture.md) |
+| `Worker` | TypeScript | Service worker | [Architecture](https://github.com/CodeEditorLand/Worker/tree/Current/Documentation/GitHub/Architecture.md) |
+
+---
+
+## Related Documentation 📖
+
+- [Architecture](Architecture.md) - system architecture and process model
+- [InterComponentProtocol](InterComponentProtocol.md) - Tauri IPC, gRPC, and connection lifecycle
+- [README](README.md) - master index for the system documentation set
 
 ---
 

@@ -11,7 +11,7 @@ read out of order. Every source path is a link to its canonical location on the
 
 ---
 
-## Table of Contents
+**Table of Contents**
 
 1. [Workbench Architecture](#workbench-architecture)
 2. [Wind Service Layer](#wind-service-layer)
@@ -24,7 +24,7 @@ read out of order. Every source path is a link to its canonical location on the
 
 ---
 
-## Workbench Architecture&#x2001;🏗️
+## Workbench Architecture 🏗️
 
 **What the workbench does:** it renders the editor surface - Activity Bar, Side
 Bar, Editor Part, Status Bar and Panel - and owns the service graph that every
@@ -118,7 +118,7 @@ window.dispatchEvent(new Event("land-preload-ready"));
 
 ---
 
-## Wind Service Layer&#x2001;🧩
+## Wind Service Layer 🧩
 
 **What the Wind service layer does:** it supplies the service implementations
 the workbench resolves at startup, standing in for VS Code's Electron-backed
@@ -151,11 +151,15 @@ Wind/Source/Effect/<Service>/
 > [!IMPORTANT]
 >
 > The `Effect-TS` layout above is the design this chapter documents; the tracked
-> tree has since moved on. Commit `96704967` (2026-06-13) migrated the service
-> domains out of `Source/Effect/` and removed the `effect` dependency from Wind's
-> `package.json`, so on `Current` [`Wind/Source/Effect/`](https://github.com/CodeEditorLand/Wind/tree/Current/Source) holds no
-> tracked files and the live transport code sits in
-> [`Wind/Source/Service/`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Service).
+> tree has since moved on. Commit `96704967` (2026-06-13) migrated the transport
+> code out of `Source/Effect/` and removed the `effect` dependency from Wind's
+> `package.json`. On `Current`, the live transport code sits in
+> [`Wind/Source/Service/`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Service),
+> while [`Wind/Source/Effect/`](https://github.com/CodeEditorLand/Wind/tree/Current/Source)
+> still holds the `Workbench*` service domains. The `Generated/` and
+> `Effect/Layers/` directories named above are absent on `Current`; the surviving
+> entry point is
+> [`Wind/Source/Function/Install.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Function/Install.ts).
 
 ### Service Catalog
 
@@ -280,7 +284,7 @@ export async function InvokeMountain(
 
 ---
 
-## Service Composition and Layer Stacks&#x2001;🧩
+## Service Composition and Layer Stacks 🧩
 
 **What layer composition does:** it wires the individual service
 implementations into one dependency-checked graph, so the workbench can resolve
@@ -476,7 +480,7 @@ module-singleton `ManagedRuntime` wrapping `LandWorkbenchLayer`:
 
 ---
 
-## Workbench Variants&#x2001;🚀
+## Workbench Variants 🚀
 
 **What a variant does:** it fixes how much of VS Code the build carries and
 which backend serves it, letting a contributor trade feature coverage for build
@@ -559,7 +563,7 @@ variants are bundled through Vite/Astro (see `Bundled/<Variant>/Layout.astro`).
 
 ---
 
-## Command Dispatch System&#x2001;🎮
+## Command Dispatch System 🎮
 
 **What command dispatch does:** it takes one user gesture - a palette entry, a
 keybinding or a programmatic call - and routes it to whichever of the three
@@ -643,7 +647,7 @@ flow above.
 
 ---
 
-## Editor Service Architecture&#x2001;✏️
+## Editor Service Architecture ✏️
 
 **What the editor service does:** it turns a URI into a live editor - resolving
 a text model, filling it from `Mountain`, and mounting the Monaco-based widget
@@ -722,7 +726,7 @@ Dirty state propagates to:
 
 ---
 
-## VS Code API Coverage Strategy&#x2001;🔬
+## VS Code API Coverage Strategy 🔬
 
 **What the coverage strategy does:** it decides, per API, whether **Land** runs
 VS Code's own implementation unchanged or substitutes a native `Rust` one -
@@ -791,7 +795,7 @@ Status symbols:
 
 ---
 
-## Related Documentation&#x2001;📋
+## Related Documentation 📋
 
 **What this index does:** it points at the neighbouring documents that carry the
 detail this chapter deliberately stops short of, with both the in-tree path and

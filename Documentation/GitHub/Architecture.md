@@ -11,7 +11,7 @@ drawn from the real source tree.
 
 ---
 
-## Table of Contents
+**Table of Contents**
 
 1. [Process Model](#process-model)
 2. [Component Map](#component-map)
@@ -24,7 +24,7 @@ drawn from the real source tree.
 
 ---
 
-## Process Model&#x2001;🏗️
+## Process Model 🏗️
 
 **Land** operates as a multi-process application with three concurrent
 processes:
@@ -94,7 +94,7 @@ graph TB
     Wind --> Sky
 ```
 
-## Component Map&#x2001;🗺️
+## Component Map 🗺️
 
 Every Element is its own repository under the `CodeEditorLand` organisation and
 is vendored into
@@ -191,7 +191,7 @@ service MountainService {
 
 ---
 
-## IPC Architecture&#x2001;🔌
+## IPC Architecture 🔌
 
 ### Inter-Process Communication Matrix
 
@@ -315,7 +315,7 @@ TierAuth=Node
 
 ---
 
-## Service Layer Design&#x2001;🧩
+## Service Layer Design 🧩
 
 ### Common Trait Architecture (Rust side)
 
@@ -447,7 +447,7 @@ rpc ProvideHover(ProvideHoverRequest) returns (ProvideHoverResponse);
 
 ---
 
-## Tier-Gated Implementation&#x2001;⚙️
+## Tier-Gated Implementation ⚙️
 
 **Land** uses a configuration-driven selection mechanism for capabilities that
 have multiple implementation strategies. Each capability is assigned a tier
@@ -482,7 +482,7 @@ TierFileWatcher=Layer4
 
 ---
 
-## Data Flow Patterns&#x2001;📊
+## Data Flow Patterns 📊
 
 ### Read Request (File Open)
 
@@ -551,7 +551,7 @@ sequenceDiagram
 
 ---
 
-## Shim Interception Layer&#x2001;🔵
+## Shim Interception Layer 🔵
 
 Land includes a two-tier VS Code engine interception system for deep event
 routing and performance tracing.
@@ -640,7 +640,7 @@ pub enum SwallowAction {
 
 ---
 
-## Related Documentation&#x2001;📋
+## Related Documentation 📋
 
 - [BuildPipeline](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/BuildPipeline.md) - Full build pipeline from env files to
   binary artifacts
