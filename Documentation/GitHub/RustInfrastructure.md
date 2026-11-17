@@ -37,7 +37,7 @@ built upon.
 | `Grove`    | Library+Binary | 2024    | `Common`, wasmtime, tonic, clap                      | Wasm sandbox for WASM-compiled extensions                                                         |
 | `Vine`     | Library        | 2024    | tonic-build, prost, prost-types                      | `gRPC` protocol definitions (`Vine.proto`); compiled stubs consumed by `Mountain`, `Cocoon`, `Air` |
 
-### Dependency Graph
+### Dependency Graph 🗺️
 
 ```mermaid
 graph TB
@@ -64,7 +64,7 @@ The `Common` crate is the architectural foundation of **Land**'s native backend.
 It is a pure abstract library with no concrete implementations -- it defines
 what the system can do, not how.
 
-### Trait Architecture
+### Trait Architecture 🧩
 
 Every application capability is defined as an async trait:
 
@@ -83,7 +83,7 @@ pub trait FileSystem: Send + Sync {
 }
 ```
 
-### Defined Service Interfaces
+### Defined Service Interfaces 🧩
 
 | Trait                 | Domain              | Methods                                                        |
 | --------------------- | ------------------- | -------------------------------------------------------------- |
@@ -99,7 +99,7 @@ pub trait FileSystem: Send + Sync {
 | `SecretStorage`       | OS keychain         | get, set, delete, onDidChange                                  |
 | `Search`              | File/text search    | search, findInFile, replace                                    |
 
-### ActionEffect System
+### ActionEffect System ⚡
 
 `Common` defines the `ActionEffect` declarative system -- a sealed enum of all
 possible effects that the extension host can request:
@@ -121,7 +121,7 @@ Effects flow: **Cocoon (extension host)** --`gRPC`--> **Mountain** --execute-->
 This allows extensions to request native operations without knowing whether the
 implementation runs in `Rust`, `Node.js`, or `WASM`.
 
-### Data Transfer Objects
+### Data Transfer Objects 📦
 
 `Common` defines DTOs shared across all components:
 
@@ -134,7 +134,7 @@ implementation runs in `Rust`, `Node.js`, or `WASM`.
 | `ConfigurationTarget` | Global, Workspace, WorkspaceFolder                      | Configuration operations       |
 | `SearchOptions`       | pattern, include, exclude, maxResults, contextLines     | Search operations              |
 
-### CommonError
+### CommonError 🔬
 
 A unified error type covering all failure modes:
 
@@ -158,7 +158,7 @@ pub enum CommonError {
 `Echo` is a bounded work-stealing task scheduler designed as the core execution
 engine for `Mountain`'s async workloads.
 
-### Scheduling Architecture
+### Scheduling Architecture ⚡
 
 ```mermaid
 graph TB
@@ -182,7 +182,7 @@ graph TB
     Spawn --> Ordering[Priority ordering preserved]
 ```
 
-### Key Properties
+### Key Properties 🔐
 
 | Property            | Implementation                       | Benefit                           |
 | ------------------- | ------------------------------------ | --------------------------------- |
@@ -192,7 +192,7 @@ graph TB
 | Work stealing       | Idle workers steal from random peers | Full CPU utilization              |
 | `Tokio` integration | `Echo::spawn()` returns `JoinHandle` | Seamless async `Rust` usage       |
 
-### Usage in Mountain
+### Usage in Mountain 💻
 
 ```rust
 // Mountain uses Echo for all async work
@@ -218,9 +218,9 @@ scheduler.spawn_low(index_workspace(workspace)).await;
 It implements all traits from `Common`, hosts the `gRPC` server, manages
 application state, and orchestrates sidecar processes.
 
-### Module Architecture
+### Module Architecture 🏗️
 
-```
+```text
 Element/Mountain/Source/
     +-- Binary/
     |   +-- Main/
@@ -255,7 +255,7 @@ Element/Mountain/Source/
     +-- LandFixSystem/         - Structured diagnostics
 ```
 
-### Application Startup
+### Application Startup 🚀
 
 ```mermaid
 sequenceDiagram
@@ -291,7 +291,7 @@ sequenceDiagram
     Background-->>Main: System ready for user interaction
 ```
 
-### Tauri Command Registration
+### Tauri Command Registration 💻
 
 `Mountain` registers `Tauri` commands in `Handler/Commands/`. Each command maps
 to a `Rust` function that:
@@ -308,7 +308,7 @@ async fn read_file(path: String, state: State<'_, AppState>) -> Result<Vec<u8>, 
 }
 ```
 
-### Process Management
+### Process Management ⚙️
 
 `ProcessManagement/` handles the lifecycle of sidecar processes:
 
@@ -328,7 +328,7 @@ async fn read_file(path: String, state: State<'_, AppState>) -> Result<Vec<u8>, 
 - Monitors health and resource usage
 - Coordinates update downloads and verification
 
-### Extension Scanner Cache
+### Extension Scanner Cache 📦
 
 Extension scanning is a two-path process that avoids the ~1200 ms cold-disk scan
 on every boot:
@@ -338,11 +338,22 @@ on every boot:
 | `ApplicationState/Internal/ExtensionScanner/LoadFromCache.rs`             | Reads `extensions.manifest.json` pre-baked at build time; returns descriptors in <50 ms |
 | `ApplicationState/Internal/ExtensionScanner/ScanAndPopulateExtensions.rs` | Tries cache first; falls back to live scan using `join_all` parallel directory walks    |
 
-**Cache pre-bake:** `Maintain/Build/Manifest/PreBake.ts` runs from
-`tauri.conf.json` `beforeBundleCommand` and writes a single JSON blob
+**Cache pre-bake:** `Maintain/Build/Manifest/PreBake.ts` ran from
+`tauri.conf.json` `beforeBundleCommand` and wrote a single JSON blob
 (`extensions.manifest.json`) covering all bundled extension roots. Running from
-`beforeBundleCommand` ensures the cache is produced in all build paths, not only
+`beforeBundleCommand` ensured the cache was produced in all build paths, not only
 via `Build.sh`.
+
+> [!IMPORTANT]
+>
+> On `Current`, `Maintain/Build/Manifest/PreBake.ts` was removed in commit
+> `05dae21d6`, and `beforeBundleCommand` in
+> `Element/Mountain/tauri.conf.json` is now empty. The cache readers
+> `ApplicationState/Internal/ExtensionScanner/LoadFromCache.rs` and
+> `ApplicationState/Internal/ExtensionScanner/ScanAndPopulateExtensions.rs`
+> remain in the tree and still name the former script in their comments. When
+> an `extensions.manifest.json` blob is present it is loaded; otherwise the
+> scanner falls through to the live parallel scan described above.
 
 **Cache freshness:** Dev-binary caches expire after 24 hours; bundled (`.app`)
 caches skip the staleness check entirely - they were written at build time and
@@ -358,7 +369,7 @@ semantics where an installed VSIX shadows a built-in of the same identifier.
 `OnceLock` so repeated calls for the same filter type are served from an
 in-process cache after the first resolution.
 
-### Encryption Provider
+### Encryption Provider 🔑
 
 Mountain implements VS Code's `EncryptionMainService` contract via three files
 in `IPC/WindServiceHandlers/Encryption/`:
@@ -372,7 +383,7 @@ in `IPC/WindServiceHandlers/Encryption/`:
 Used by `Cocoon`'s `context.secrets` API so extension credentials and auth
 tokens are stored encrypted at rest on the host filesystem.
 
-### Boot Performance
+### Boot Performance ⚡
 
 Key optimizations applied to Mountain's startup path:
 
@@ -397,7 +408,7 @@ channel-drain patterns: `ExtensionsGetInstalled`, `WaitForClientConnection`,
 `Mist` runs a local Hickory DNS server authoritative for the `editor.land` zone.
 It provides network isolation for sidecar processes.
 
-### DNS Zone Configuration
+### DNS Zone Configuration 🌐
 
 `Element/Mist/Source/Zone.rs` builds the records for the `editor.land` zone:
 
@@ -423,7 +434,7 @@ processes resolve these names only to the local host. There is no wildcard
 `*.editor.land` record; the five listed subdomains and the apex are
 explicit.
 
-### Forward Allowlisting
+### Forward Allowlisting 🛡️
 
 `Element/Mist/Source/ForwardSecurity.rs` supplies the default forward
 allowlist. Queries for names inside `editor.land` are answered by the local
@@ -437,7 +448,7 @@ zone; other names pass through this allowlist.
 The shipped allowlist authorizes one forwarded domain. A query for any other
 external name is refused rather than answered with `NXDOMAIN`.
 
-### DNSSEC
+### DNSSEC 🔐
 
 `Mist` supports DNSSEC with ECDSA P-256 signing for the `editor.land` zone.
 Signing keys are produced on first run and cached in the application data
@@ -450,7 +461,7 @@ directory.
 `Air` is the background daemon sidecar for **Land**, providing long-running
 services that would degrade UI performance if run in the main process.
 
-### Services
+### Services 🧩
 
 | Service          | Protocol | Port    | Purpose                                                      |
 | ---------------- | -------- | ------- | ------------------------------------------------------------ |
@@ -460,9 +471,9 @@ services that would degrade UI performance if run in the main process.
 | Health Monitor   | `gRPC`   | `50053` | System health checks, metrics collection, crash reporting    |
 | Asset Downloader | `gRPC`   | `50053` | Background download of extension assets                      |
 
-### Lifecycle
+### Lifecycle 🔄
 
-```
+```text
 Mountain starts
     |
     +---> AirManagement spawns Air binary
@@ -493,9 +504,9 @@ Mountain shuts down
 Compiler) toolchain. It replaces `esbuild`'s `TypeScript` loader with a
 `Rust`-powered alternative.
 
-### Compilation Pipeline
+### Compilation Pipeline ⚙️
 
-```
+```text
 TypeScript input (.ts, .tsx)
     |
     v
@@ -524,7 +535,7 @@ TypeScript input (.ts, .tsx)
 JavaScript output (.js, .mjs)
 ```
 
-### Performance
+### Performance ⚡
 
 | Operation                    | esbuild | Rest (OXC) | Improvement |
 | ---------------------------- | ------- | ---------- | ----------- |
@@ -532,7 +543,7 @@ JavaScript output (.js, .mjs)
 | Full bundle (100K LOC)       | 1.8s    | 0.7s       | 2.6x        |
 | Minified bundle              | 3.1s    | 1.3s       | 2.4x        |
 
-### CLI Usage
+### CLI Usage 💻
 
 ```sh
 rest --entry src/index.ts \
@@ -555,9 +566,9 @@ profile:
 `SideCar` manages pre-compiled native dependency binaries. Currently handles
 `Node.js` runtime binaries for each target platform.
 
-### Binary Resolution
+### Binary Resolution 🔎
 
-```
+```text
 Build.sh reads NodeVersion and NodePlatform from .env.Land
     |
     v
@@ -580,7 +591,7 @@ SideCar::resolve()
 Mountain build copies binary to app bundle
 ```
 
-### Supported Platforms
+### Supported Platforms 📋
 
 | Target Triple             | Platform String | `Node.js` Binary                    |
 | ------------------------- | --------------- | ----------------------------------- |
@@ -598,9 +609,9 @@ Mountain build copies binary to app bundle
 `Grove` provides an alternative extension host for running WASM-compiled VS Code
 extensions in a sandboxed environment using `WASMtime`.
 
-### Architecture
+### Architecture 🏗️
 
-```
+```text
 Grove Binary
     |
     +---> WASMtime Runtime
@@ -621,7 +632,7 @@ Grove Binary
             Extension API functions exposed directly to WASM modules
 ```
 
-### Status
+### Status 📊
 
 `Grove` is integrated as an optional build feature (`--features grove`). It is
 not enabled by default. When activated, it provides parallel extension hosting
@@ -646,7 +657,7 @@ Protocol evolution is centralised here - adding or changing an RPC updates one
 
 ## Rust Build Configuration 🔧
 
-### Workspace Configuration
+### Workspace Configuration ⚙️
 
 The `Rust` workspace is defined in `Cargo.toml`:
 
@@ -685,7 +696,7 @@ overflow-checks = false
 `Element/Maintain` and `Element/Cache` are workspace members in the source;
 `Element/Document` and the vendored `Dependency/Tauri` tree are excluded.
 
-### Toolchain
+### Toolchain 🦀
 
 Defined in `rust-toolchain.toml`:
 
@@ -716,7 +727,7 @@ targets = [
 
 The `channel` floats on `nightly`; the source carries no dated pin.
 
-### Rust Edition
+### Rust Edition 🦀
 
 All `Rust` crates use edition 2024 (`Rust` nightly), matching the
 `[workspace.package]` value in `Cargo.toml`. Individual crates declare the

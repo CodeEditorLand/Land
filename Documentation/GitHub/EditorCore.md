@@ -38,7 +38,7 @@ renderer process and communicates with the main process via Electron IPC.
 the workbench UI code substantially unchanged. The UI tree is upstream code; the
 transport underneath it is not.
 
-### Architecture Comparison
+### Architecture Comparison 🏗️
 
 **What this mapping does:** it pairs each Electron facility VS Code depends on
 with the **Land** component that replaces it, so a contributor tracing a
@@ -59,7 +59,7 @@ The `Wind` column resolves to [`Wind/Source/`](https://github.com/CodeEditorLand
 column to the [`Mountain`](https://github.com/CodeEditorLand/Mountain/tree/Current) repository, and the extension host column to
 [`Cocoon`](https://github.com/CodeEditorLand/Cocoon/tree/Current).
 
-### Workbench Loading Sequence
+### Workbench Loading Sequence 🚀
 
 **What the loading sequence does:** it carries the WebView from a cold Astro
 page to a painted workbench, installing the preload bridge before any workbench
@@ -98,7 +98,7 @@ sequenceDiagram
 > announces itself, then the bundle builds the service graph and
 > `Workbench.startup()` paints the five UI parts.
 
-### Preload Handshake
+### Preload Handshake 🔌
 
 **What the preload stage does:** it installs the `Tauri` bridge onto the WebView
 global scope and then fires a single DOM event that tells the workbench bundle
@@ -131,7 +131,7 @@ a consistent module structure:
 
 **`Wind service module layout`**
 
-```
+```text
 Wind/Source/Effect/<Service>/
     +-- <Service>.ts            - Barrel re-export module
     +-- Interface/              - Service interface (TypeScript type)
@@ -162,7 +162,7 @@ Wind/Source/Effect/<Service>/
 > entry point is
 > [`Wind/Source/Function/Install.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Function/Install.ts).
 
-### Service Catalog
+### Service Catalog 🧩
 
 **What the catalog does:** it names every service the workbench can resolve and
 the `Tag` it is resolved by, grouped so a reader can find the owner of a
@@ -253,7 +253,7 @@ capability without reading the whole list.
 | Accessibility | `Accessibility` | Screen reader support via OS APIs          |
 | Lifecycle     | `Lifecycle`     | Application lifecycle events               |
 
-### Transport Modules on Current
+### Transport Modules on Current 🔌
 
 **What these modules do:** they carry the traffic the service catalog above
 describes - one file resolves a channel name to a `Mountain` route, one performs
@@ -295,7 +295,7 @@ any service knowing its dependencies are already satisfied.
 Layer is a collection of service implementations wired together through
 `Effect-TS`'s dependency injection.
 
-### Layer Stack Architecture
+### Layer Stack Architecture 🧩
 
 **What the stack does:** it selects one backend family - `Tauri`, Electron or
 Test - and merges that family's service implementations into a single root
@@ -333,7 +333,7 @@ graph TB
 > Three sibling stacks share one service vocabulary; only the implementations
 > behind each `Tag` differ between them.
 
-### Layer Resolution
+### Layer Resolution 🗺️
 
 **What resolution does:** it decides which of the three stacks the build gets,
 reading environment variables at build time rather than branching at runtime.
@@ -342,7 +342,7 @@ The active layer is determined at build time through environment variables:
 
 **`Layer re-export graph`**
 
-```
+```text
 Wind/Source/Effect/Layers/index.ts
     |
     +---> Re-exports TauriBaseLayer, TauriLiveLayer, TauriDevLayer from ./Tauri.ts
@@ -359,7 +359,7 @@ Wind/Source/Effect/Layers/index.ts
 > re-exports from
 > [`Install/Function/Install.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Function/Install/Function/Install.ts).
 
-### Layer Composition
+### Layer Composition 🧩
 
 **What the composition operators do:** they combine service layers either flat
 (`Layer.mergeAll`) or as a dependency chain (`Layer.provideMerge`), and wrap a
@@ -402,7 +402,7 @@ export const LiveEditorServiceLayer = Layer.succeed(
 used without its dependencies being satisfied by the Layer stack. A missing
 dependency produces a `TypeScript` type error.
 
-### TierIPC Routing
+### TierIPC Routing ⚙️
 
 **What TierIPC routing does:** it chooses, per call, whether a channel invocation
 is served by `Mountain` in `Rust` or forwarded to `Cocoon` over `gRPC` - and it
@@ -456,7 +456,7 @@ The tier vocabulary is declared in
 [`Wind/Source/Utility/Tier.ts`](https://github.com/CodeEditorLand/Wind/tree/Current/Source/Utility/Tier.ts), which mirrors
 `Cocoon`'s copy so both sides of the bridge agree on the value set.
 
-### ManagedRuntime
+### ManagedRuntime ⚡
 
 **What the managed runtime does:** it builds the service graph exactly once per
 page and hands every later caller the same warmed instance, so service lookups
@@ -522,7 +522,7 @@ sh Maintain/Debug/Build.sh --profile mountain
 > The profile name is the shorthand minus its `debug-` prefix; running the
 > script with no arguments prints the full list.
 
-### Variant Selection Logic
+### Variant Selection Logic ⚙️
 
 **What the selection logic does:** it reads plain environment booleans on the
 `Sky` entry page and picks one workbench component to render, so unselected
@@ -572,14 +572,14 @@ layers actually owns that command.
 
 **Land** implements the VS Code command system across all three layers:
 
-### Command Registry Structure
+### Command Registry Structure 💻
 
 **What registration does:** it records, per layer, where a command's handler
 lives, so dispatch has somewhere to look before it crosses a process boundary.
 
 **`Command registration by layer`**
 
-```
+```text
 Command Registration:
     Wind (UI commands)      -- registered in Wind services
     Mountain (native)       -- registered as Tauri command handlers
@@ -591,7 +591,7 @@ Command Registration:
 > Three registries, one namespace: a command id is unique across all three, and
 > dispatch tries them in the order shown.
 
-### Command Execution Flow
+### Command Execution Flow 💻
 
 **What the execution flow does:** it resolves a command locally when `Wind` owns
 it, and otherwise crosses into `Mountain` and, if the handler is an extension's,
@@ -633,7 +633,7 @@ sequenceDiagram
 > The fast path never leaves the WebView; only a native or extension command
 > pays the `Tauri` and `gRPC` hops.
 
-### Command Categories
+### Command Categories 💻
 
 **What the categories do:** they say which layer registers each family of
 commands, which is what determines the path a given command takes through the
@@ -657,7 +657,7 @@ that renders it.
 The editor service in `Wind` integrates the VS Code CodeEditor widget (based on
 Monaco) with `Tauri`'s WebView and `Mountain`'s native capabilities:
 
-### Text Model Management
+### Text Model Management 📝
 
 **What text model management does:** it resolves a URI to a text model, reads
 the bytes through `Mountain`, and hands the populated model to a newly
@@ -665,7 +665,7 @@ instantiated editor widget.
 
 **`Open-file path`**
 
-```
+```text
 User opens file
     |
     v
@@ -696,7 +696,7 @@ TauriInvoke("MountainIPCInvoke", {
 > The provider is what makes `IFileService.readFile()` in the diagram resolve to
 > a `Rust` syscall rather than a Node.js one.
 
-### Editor Change Lifecycle
+### Editor Change Lifecycle 🔄
 
 **What the change lifecycle does:** it propagates a keystroke from the widget
 into the model's dirty state, and from there into the tab indicator, the save
@@ -704,7 +704,7 @@ pipeline and the autosave timer.
 
 **`Dirty-state propagation`**
 
-```
+```text
 User types in editor
     |
     v
@@ -735,7 +735,7 @@ trading maximum compatibility against performance.
 
 **Land** uses a dual-track strategy for VS Code API coverage:
 
-### Track A: Stock Node (Maximum Compatibility)
+### Track A: Stock Node (Maximum Compatibility) 🧩
 
 **What Track A does:** it runs VS Code's unmodified extension-host sources and
 shims only the RPC glue beneath them, so behaviour matches upstream by
@@ -748,7 +748,7 @@ main process is shimmed by `Cocoon` to work over `gRPC`.
 Coverage: All APIs that the stock implementation handles in-process are
 immediately compatible.
 
-### Track B: Rust Native (Performance)
+### Track B: Rust Native (Performance) ⚡
 
 **What Track B does:** it intercepts the I/O-heavy calls and re-implements them
 against `Mountain`'s native `Rust` services instead of Node.js.
@@ -777,7 +777,7 @@ import { createInterceptedInvoke } from "../Shim/IPCInterceptor.js";
 > With `TierShim` off the wrapper is a pass-through and the module is
 > tree-shaken out of the bundle entirely.
 
-### Coverage Matrix
+### Coverage Matrix 📊
 
 **What the matrix does:** it records the verified state of each API surface, so
 a contributor can tell a wired-but-unrendered feature from a working one.

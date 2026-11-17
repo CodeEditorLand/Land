@@ -4,6 +4,29 @@ This is the master index for the Land code editor's GitHub-facing documentation.
 Every document in `Documentation/GitHub/` and all per-Element
 `Documentation/GitHub/` directories is catalogued here.
 
+```mermaid
+graph TB
+    Index["Documentation index"]
+    Arch["Architecture"]
+    Editor["EditorCore"]
+    Proto["InterComponentProtocol"]
+    Rust["RustInfrastructure"]
+    Build["Building and BuildPipeline"]
+    Flow["Workflow examples"]
+    Elements["Per-Element Architecture docs"]
+
+    Index --> Arch
+    Index --> Editor
+    Index --> Proto
+    Index --> Rust
+    Index --> Build
+    Index --> Flow
+    Index --> Elements
+    Arch --> Editor
+    Arch --> Proto
+    Arch --> Rust
+```
+
 ---
 
 **Table of Contents**
@@ -17,7 +40,7 @@ Every document in `Documentation/GitHub/` and all per-Element
 
 ---
 
-## System Architecture
+## System Architecture 🏗️
 
 Documents covering the overall Land system, its components, and their
 interactions.
@@ -34,7 +57,7 @@ interactions.
 
 ---
 
-## Build System
+## Build System 📦
 
 Documents covering the build pipeline, environment configuration, and build
 profiles.
@@ -48,7 +71,7 @@ profiles.
 
 ---
 
-## Workflow Examples
+## Workflow Examples 📖
 
 Detailed end-to-end walkthroughs of specific user interactions and system
 operations.
@@ -69,7 +92,7 @@ operations.
 
 ---
 
-## Per-Element Documentation
+## Per-Element Documentation 🗺️
 
 Each Land Element has an `Architecture.md` in its own `Documentation/GitHub/`
 directory covering internal module structure, data flow, and implementation
@@ -106,7 +129,7 @@ details.
 
 ---
 
-## Legacy / Pre-existing Deep Dives
+## Legacy / Pre-existing Deep Dives 🔬
 
 Each Element also contains a `DeepDive.md` in its `Documentation/GitHub/`
 directory. These pre-existing documents provide historical technical depth and
@@ -144,7 +167,7 @@ Some Elements contain additional documentation beyond `DeepDive.md` and
 
 ---
 
-## Related Documentation
+## Related Documentation 📖
 
 - [`Documentation/Module/Telemetry/`](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/Module/Telemetry/) - Telemetry system
   docs (Effect-OTel, Sidecars, Tree-Shaking)
@@ -155,7 +178,7 @@ Some Elements contain additional documentation beyond `DeepDive.md` and
 
 ---
 
-## Coverage Summary
+## Coverage Summary 📈
 
 > [!NOTE] VS Code API weighted coverage as of 2026-05-23: **88%** overall.
 >
@@ -172,7 +195,7 @@ Some Elements contain additional documentation beyond `DeepDive.md` and
 
 ---
 
-## 🟠 Low-Level Shim | 🔵 Coverage / Telemetry
+## Low-Level Shim and Coverage Telemetry 🔵
 
 > ℹ️ New experimental feature (2026-06-13). Two-tier interception system at the
 > JavaScript engine level (orange) and application service level (blue).

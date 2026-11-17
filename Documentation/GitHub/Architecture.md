@@ -38,7 +38,7 @@ processes:
 A fourth optional process, the background daemon (`Air`), runs as a persistent
 sidecar for updates and indexing.
 
-### Routing Between Processes
+### Routing Between Processes 🌐
 
 The `TierIPC` environment variable controls whether `Wind`/`Output` route IPC
 through `Mountain` (default), fall back to `Cocoon` on miss (`NodeDeferred`), or
@@ -59,7 +59,7 @@ TierIPC=Mountain
 > **TierIPC note:** The `TierIPC` environment variable is read at runtime, so
 > this default can be changed without a rebuild.
 
-### Process Topology
+### Process Topology 🗺️
 
 ```mermaid
 graph TB
@@ -101,7 +101,7 @@ is vendored into
 [Element/](https://github.com/CodeEditorLand/Land/tree/Current/Element) as a
 submodule.
 
-### Rust Components (Native)
+### Rust Components (Native) 🦀
 
 | Component    | Crate Type       | Role                                                                                                                                                                                                                                                                                                 |
 | ------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -113,7 +113,7 @@ submodule.
 | **Rest**     | Binary + Library | High-performance `TypeScript` compiler built on `OXC` (Oxidation Compiler). Replaces `esbuild`'s `TypeScript` loader with a `Rust`-powered `OXC` pipeline, producing VS Code-compatible output at 2-3x speed improvement. Handles decorators, class field transformations, `JSX`.                    |
 | **Grove**    | Library + Binary | Native `Rust`/`WASM` extension host. Provides a sandboxed environment via `WASMtime` for running `WASM`-compiled VS Code extensions. Shares the same VS Code API surface as `Cocoon`. Supports `gRPC`, IPC, and `WASM` host function transport strategies.                                           |
 | **SideCar**  | Library          | Vendored runtime binary management. Packages exact `Node.js` binaries per target triple (`aarch64`/`x86_64` for `macOS`/`Linux`/`Windows`). Provides download, caching, version resolution, and `Git LFS` management. Consumed at `Mountain` build time.                                             |
-| **Vine**     | Protocol Library | gRPC protocol definitions for all inter-process communication. Defines `Vine.proto` - the service contracts used between `Mountain` (port 50051) and `Cocoon` (port 50052), and between `Mountain` and `Air` (port 50053). Generated stubs are consumed by every element that speaks gRPC.           |
+| **Vine**     | Protocol Library | gRPC protocol definitions for all inter-process communication. Defines `Vine.proto` - the service contracts used between `Mountain` (port 50051) and `Cocoon` (port 50052), and between `Mountain` and `Air` (port 50053). Compiled stubs are consumed by every Element that speaks `gRPC`.           |
 
 #### Common: the trait foundation
 
@@ -164,7 +164,7 @@ service MountainService {
 > Both a unary call and a bidirectional stream are declared, which is why the
 > same port carries requests and pushed events.
 
-### TypeScript Components (Web / Node.js)
+### TypeScript Components (Web / Node.js) 📜
 
 | Component  | Framework             | Role                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | ---------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -193,7 +193,7 @@ service MountainService {
 
 ## IPC Architecture 🔌
 
-### Inter-Process Communication Matrix
+### Inter-Process Communication Matrix 🌐
 
 | Source              | Sink         | Protocol              | Transport        | Port    |
 | ------------------- | ------------ | --------------------- | ---------------- | ------- |
@@ -216,7 +216,7 @@ NetworkCocoonPort=50052
 > Both ports are overridable, which is how parallel development sessions avoid
 > colliding.
 
-### Request Flow for UI Operations
+### Request Flow for UI Operations 📊
 
 All requests from the user interface follow a consistent flow through the
 system:
@@ -244,7 +244,7 @@ sequenceDiagram
     Sky-->>User: UI renders change
 ```
 
-### Protocol Layers
+### Protocol Layers 🌐
 
 **Land**'s IPC uses three distinct protocol layers:
 
@@ -278,7 +278,7 @@ IPCService.invoke(Channels.ExtensionsInstall)([VsixPath]);
 > Wire strings live in one registry that mirrors the `Channel` enum in
 > [Common](https://github.com/CodeEditorLand/Common/tree/Current/Source/IPC).
 
-### TierIPC Routing
+### TierIPC Routing ⚙️
 
 `Wind` and `Output` both support three routing modes, selected by the `TierIPC`
 environment variable:
@@ -317,12 +317,12 @@ TierAuth=Node
 
 ## Service Layer Design 🧩
 
-### Common Trait Architecture (Rust side)
+### Common Trait Architecture (Rust side) 🧩
 
 The `Common` crate defines application capabilities as abstract async traits.
 Each trait represents a domain:
 
-```
+```text
 Common::Interface
     +-- FileSystem (read, write, watch, stat, mkdir, readdir)
     +-- Configuration (get, set, has, inspect, onDidChange)
@@ -338,7 +338,7 @@ Common::Interface
 and `Wind` never implement these traits directly - they call `Mountain`'s
 implementations through IPC.
 
-### Wind Effect-TS Service Architecture (UI side)
+### Wind Effect-TS Service Architecture (UI side) 🧩
 
 `Wind` recreates the VS Code workbench service architecture using `Effect-TS`.
 Each service follows a consistent module structure:
@@ -385,7 +385,7 @@ Services compose into Layer stacks:
 | **ElectronLiveLayer** | Electron-compatible services | Used for Electron workbench variant                    |
 | **TestLayer**         | Mock implementations         | Used in extension test runner                          |
 
-### Cocoon Bootstrap and Extension Architecture
+### Cocoon Bootstrap and Extension Architecture 🚀
 
 `Cocoon`'s bootstrap is lean async - plain `async`/`await` functions with no
 `Effect-TS` runtime overhead. Stages run sequentially in this order:
@@ -416,7 +416,7 @@ Set cycle guard to prevent circular-dependency deadlocks.
 > Each stage reports by name, so a startup failure log points at the exact stage
 > that aborted.
 
-### The vscode API Shim: Two-Track Dispatch
+### The vscode API Shim: Two-Track Dispatch 🔀
 
 The `vscode` API shim in
 [Cocoon/Source/Services/Handler/VscodeAPI/](https://github.com/CodeEditorLand/Cocoon/tree/Current/Source/Services/Handler/VscodeAPI)
@@ -484,7 +484,7 @@ TierFileWatcher=Layer4
 
 ## Data Flow Patterns 📊
 
-### Read Request (File Open)
+### Read Request (File Open) 📊
 
 ```mermaid
 sequenceDiagram
@@ -506,7 +506,7 @@ sequenceDiagram
     Sky-->>User: File rendered in editor
 ```
 
-### Extension Feature Request (Hover)
+### Extension Feature Request (Hover) 📊
 
 ```mermaid
 sequenceDiagram
@@ -527,7 +527,7 @@ sequenceDiagram
     Sky-->>User: Hover tooltip displayed
 ```
 
-### Configuration Change
+### Configuration Change ⚙️
 
 ```mermaid
 sequenceDiagram
@@ -556,7 +556,7 @@ sequenceDiagram
 Land includes a two-tier VS Code engine interception system for deep event
 routing and performance tracing.
 
-### Tiers
+### Tiers ⚙️
 
 | Tier               | Color | What                                        |
 | ------------------ | ----- | ------------------------------------------- |
@@ -577,7 +577,7 @@ TierShim=None
 > At the default tier the shim code is compiled out entirely, so it costs
 > nothing at runtime.
 
-### Architecture
+### Architecture 🏗️
 
 Each layer names the file that installs it. The paths below are the real
 locations in each Element's repository.
@@ -602,7 +602,7 @@ locations in each Element's repository.
 > `Wind/Shim/...` and `Cocoon/Shim/...`; the real trees place them under each
 > Element's `Source/` directory.
 
-### Rust Side
+### Rust Side 🦀
 
 Mountain's
 [Source/Shim/SwallowMap.rs](https://github.com/CodeEditorLand/Mountain/tree/Current/Source/Shim/SwallowMap.rs)
@@ -658,7 +658,7 @@ pub enum SwallowAction {
 - [VSCode-API-Coverage-Matrix](https://github.com/CodeEditorLand/Land/tree/Current/Documentation/GitHub/VSCode-API-Coverage-Matrix.md) - `vscode.*` API
   implementation status per namespace
 
-### Sibling Paths Within This Directory
+### Sibling Paths Within This Directory 📖
 
 Every document above is linked by its canonical `tree/Current` URL. All of them
 are also siblings of this file inside

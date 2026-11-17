@@ -32,7 +32,7 @@ levels:
 | `gRPC` (`Vine`) | TCP localhost           | Service     | `Cocoon` <-> `Mountain`, `Air` <-> `Mountain` | Inter-service RPC           |
 | `Spine`         | `gRPC` + `ActionEffect` | Extension   | `Cocoon` -> `Mountain`                        | Extension host coordination |
 
-### Protocol Stack
+### Protocol Stack 🗺️
 
 ```mermaid
 graph BT
@@ -68,7 +68,7 @@ graph BT
 
 ## Tauri IPC 🎮
 
-### TierIPC Runtime Routing
+### TierIPC Runtime Routing ⚙️
 
 The `TierIPC` environment variable controls how `Wind` and `Output` route Tauri
 IPC calls at runtime. No rebuild is required to switch tiers.
@@ -85,7 +85,7 @@ shell export (e.g. `export TierStorage=Node`) overrides the baked value without
 a rebuild. The active tier for each subsystem is logged at boot by
 `Mountain/Source/LandFixTier.rs`.
 
-### Commands (Request-Response)
+### Commands (Request-Response) 💻
 
 `Wind` invokes `Mountain` handlers through `@tauri-apps/api` `invoke()`. Each
 command maps to a registered `Rust` handler in `Mountain`.
@@ -123,7 +123,7 @@ fn main() {
 }
 ```
 
-### Command Catalog
+### Command Catalog 💻
 
 All commands are dispatched through the single Tauri command `MountainIPCInvoke`
 with `{ method: string, params: any[] }`. The method string corresponds to the
@@ -259,7 +259,7 @@ the Echo scheduler.
 > mirrored in `Wind/Source/IPC/Channel.ts` (TypeScript). Both must be kept in
 > lockstep - adding a channel to one requires adding it to the other.
 
-### Events (Push from Mountain)
+### Events (Push from Mountain) 📢
 
 `Mountain` emits events that `Wind`/`Sky` listen to via `@tauri-apps/api/event`:
 
@@ -272,7 +272,7 @@ const unlisten = await listen("configuration-changed", (event) => {
 });
 ```
 
-### Event Catalog
+### Event Catalog 📢
 
 | Event                   | Payload                          | Direction            | Purpose                             |
 | ----------------------- | -------------------------------- | -------------------- | ----------------------------------- |
@@ -283,7 +283,7 @@ const unlisten = await listen("configuration-changed", (event) => {
 | `theme-changed`         | `{ theme: string }`              | `Mountain` -> `Wind` | Color theme change                  |
 | `window-state-changed`  | `{ state: string }`              | `Mountain` -> `Wind` | Window maximize/minimize/fullscreen |
 
-### Serialization
+### Serialization 🔬
 
 `Tauri` IPC uses JSON serialization with the following conventions:
 
@@ -303,7 +303,7 @@ const unlisten = await listen("configuration-changed", (event) => {
 `Element/Vine/Proto/Vine.proto`. `Mountain` keeps a local sync'd copy at
 `Element/Mountain/Proto/Vine.proto` which its `build.rs` compiles directly.
 
-### Service Definitions
+### Service Definitions 🌐
 
 ```protobuf
 syntax = "proto3";
@@ -496,7 +496,7 @@ service CocoonService {
 }
 ```
 
-### Service: MountainService
+### Service: MountainService 🌐
 
 Used for `Cocoon` -> `Mountain` communication:
 
@@ -507,7 +507,7 @@ Used for `Cocoon` -> `Mountain` communication:
 | `CancelOperation`        | `Cocoon` -> `Mountain` | User cancels    | Cancel an in-flight operation                        |
 | `OpenChannelFromCocoon`  | `Cocoon` -> `Mountain` | After handshake | LAND-PATCH B7-S6 P2 bidirectional multiplexed stream |
 
-### Service: CocoonService
+### Service: CocoonService 🌐
 
 Used for `Mountain` -> `Cocoon` communication:
 
@@ -567,7 +567,7 @@ Used for `Mountain` -> `Cocoon` communication:
 | `RegisterLinkedEditingRangeProvider`      | `Cocoon` -> `Mountain` | Extension boot   | Register a linked editing range provider             |
 | `ProvideLinkedEditingRanges`              | `Mountain` -> `Cocoon` | User edits       | Request linked editing ranges                        |
 
-### Message Formats
+### Message Formats 📦
 
 ```protobuf
 // A generic request / response envelope shared across all RPCs.
@@ -627,7 +627,7 @@ message CompletionItem { /* ... */ }
 message Location { /* ... */ }
 ```
 
-### Port Allocation
+### Port Allocation 🔌
 
 | Service       | Element    | Port    | Transport |
 | ------------- | ---------- | ------- | --------- |
@@ -647,7 +647,7 @@ The `Spine` protocol is the extension host coordination layer built on top of
 `Vine` `gRPC`. It implements an action/response pattern for extension-to-backend
 communication.
 
-### Action/Response Pattern
+### Action/Response Pattern 🔄
 
 ```mermaid
 sequenceDiagram
@@ -668,12 +668,12 @@ sequenceDiagram
     Shim-->>Extension: Return result to extension
 ```
 
-### ActionEffect Types
+### ActionEffect Types 🧩
 
 The `Spine` protocol encodes all possible extension actions as a discriminated
 union:
 
-```
+```text
 ActionEffect
     +-- ReadFile { path }
     +-- WriteFile { path, content }
@@ -706,7 +706,7 @@ ActionEffect
     // ... 80+ effect variants
 ```
 
-### Routing
+### Routing 🔀
 
 The `Cocoon` tier router (`Cocoon/Source/Services/Handler/VscodeAPI/ROUTING.md`)
 decides per-call whether to:
@@ -722,7 +722,7 @@ decides per-call whether to:
 
 ## Connection Lifecycle 🔄
 
-### Mountain-Cocoon Connection
+### Mountain-Cocoon Connection 🔌
 
 **Bootstrap order (critical):** Cocoon's gRPC server (port 50052) must bind
 before Cocoon attempts to connect to Mountain's gRPC server (port 50051). The
@@ -753,9 +753,9 @@ sequenceDiagram
     Server-->>Mountain: Connection established, normal operation
 ```
 
-### Disconnection and Reconnection
+### Disconnection and Reconnection 🔄
 
-```
+```text
 Network failure or Cocoon crash
     |
     v
@@ -774,9 +774,9 @@ Mountain detects stale connection (no activity within 30-second check window)
             - Reconnect when Cocoon restarts (user manually)
 ```
 
-### Mountain-Air Connection
+### Mountain-Air Connection 🔌
 
-```
+```text
 Mountain starts
     |
     v
@@ -802,7 +802,7 @@ Normal operation:
 
 ## Health Monitoring 💓
 
-### Heartbeat Protocol
+### Heartbeat Protocol 💓
 
 Both `gRPC` connections (`Mountain`-`Cocoon`, `Mountain`-`Air`) implement a
 health monitoring protocol. Health is tracked via a per-connection
@@ -823,12 +823,12 @@ Health is determined by three conditions in
 `RecordSideCarFailure` which increments the counter and sets `IsHealthy` to
 `false`; successful activity resets both via `UpdateSideCarActivity`.
 
-### Diagnostic Logging
+### Diagnostic Logging 🪵
 
 All connection state changes are logged via the `dev_log!` system at
 `Mountain/Source/IPC/DevLog/`:
 
-```
+```text
 [DEV:Vine] gRPC server listening on [::1]:50051
 [DEV:Vine] Cocoon connected, handshake received
 [DEV:Vine] Heartbeat OK (seq=142, latency=3ms)
@@ -840,7 +840,7 @@ All connection state changes are logged via the `dev_log!` system at
 
 ## Protocol Buffer Definitions 📁
 
-### Current Location
+### Current Location 📁
 
 Protocol definitions currently reside in consuming components:
 
@@ -852,7 +852,7 @@ Protocol definitions currently reside in consuming components:
 | Client impl   | `Element/Cocoon/Source/Services/Mountain/gRPC/Client.ts` | TypeScript `gRPC` client                          |
 | RouteManifest | `Maintain/Script/GenerateRouteManifest.sh` (build-time) | Emits the routing tier enumeration into `Element/Cocoon/Source/Generated/RouteManifest.ts` |
 
-### Code Generation
+### Code Generation ⚙️
 
 Rust types are compiled from `.proto` files using `prost` and `tonic-build` at
 compile time:
