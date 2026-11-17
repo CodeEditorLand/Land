@@ -2,7 +2,6 @@
 exclude = [
 	"Dependency/Microsoft/Dependency/Editor/cli",
 	"Dependency/Microsoft/Dependency/Editor/build/win32",
-	"Element/Document",
 	"Dependency/Tauri",
 ]
 members = [
