@@ -769,6 +769,24 @@
 
 ---
 
+## Documentation 📖
+
+The full documentation set is catalogued in the [`Documentation/INDEX.md`](Documentation/INDEX.md) master index.
+
+- [`Documentation/INDEX.md`](Documentation/INDEX.md) - entry point for the whole set
+- [`Documentation/GitHub/README.md`](Documentation/GitHub/README.md) - catalogue of the `Documentation/GitHub/` documents
+
+The master index groups its links by purpose:
+
+- System guides
+- Build and configuration references
+- Workflow examples
+- Filesystem footprint notes
+- Module notes
+- Per-Element architecture documents
+
+---
+
 ## Project Identity 🪪
 
 - **Editor.** `Land` is a high-performance, resource-efficient, cross-platform code editor.

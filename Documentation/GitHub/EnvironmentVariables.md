@@ -700,7 +700,7 @@ This is separate from the standard application log and includes all tagged outpu
 When `Trace` is set (in either `PostHog` or `Diagnostics` domain), these are the most common tag values:
 
 | Tag | Covers |
-| --- | ------ |
+| -------- | -------- |
 | `all` | Every tag (verbose) |
 | `lifecycle` | Application startup, shutdown, window lifecycle |
 | `ipc` | Inter-process communication messages |
